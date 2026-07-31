@@ -1,25 +1,20 @@
-# Playground → Vercel
+# Playground → Vercel（Git 集成）
 
-| Playground | 目录 |
-|------------|------|
-| Element Plus | `playgrounds/vue3-element-plus` |
-| element-ui | `playgrounds/vue2-element-ui` |
+两个 Vercel 项目，**GitHub 连同一仓库**，靠 Root Directory 区分：
 
-目录内 `vercel.json`：monorepo 根 `pnpm install` + filter build → `dist`。
+| 项目 | Root Directory | 生产域名 |
+|------|----------------|----------|
+| `veform-element-plus` | `playgrounds/vue3-element-plus` | https://veform-element-plus.vercel.app |
+| `veform-element-ui` | `playgrounds/vue2-element-ui` | https://veform-element-ui.vercel.app |
 
-## GitHub Actions（推荐）
+目录内 `vercel.json`：从 monorepo 根 `pnpm install`，再 filter 构建当前 playground。
 
-Workflow：`.github/workflows/vercel-playgrounds.yml`  
+## 行为
 
-Secrets：`VERCEL_TOKEN`、`VERCEL_ORG_ID`、`VERCEL_PROJECT_ID_ELEMENT_PLUS`、`VERCEL_PROJECT_ID_ELEMENT_UI`。
+- push / PR 到 `main` → Vercel 自动构建部署（无需 GitHub Secrets、无 Actions 部署 job）
+- 不需要 `VERCEL_TOKEN` / project id
 
-详见 [ci.md](./ci.md)。
-
-## 控制台双项目
-
-同一仓库 Import 两次，Root Directory 分别指上表两目录；勾选 include files outside root。
-
-## 本地
+## 本地预览生产包
 
 ```bash
 pnpm build:play:vue3
