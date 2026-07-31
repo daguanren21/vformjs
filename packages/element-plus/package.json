@@ -1,0 +1,71 @@
+{
+  "name": "@veform/element-plus",
+  "version": "0.0.0",
+  "description": "Element Plus adapter for veform (useElForm)",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": {
+        "types": "./src/index.ts",
+        "default": "./src/index.ts"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      },
+      "default": "./src/index.ts"
+    },
+    "./zod": {
+      "types": "./src/use-zod-form.ts",
+      "import": {
+        "types": "./src/use-zod-form.ts",
+        "default": "./src/use-zod-form.ts"
+      },
+      "require": {
+        "types": "./dist/use-zod-form.d.cts",
+        "default": "./dist/use-zod-form.cjs"
+      },
+      "default": "./src/use-zod-form.ts"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./src/index.ts",
+  "types": "./src/index.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@veform/core": "workspace:^",
+    "@veform/vue": "workspace:^",
+    "@veform/zod": "workspace:^"
+  },
+  "peerDependencies": {
+    "element-plus": ">=2.0.0",
+    "vue": "^3.0.0",
+    "zod": "^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "element-plus": {
+      "optional": true
+    },
+    "zod": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "zod": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

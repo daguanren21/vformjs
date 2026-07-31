@@ -1,0 +1,24 @@
+{
+  "name": "@veform/playground-vue2-element-ui",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@veform/element-ui": "workspace:*",
+    "@veform/core": "workspace:*",
+    "@veform/vue": "workspace:*",
+    "element-ui": "^2.15.14",
+    "vue": "catalog:vue27",
+    "vue-demi": "catalog:"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue2": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vue-template-compiler": "2.7.16"
+  }
+}

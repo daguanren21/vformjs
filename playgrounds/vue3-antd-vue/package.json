@@ -1,0 +1,24 @@
+{
+  "name": "@veform/playground-vue3-antd-vue",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@veform/core": "workspace:*",
+    "@veform/vue": "workspace:*",
+    "@veform/zod": "workspace:*",
+    "ant-design-vue": "^4.2.6",
+    "vue": "catalog:",
+    "vue-demi": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:"
+  }
+}

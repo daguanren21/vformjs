@@ -1,0 +1,24 @@
+{
+  "name": "@veform/playground-vue3-naive-ui",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@veform/core": "workspace:*",
+    "@veform/vue": "workspace:*",
+    "@veform/zod": "workspace:*",
+    "naive-ui": "^2.44.1",
+    "vue": "catalog:",
+    "vue-demi": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:"
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "name": "veform-monorepo",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.17.0",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "prepare": "husky",
+    "build": "turbo run build --filter=./packages/*",
+    "build:play:vue3": "pnpm --filter @veform/playground-vue3-element-plus run build",
+    "build:play:vue2": "pnpm --filter @veform/playground-vue2-element-ui run build",
+    "dev:vue3": "pnpm --filter @veform/playground-vue3-element-plus run dev",
+    "dev:vue2": "pnpm --filter @veform/playground-vue2-element-ui run dev",
+    "dev:naive": "pnpm --filter @veform/playground-vue3-naive-ui run dev",
+    "dev:antd": "pnpm --filter @veform/playground-vue3-antd-vue run dev",
+    "typecheck": "turbo run typecheck --filter=./packages/*",
+    "lint": "oxlint -c .oxlintrc.json packages playgrounds",
+    "lint:fix": "oxlint -c .oxlintrc.json --fix packages playgrounds",
+    "test": "vitest run --config vitest.config.ts",
+    "test:watch": "vitest --config vitest.config.ts",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "pnpm build && changeset publish",
+    "ci": "pnpm lint && pnpm test && pnpm build && pnpm build:play:vue3 && pnpm build:play:vue2",
+    "commitlint": "commitlint --edit"
+  },
+  "devDependencies": {
+    "@changesets/cli": "2.31.1",
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
+    "@types/node": "^22.19.0",
+    "@vitejs/plugin-vue": "catalog:",
+    "@veform/core": "workspace:*",
+    "@veform/element-plus": "workspace:*",
+    "@veform/element-ui": "workspace:*",
+    "@veform/shared": "workspace:*",
+    "@veform/vue": "workspace:*",
+    "@veform/zod": "workspace:*",
+    "@vue/test-utils": "2.4.11",
+    "element-plus": "^2.14.3",
+    "happy-dom": "20.11.1",
+    "husky": "^9.1.7",
+    "oxlint": "1.76.0",
+    "turbo": "^2.5.4",
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "vue": "catalog:",
+    "vue-demi": "catalog:"
+  }
+}

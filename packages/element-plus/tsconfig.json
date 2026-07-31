@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "paths": {
+      "@veform/core": ["../core/src/index.ts"],
+      "@veform/shared": ["../shared/src/index.ts"],
+      "@veform/vue": ["../vue/src/index.ts"],
+      "@veform/zod": ["../zod/src/index.ts"]
+    }
+  },
+  "include": ["src", "test"]
+}

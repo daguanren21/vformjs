@@ -1,0 +1,26 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@3.1.1/schema.json",
+  "changelog": "@changesets/cli/changelog",
+  "commit": false,
+  "fixed": [
+    [
+      "@veform/core",
+      "@veform/vue",
+      "@veform/zod",
+      "@veform/element-plus",
+      "@veform/element-ui"
+    ]
+  ],
+  "linked": [],
+  "access": "public",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "ignore": [
+    "@veform/shared",
+    "@veform/schema",
+    "@veform/playground-vue3-element-plus",
+    "@veform/playground-vue2-element-ui",
+    "@veform/playground-vue3-naive-ui",
+    "@veform/playground-vue3-antd-vue"
+  ]
+}

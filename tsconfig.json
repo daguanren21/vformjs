@@ -1,0 +1,28 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "paths": {
+      "@veform/shared": ["./packages/shared/src/index.ts"],
+      "@veform/core": ["./packages/core/src/index.ts"],
+      "@veform/vue": ["./packages/vue/src/index.ts"],
+      "@veform/zod": ["./packages/zod/src/index.ts"],
+      "@veform/element-plus": ["./packages/element-plus/src/index.ts"],
+      "@veform/element-plus/*": ["./packages/element-plus/src/*"],
+      "@veform/element-ui": ["./packages/element-ui/src/index.ts"],
+      "@veform/element-ui/*": ["./packages/element-ui/src/*"]
+    }
+  },
+  "include": [
+    "env.d.ts",
+    "vitest.config.ts",
+    "packages/*/src",
+    "packages/*/test",
+    "playgrounds/vue3-*/src",
+    "playgrounds/vue3-*/vite.config.ts"
+  ],
+  "exclude": [
+    "**/dist/**",
+    "**/node_modules/**",
+    "playgrounds/vue2-element-ui/**"
+  ]
+}
