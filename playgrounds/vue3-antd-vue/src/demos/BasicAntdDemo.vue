@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { r } from '@veform/vue'
+import { r } from '@vformjs/vue'
 import { Button, Form, FormItem, Input, Space, Textarea } from 'ant-design-vue'
 import { ref } from 'vue'
 import { useAntdForm } from '../form/use-antd-form'

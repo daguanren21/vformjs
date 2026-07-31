@@ -15,7 +15,7 @@ export default defineComponent({
 <template>
   <div class="page">
     <header>
-      <h1>veform playground</h1>
+      <h1>vformjs playground</h1>
       <p>纯演示 · Vue2.7 + element-ui · 不绑业务</p>
     </header>
     <aside class="nav">

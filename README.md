@@ -1,15 +1,15 @@
-# veform
+# vformjs
 
 Vue 表单状态与校验（Vue 2.7 / Vue 3）。UI 用 adapter 接入。
 
 ```bash
-pnpm add @veform/element-plus   # Vue3 + Element Plus
-# pnpm add @veform/element-ui  # Vue2.7 + element-ui
-# pnpm add @veform/vue         # 通用 useForm / defineAdapter
+pnpm add @vformjs/element-plus   # Vue3 + Element Plus
+# pnpm add @vformjs/element-ui  # Vue2.7 + element-ui
+# pnpm add @vformjs/vue         # 通用 useForm / defineAdapter
 ```
 
 ```ts
-import { useElForm, r } from '@veform/element-plus'
+import { useElForm, r } from '@vformjs/element-plus'
 
 const form = useElForm({
   defaults: { name: '', email: '' },

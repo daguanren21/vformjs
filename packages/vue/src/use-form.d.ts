@@ -1,4 +1,4 @@
-import { createForm, type CreateFormOptions, type FieldArrayApi, type FieldPath, type FormApi, type FormResult, type FormRulesMap, type LinkageRule } from '@veform/core';
+import { createForm, type CreateFormOptions, type FieldArrayApi, type FieldPath, type FormApi, type FormResult, type FormRulesMap, type LinkageRule } from '@vformjs/core';
 import type { ComputedRef } from 'vue-demi';
 /** Unified form modes: create / edit / detail all share useForm. */
 export type FormMode = 'create' | 'edit' | 'detail';

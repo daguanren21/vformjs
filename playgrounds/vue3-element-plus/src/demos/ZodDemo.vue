@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useZodForm } from '@veform/element-plus'
+import { useZodForm } from '@vformjs/element-plus'
 import { ref } from 'vue'
 import { z } from 'zod'
 

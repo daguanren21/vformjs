@@ -9,11 +9,11 @@ export default defineConfig({
   plugins: [vue()],
   resolve: {
     alias: {
-      '@veform/shared': path.join(root, 'packages/shared/src/index.ts'),
-      '@veform/core': path.join(root, 'packages/core/src/index.ts'),
-      '@veform/vue': path.join(root, 'packages/vue/src/index.ts'),
-      '@veform/zod': path.join(root, 'packages/zod/src/index.ts'),
-      '@veform/element-plus': path.join(
+      '@vformjs/shared': path.join(root, 'packages/shared/src/index.ts'),
+      '@vformjs/core': path.join(root, 'packages/core/src/index.ts'),
+      '@vformjs/vue': path.join(root, 'packages/vue/src/index.ts'),
+      '@vformjs/zod': path.join(root, 'packages/zod/src/index.ts'),
+      '@vformjs/element-plus': path.join(
         root,
         'packages/element-plus/src/index.ts',
       ),

@@ -133,7 +133,7 @@ form.load('edit', row)
 `useZodForm` 同样支持 `load` / `mode` / `readonly`：
 
 ```ts
-import { useZodForm } from '@veform/element-plus'
+import { useZodForm } from '@vformjs/element-plus'
 
 const form = useZodForm({
   schema,

@@ -9,7 +9,7 @@ const current = computed(() => demos.find(d => d.id === active.value)!)
 <template>
   <div class="page">
     <header>
-      <h1>veform playground</h1>
+      <h1>vformjs playground</h1>
       <p>纯演示场景 · Vue3 + element-plus · 不绑业务</p>
     </header>
 

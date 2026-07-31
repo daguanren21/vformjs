@@ -1,6 +1,6 @@
 <script lang="ts">
-import { useElForm } from '@veform/element-ui'
-import { r } from '@veform/vue'
+import { useElForm } from '@vformjs/element-ui'
+import { r } from '@vformjs/vue'
 import { defineComponent, ref } from 'vue'
 
 export default defineComponent({

@@ -9,4 +9,4 @@ import type { FormInst } from 'naive-ui';
  *
  * @see https://www.naiveui.com/
  */
-export declare const createNaiveAdapter: import("@veform/core").DefineAdapterFactory<FormInst>;
+export declare const createNaiveAdapter: import("@vformjs/core").DefineAdapterFactory<FormInst>;

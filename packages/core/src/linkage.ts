@@ -48,14 +48,14 @@ export function assertLinkageRules<T extends Record<string, unknown>>(
   rules.forEach((rule, index) => {
     if (rule.deps !== '*' && (!Array.isArray(rule.deps) || rule.deps.length === 0)) {
       throw new Error(
-        `[veform] linkage[${index}] deps must be non-empty array or '*'`,
+        `[vformjs] linkage[${index}] deps must be non-empty array or '*'`,
       )
     }
     if (Array.isArray(rule.deps)) {
       for (const d of rule.deps) {
         if (!d) {
           throw new Error(
-            `[veform] linkage[${index}] contains empty dep path`,
+            `[vformjs] linkage[${index}] contains empty dep path`,
           )
         }
       }

@@ -8,8 +8,8 @@ import type {
   FormErrors,
   FormHostAdapter,
   HostValidateResult,
-} from '@veform/core'
-import { r, useForm } from '@veform/vue'
+} from '@vformjs/core'
+import { r, useForm } from '@vformjs/vue'
 import { computed, reactive, ref } from 'vue'
 
 const log = ref('')

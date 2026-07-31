@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { r } from '@veform/vue'
+import { r } from '@vformjs/vue'
 import {
   NButton,
   NForm,

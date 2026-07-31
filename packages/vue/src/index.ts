@@ -11,7 +11,7 @@ export type {
   FormRulesMap,
   RuleItem,
   RuleInput,
-} from '@veform/core'
+} from '@vformjs/core'
 export {
   fieldPath,
   createId,
@@ -21,11 +21,11 @@ export {
   adapterOk,
   adapterFail,
   normalizeHostErrors,
-} from '@veform/core'
+} from '@vformjs/core'
 export type {
   RuleBuilders,
   ValidatorFn,
   DefineAdapterOptions,
   DefineAdapterFactory,
   AdapterValidateContext,
-} from '@veform/core'
+} from '@vformjs/core'

@@ -1,7 +1,7 @@
 {
-  "name": "@veform/element-ui",
+  "name": "@vformjs/element-ui",
   "version": "0.1.0",
-  "description": "element-ui (Vue 2.7) adapter for veform (useElForm)",
+  "description": "element-ui (Vue 2.7) adapter for vformjs (useElForm)",
   "license": "MIT",
   "type": "module",
   "exports": {
@@ -43,9 +43,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@veform/core": "workspace:^",
-    "@veform/vue": "workspace:^",
-    "@veform/zod": "workspace:^"
+    "@vformjs/core": "workspace:^",
+    "@vformjs/vue": "workspace:^",
+    "@vformjs/zod": "workspace:^"
   },
   "peerDependencies": {
     "element-ui": ">=2.13.0",

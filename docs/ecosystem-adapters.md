@@ -82,7 +82,7 @@ pnpm dev:antd    # Ant Design Vue:5286
 
 #### Element Plus / Element UI
 
-- 包：`@veform/element-plus` / `element-ui`  
+- 包：`@vformjs/element-plus` / `element-ui`  
 - 模板：`v-bind="form.el"`  
 - 周期：`validate` → 红字 → `clearValidate` → `load`/`reset` 清状态  
 
@@ -332,7 +332,7 @@ const form = useForm({
 - 没有、只有控件 rules + `formRef.validate()` → **C**  
 - 有 Form 级 rules 且可映射 → **B/A**
 
-Agent skill 强制同一决策树：`skills/veform/SKILL.md`。
+Agent skill 强制同一决策树：`skills/vformjs/SKILL.md`。
 
 ---
 

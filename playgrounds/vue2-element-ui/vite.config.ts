@@ -16,10 +16,10 @@ export default defineConfig({
   resolve: {
     dedupe: ['vue', 'vue-demi'],
     alias: {
-      '@veform/core': path.join(repo, 'packages/core/src/index.ts'),
-      '@veform/shared': path.join(repo, 'packages/shared/src/index.ts'),
-      '@veform/vue': path.join(repo, 'packages/vue/src/index.ts'),
-      '@veform/element-ui': path.join(
+      '@vformjs/core': path.join(repo, 'packages/core/src/index.ts'),
+      '@vformjs/shared': path.join(repo, 'packages/shared/src/index.ts'),
+      '@vformjs/vue': path.join(repo, 'packages/vue/src/index.ts'),
+      '@vformjs/element-ui': path.join(
         repo,
         'packages/element-ui/src/index.ts',
       ),
@@ -30,10 +30,10 @@ export default defineConfig({
   },
   optimizeDeps: {
     exclude: [
-      '@veform/core',
-      '@veform/shared',
-      '@veform/vue',
-      '@veform/element-ui',
+      '@vformjs/core',
+      '@vformjs/shared',
+      '@vformjs/vue',
+      '@vformjs/element-ui',
     ],
   },
 })

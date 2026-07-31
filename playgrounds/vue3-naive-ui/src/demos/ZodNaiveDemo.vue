@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useZodForm } from '@veform/zod'
+import { useZodForm } from '@vformjs/zod'
 import {
   NButton,
   NForm,
@@ -51,7 +51,7 @@ async function onSubmit() {
 <template>
   <div class="demo">
     <p class="hint">
-      useZodForm（@veform/zod）+ createNaiveAdapter。
+      useZodForm（@vformjs/zod）+ createNaiveAdapter。
       输入 admin 看 refine 是否挂在 username 上。
     </p>
 

@@ -1,4 +1,4 @@
-import { defineAdapter } from '@veform/core'
+import { defineAdapter } from '@vformjs/core'
 import type { FormInst, FormItemRule } from 'naive-ui'
 
 /**

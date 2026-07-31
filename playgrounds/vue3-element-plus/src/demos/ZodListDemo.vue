@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useZodForm } from '@veform/element-plus'
-import { fieldPath } from '@veform/vue'
+import { useZodForm } from '@vformjs/element-plus'
+import { fieldPath } from '@vformjs/vue'
 import { ref } from 'vue'
 import { z } from 'zod'
 

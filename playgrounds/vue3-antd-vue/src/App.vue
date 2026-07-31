@@ -9,7 +9,7 @@ const current = computed(() => demos.find(d => d.id === active.value)!)
 <template>
   <div class="page">
     <header>
-      <h1>veform · Ant Design Vue</h1>
+      <h1>vformjs · Ant Design Vue</h1>
       <p>
         defineAdapter 实测 ·
         <a href="https://antdv.com/components/form-cn" target="_blank" rel="noreferrer">antdv.com Form</a>

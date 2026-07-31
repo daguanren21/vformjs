@@ -2,14 +2,14 @@
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "paths": {
-      "@veform/shared": ["./packages/shared/src/index.ts"],
-      "@veform/core": ["./packages/core/src/index.ts"],
-      "@veform/vue": ["./packages/vue/src/index.ts"],
-      "@veform/zod": ["./packages/zod/src/index.ts"],
-      "@veform/element-plus": ["./packages/element-plus/src/index.ts"],
-      "@veform/element-plus/*": ["./packages/element-plus/src/*"],
-      "@veform/element-ui": ["./packages/element-ui/src/index.ts"],
-      "@veform/element-ui/*": ["./packages/element-ui/src/*"]
+      "@vformjs/shared": ["./packages/shared/src/index.ts"],
+      "@vformjs/core": ["./packages/core/src/index.ts"],
+      "@vformjs/vue": ["./packages/vue/src/index.ts"],
+      "@vformjs/zod": ["./packages/zod/src/index.ts"],
+      "@vformjs/element-plus": ["./packages/element-plus/src/index.ts"],
+      "@vformjs/element-plus/*": ["./packages/element-plus/src/*"],
+      "@vformjs/element-ui": ["./packages/element-ui/src/index.ts"],
+      "@vformjs/element-ui/*": ["./packages/element-ui/src/*"]
     }
   },
   "include": [

@@ -3,7 +3,7 @@ import type {
   FormErrors,
   FormHostAdapter,
   HostValidateResult,
-} from '@veform/core'
+} from '@vformjs/core'
 
 interface ElementPlusFormInstance {
   validate?: (callback?: (valid: boolean, fields?: unknown) => void) => Promise<void> | void

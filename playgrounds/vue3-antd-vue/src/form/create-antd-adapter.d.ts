@@ -6,4 +6,4 @@ import type { FormInstance } from 'ant-design-vue/es/form';
  * { errorFields: [{ name: NamePath, errors: string[] }] }
  * → core.normalizeHostErrors 已支持 errorFields。
  */
-export declare const createAntdAdapter: import("@veform/core").DefineAdapterFactory<FormInstance>;
+export declare const createAntdAdapter: import("@vformjs/core").DefineAdapterFactory<FormInstance>;

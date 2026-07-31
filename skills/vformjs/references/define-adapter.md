@@ -10,7 +10,7 @@ import {
   adapterOk,
   adapterFail,
   normalizeHostErrors,
-} from '@veform/vue' // 或 @veform/core
+} from '@vformjs/vue' // 或 @vformjs/core
 
 export const createXxxAdapter = defineAdapter<HostInst>({
   name: 'xxx-ui',

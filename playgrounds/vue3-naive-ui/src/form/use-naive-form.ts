@@ -1,5 +1,5 @@
-import type { UseFormOptions, UseFormReturn } from '@veform/vue'
-import { useForm } from '@veform/vue'
+import type { UseFormOptions, UseFormReturn } from '@vformjs/vue'
+import { useForm } from '@vformjs/vue'
 import { createNaiveAdapter } from './create-naive-adapter'
 
 /**

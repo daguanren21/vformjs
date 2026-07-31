@@ -9,7 +9,7 @@ import {
   type FormResult,
   type FormRulesMap,
   type LinkageRule,
-} from '@veform/core'
+} from '@vformjs/core'
 import type { ComputedRef, Ref } from 'vue-demi'
 import {
   computed,

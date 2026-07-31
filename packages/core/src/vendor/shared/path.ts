@@ -38,7 +38,7 @@ export function setByPath(target: unknown, path: string | PathSegment[], value: 
   if (!segs.length)
     return
   if (!isObjectLike(target))
-    throw new Error('[veform] setByPath root must be an object')
+    throw new Error('[vformjs] setByPath root must be an object')
 
   let cur: Record<string | number, unknown> = target
   for (let i = 0; i < segs.length - 1; i++) {

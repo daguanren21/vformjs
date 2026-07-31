@@ -4,11 +4,11 @@
 
 | 包 | npm | 用户装 |
 |----|-----|--------|
-| `@veform/element-plus` | ✅ | 是 |
-| `@veform/element-ui` | ✅ | 是 |
-| `@veform/vue` | ✅ | 换 UI |
-| `@veform/zod` | ✅ | Zod |
-| `@veform/core` | ✅ | 传递依赖 |
+| `@vformjs/element-plus` | ✅ | 是 |
+| `@vformjs/element-ui` | ✅ | 是 |
+| `@vformjs/vue` | ✅ | 换 UI |
+| `@vformjs/zod` | ✅ | Zod |
+| `@vformjs/core` | ✅ | 传递依赖 |
 | shared · schema · playgrounds | ❌ | — |
 
 ## npm：OIDC Trusted Publishing

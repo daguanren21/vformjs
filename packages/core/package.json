@@ -1,7 +1,7 @@
 {
-  "name": "@veform/core",
+  "name": "@vformjs/core",
   "version": "0.1.0",
-  "description": "Headless form state machine for veform",
+  "description": "Headless form state machine for vformjs",
   "license": "MIT",
   "type": "module",
   "exports": {

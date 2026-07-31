@@ -1,7 +1,7 @@
-import type { FormResult } from '@veform/core'
-import { deepClone } from '@veform/core'
-import type { UseFormOptions, UseFormReturn } from '@veform/vue'
-import { useForm } from '@veform/vue'
+import type { FormResult } from '@vformjs/core'
+import { deepClone } from '@vformjs/core'
+import type { UseFormOptions, UseFormReturn } from '@vformjs/vue'
+import { useForm } from '@vformjs/vue'
 import type { z, ZodType } from 'zod'
 import {
   arrayLengthSignature,
@@ -62,7 +62,7 @@ function resolveDefaults<S extends ZodType<Record<string, unknown>>>(
   const raw = options.defaults ?? options.defaultValues
   if (raw == null) {
     throw new Error(
-      '[veform/zod] `defaults` is required. '
+      '[vformjs/zod] `defaults` is required. '
       + 'Pass initial values matching your schema input type.',
     )
   }
@@ -92,7 +92,7 @@ function isHostUnboundError(errors: Record<string, string[]> | undefined): boole
  *
  * Prefer the adapter entry so you never pass `adapter` yourself:
  * ```ts
- * import { useZodForm } from '@veform/element-plus'
+ * import { useZodForm } from '@vformjs/element-plus'
  * ```
  */
 export function useZodForm<S extends ZodType<Record<string, unknown>>>(

@@ -5,8 +5,8 @@
  * - 弹窗内 form.load
  * - 详情：弹窗里仍可用 form.readonly，但 UI 用 Descriptions 展示文字，不用 disabled 输入框
  */
-import { useElForm } from '@veform/element-plus'
-import { r } from '@veform/vue'
+import { useElForm } from '@vformjs/element-plus'
+import { r } from '@vformjs/vue'
 import { computed, ref } from 'vue'
 
 interface Row {

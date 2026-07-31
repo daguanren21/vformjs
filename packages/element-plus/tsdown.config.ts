@@ -9,9 +9,9 @@ export default defineConfig({
     'vue-demi',
     'zod',
     'element-plus',
-    '@veform/core',
-    '@veform/vue',
-    '@veform/zod',
+    '@vformjs/core',
+    '@vformjs/vue',
+    '@vformjs/zod',
   ],
   outExtensions({ format }) {
     return { js: format === 'cjs' ? '.cjs' : '.js' }

@@ -219,7 +219,7 @@ export function createForm<T extends Record<string, unknown>>(
       createCtx,
       onError: (error, index) => {
         if (typeof console !== 'undefined')
-          console.error(`[veform] linkage[${index}] failed`, error)
+          console.error(`[vformjs] linkage[${index}] failed`, error)
       },
     })
   }

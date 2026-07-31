@@ -1,5 +1,5 @@
 {
-  "name": "@veform/playground-vue3-antd-vue",
+  "name": "@vformjs/playground-vue3-antd-vue",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,9 +8,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@veform/core": "workspace:*",
-    "@veform/vue": "workspace:*",
-    "@veform/zod": "workspace:*",
+    "@vformjs/core": "workspace:*",
+    "@vformjs/vue": "workspace:*",
+    "@vformjs/zod": "workspace:*",
     "ant-design-vue": "^4.2.6",
     "vue": "catalog:",
     "vue-demi": "catalog:",

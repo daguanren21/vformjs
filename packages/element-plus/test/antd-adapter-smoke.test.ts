@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createAntdAdapter } from '../../../playgrounds/vue3-antd-vue/src/form/create-antd-adapter'
-import { normalizeHostErrors } from '@veform/core'
+import { normalizeHostErrors } from '@vformjs/core'
 
 describe('createAntdAdapter (defineAdapter)', () => {
   it('fails when host unbound', async () => {

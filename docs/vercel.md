@@ -4,8 +4,8 @@
 
 | 项目 | Root Directory | 生产域名 |
 |------|----------------|----------|
-| `veform-element-plus` | `playgrounds/vue3-element-plus` | https://veform-element-plus.vercel.app |
-| `veform-element-ui` | `playgrounds/vue2-element-ui` | https://veform-element-ui.vercel.app |
+| `vformjs-element-plus` | `playgrounds/vue3-element-plus` | https://vformjs-element-plus.vercel.app |
+| `vformjs-element-ui` | `playgrounds/vue2-element-ui` | https://vformjs-element-ui.vercel.app |
 
 目录内 `vercel.json`：从 monorepo 根 `pnpm install`，再 filter 构建当前 playground。
 

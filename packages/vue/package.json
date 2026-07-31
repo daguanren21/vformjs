@@ -1,7 +1,7 @@
 {
-  "name": "@veform/vue",
+  "name": "@vformjs/vue",
   "version": "0.1.0",
-  "description": "Vue bindings for veform (useForm, defineAdapter, r)",
+  "description": "Vue bindings for vformjs (useForm, defineAdapter, r)",
   "license": "MIT",
   "type": "module",
   "exports": {
@@ -32,7 +32,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@veform/core": "workspace:^",
+    "@vformjs/core": "workspace:^",
     "vue-demi": "catalog:"
   },
   "peerDependencies": {

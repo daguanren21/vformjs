@@ -1,8 +1,8 @@
 {
-  "name": "@veform/shared",
+  "name": "@vformjs/shared",
   "version": "0.0.0",
   "private": true,
-  "description": "Internal utils for veform (vendored into core)",
+  "description": "Internal utils for vformjs (vendored into core)",
   "license": "MIT",
   "type": "module",
   "exports": {

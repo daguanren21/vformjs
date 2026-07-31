@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useElForm } from '@veform/element-plus'
-import { fieldPath, r } from '@veform/vue'
+import { useElForm } from '@vformjs/element-plus'
+import { fieldPath, r } from '@vformjs/vue'
 import { ref } from 'vue'
 
 const log = ref('')

@@ -54,22 +54,22 @@ importers:
       '@types/node':
         specifier: ^22.19.0
         version: 22.20.1
-      '@veform/core':
+      '@vformjs/core':
         specifier: workspace:*
         version: link:packages/core
-      '@veform/element-plus':
+      '@vformjs/element-plus':
         specifier: workspace:*
         version: link:packages/element-plus
-      '@veform/element-ui':
+      '@vformjs/element-ui':
         specifier: workspace:*
         version: link:packages/element-ui
-      '@veform/shared':
+      '@vformjs/shared':
         specifier: workspace:*
         version: link:packages/shared
-      '@veform/vue':
+      '@vformjs/vue':
         specifier: workspace:*
         version: link:packages/vue
-      '@veform/zod':
+      '@vformjs/zod':
         specifier: workspace:*
         version: link:packages/zod
       '@vitejs/plugin-vue':
@@ -120,13 +120,13 @@ importers:
 
   packages/element-plus:
     dependencies:
-      '@veform/core':
+      '@vformjs/core':
         specifier: workspace:^
         version: link:../core
-      '@veform/vue':
+      '@vformjs/vue':
         specifier: workspace:^
         version: link:../vue
-      '@veform/zod':
+      '@vformjs/zod':
         specifier: workspace:^
         version: link:../zod
       element-plus:
@@ -148,13 +148,13 @@ importers:
 
   packages/element-ui:
     dependencies:
-      '@veform/core':
+      '@vformjs/core':
         specifier: workspace:^
         version: link:../core
-      '@veform/vue':
+      '@vformjs/vue':
         specifier: workspace:^
         version: link:../vue
-      '@veform/zod':
+      '@vformjs/zod':
         specifier: workspace:^
         version: link:../zod
       element-ui:
@@ -176,10 +176,10 @@ importers:
 
   packages/schema:
     dependencies:
-      '@veform/core':
+      '@vformjs/core':
         specifier: workspace:^
         version: link:../core
-      '@veform/shared':
+      '@vformjs/shared':
         specifier: workspace:^
         version: link:../shared
     devDependencies:
@@ -204,7 +204,7 @@ importers:
 
   packages/vue:
     dependencies:
-      '@veform/core':
+      '@vformjs/core':
         specifier: workspace:^
         version: link:../core
       vue-demi:
@@ -223,10 +223,10 @@ importers:
 
   packages/zod:
     dependencies:
-      '@veform/core':
+      '@vformjs/core':
         specifier: workspace:^
         version: link:../core
-      '@veform/vue':
+      '@vformjs/vue':
         specifier: workspace:^
         version: link:../vue
     devDependencies:
@@ -248,13 +248,13 @@ importers:
 
   playgrounds/vue2-element-ui:
     dependencies:
-      '@veform/core':
+      '@vformjs/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@veform/element-ui':
+      '@vformjs/element-ui':
         specifier: workspace:*
         version: link:../../packages/element-ui
-      '@veform/vue':
+      '@vformjs/vue':
         specifier: workspace:*
         version: link:../../packages/vue
       element-ui:
@@ -282,13 +282,13 @@ importers:
 
   playgrounds/vue3-antd-vue:
     dependencies:
-      '@veform/core':
+      '@vformjs/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@veform/vue':
+      '@vformjs/vue':
         specifier: workspace:*
         version: link:../../packages/vue
-      '@veform/zod':
+      '@vformjs/zod':
         specifier: workspace:*
         version: link:../../packages/zod
       ant-design-vue:
@@ -316,16 +316,16 @@ importers:
 
   playgrounds/vue3-element-plus:
     dependencies:
-      '@veform/core':
+      '@vformjs/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@veform/element-plus':
+      '@vformjs/element-plus':
         specifier: workspace:*
         version: link:../../packages/element-plus
-      '@veform/vue':
+      '@vformjs/vue':
         specifier: workspace:*
         version: link:../../packages/vue
-      '@veform/zod':
+      '@vformjs/zod':
         specifier: workspace:*
         version: link:../../packages/zod
       element-plus:
@@ -353,13 +353,13 @@ importers:
 
   playgrounds/vue3-naive-ui:
     dependencies:
-      '@veform/core':
+      '@vformjs/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@veform/vue':
+      '@vformjs/vue':
         specifier: workspace:*
         version: link:../../packages/vue
-      '@veform/zod':
+      '@vformjs/zod':
         specifier: workspace:*
         version: link:../../packages/zod
       naive-ui:

@@ -5,8 +5,8 @@
  * - detail 不是 disabled form，而是纯展示
  * - 列表只负责跳转（这里用假路由 state 模拟）
  */
-import { useElForm } from '@veform/element-plus'
-import { r } from '@veform/vue'
+import { useElForm } from '@vformjs/element-plus'
+import { r } from '@vformjs/vue'
 import { computed, ref, watch } from 'vue'
 
 type PageMode = 'list' | 'create' | 'edit' | 'detail'

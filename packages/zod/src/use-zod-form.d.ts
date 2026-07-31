@@ -1,5 +1,5 @@
-import type { FormResult } from '@veform/core';
-import type { UseFormOptions, UseFormReturn } from '@veform/vue';
+import type { FormResult } from '@vformjs/core';
+import type { UseFormOptions, UseFormReturn } from '@vformjs/vue';
 import type { z, ZodType } from 'zod';
 type ZodInput<S extends ZodType> = z.input<S> & Record<string, unknown>;
 type ZodOutput<S extends ZodType> = z.output<S> & Record<string, unknown>;
@@ -45,7 +45,7 @@ export type UseZodFormReturn<S extends ZodType<Record<string, unknown>>> = Omit<
  *
  * Prefer the adapter entry so you never pass `adapter` yourself:
  * ```ts
- * import { useZodForm } from '@veform/element-plus'
+ * import { useZodForm } from '@vformjs/element-plus'
  * ```
  */
 export declare function useZodForm<S extends ZodType<Record<string, unknown>>>(options: UseZodFormOptions<S>): UseZodFormReturn<S>;

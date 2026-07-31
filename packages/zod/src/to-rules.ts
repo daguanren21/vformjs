@@ -1,5 +1,5 @@
-import type { FormRulesMap, RuleItem } from '@veform/core'
-import { deepClone, getByPath } from '@veform/core'
+import type { FormRulesMap, RuleItem } from '@vformjs/core'
+import { deepClone, getByPath } from '@vformjs/core'
 import type { ZodObject, ZodType } from 'zod'
 
 type Trigger = string | string[]
@@ -296,7 +296,7 @@ export function zodToRules(
   options: ZodToRulesOptions & { parser?: SharedZodParser },
 ): FormRulesMap {
   if (!isZodObject(schema)) {
-    throw new Error('[veform/zod] zodToRules expects a ZodObject schema')
+    throw new Error('[vformjs/zod] zodToRules expects a ZodObject schema')
   }
 
   const deep = shouldDeep(schema, options.deep)

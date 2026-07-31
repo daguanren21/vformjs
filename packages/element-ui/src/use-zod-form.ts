@@ -1,5 +1,5 @@
-import type { UseZodFormOptions, UseZodFormReturn } from '@veform/zod'
-import { useZodForm as useZodFormBase } from '@veform/zod'
+import type { UseZodFormOptions, UseZodFormReturn } from '@vformjs/zod'
+import { useZodForm as useZodFormBase } from '@vformjs/zod'
 import type { ZodType } from 'zod'
 import { createElementUiAdapter } from './create-adapter'
 
@@ -15,4 +15,4 @@ export function useZodForm<S extends ZodType<Record<string, unknown>>>(
   })
 }
 
-export type { UseZodFormOptions, UseZodFormReturn } from '@veform/zod'
+export type { UseZodFormOptions, UseZodFormReturn } from '@vformjs/zod'

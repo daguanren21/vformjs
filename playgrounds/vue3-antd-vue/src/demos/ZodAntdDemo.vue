@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useZodForm } from '@veform/zod'
+import { useZodForm } from '@vformjs/zod'
 import { Button, Form, FormItem, Input, InputNumber, Space } from 'ant-design-vue'
 import { ref } from 'vue'
 import { z } from 'zod'

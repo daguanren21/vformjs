@@ -1,5 +1,5 @@
 {
-  "name": "@veform/playground-vue2-element-ui",
+  "name": "@vformjs/playground-vue2-element-ui",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,9 +8,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@veform/element-ui": "workspace:*",
-    "@veform/core": "workspace:*",
-    "@veform/vue": "workspace:*",
+    "@vformjs/element-ui": "workspace:*",
+    "@vformjs/core": "workspace:*",
+    "@vformjs/vue": "workspace:*",
     "element-ui": "^2.15.14",
     "vue": "catalog:vue27",
     "vue-demi": "catalog:"

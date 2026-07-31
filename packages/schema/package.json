@@ -1,5 +1,5 @@
 {
-  "name": "@veform/schema",
+  "name": "@vformjs/schema",
   "version": "0.0.0",
   "private": true,
   "description": "Form schema definition and compiler (internal, not published)",
@@ -28,8 +28,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@veform/core": "workspace:^",
-    "@veform/shared": "workspace:^"
+    "@vformjs/core": "workspace:^",
+    "@vformjs/shared": "workspace:^"
   },
   "devDependencies": {
     "tsdown": "catalog:",

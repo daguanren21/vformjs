@@ -1,15 +1,15 @@
 ---
-name: veform
+name: vformjs
 description: >-
-  Implement Vue forms with veform: useElForm, r.* rules, load modes,
-  defineAdapter for UI hosts, Zod. Use when user mentions veform, useElForm,
+  Implement Vue forms with vformjs: useElForm, r.* rules, load modes,
+  defineAdapter for UI hosts, Zod. Use when user mentions vformjs, useElForm,
   useElForm, useForm, defineAdapter, form adapter, Element Plus form state,
   Naive/Ant Design Vue form bridge, or simplifying Element form rules/submit/load.
   Do NOT use defineAdapter for vee-validate, Vuelidate, or PrimeVue+VeeValidate —
   those are parallel engines.
 ---
 
-# veform
+# vformjs
 
 Vue 表单**状态 + 校验周期**层。UI 库只负责画控件和跑宿主 validate；  
 `defaults` / `rules` / `submit` / `load` / 联动 / 动态数组在本库。
@@ -27,10 +27,10 @@ Vue 表单**状态 + 校验周期**层。UI 库只负责画控件和跑宿主 va
 用户目标 UI / 校验方案是什么？
 │
 ├─ Element Plus (Vue3)
-│     → useElForm / useZodForm  (@veform/element-plus)
+│     → useElForm / useZodForm  (@vformjs/element-plus)
 │
 ├─ Element UI (Vue2.7)
-│     → useElForm / useZodForm  (@veform/element-ui)
+│     → useElForm / useZodForm  (@vformjs/element-ui)
 │
 ├─ 有 Form 实例 + Form 级 rules（Naive / Antd / TDesign / Arco / View UI…）
 │     → 优先包一层 useXxxForm({ defaults, rules }) 内部映射 defaultValues + adapter
@@ -72,20 +72,20 @@ Vue 表单**状态 + 校验周期**层。UI 库只负责画控件和跑宿主 va
 
 | 场景 | 安装 | 入口 |
 |------|------|------|
-| Vue3 + Element Plus | `@veform/element-plus` | `useElForm` `useZodForm` `r` |
-| Vue2.7 + element-ui | `@veform/element-ui` | `useElForm` `useZodForm` `r` |
-| 换 UI / 自研 | `@veform/vue` + 可选 core | `useForm` `defineAdapter` `r` |
-| Zod 跨 UI | `@veform/zod` | `useZodForm({ adapter, schema, defaults })` |
+| Vue3 + Element Plus | `@vformjs/element-plus` | `useElForm` `useZodForm` `r` |
+| Vue2.7 + element-ui | `@vformjs/element-ui` | `useElForm` `useZodForm` `r` |
+| 换 UI / 自研 | `@vformjs/vue` + 可选 core | `useForm` `defineAdapter` `r` |
+| Zod 跨 UI | `@vformjs/zod` | `useZodForm({ adapter, schema, defaults })` |
 
 命名：
 
 - `useElForm` / playground `useXxxForm` / `useZodForm`：**`defaults`**
-- 底层 `useForm`（`@veform/vue`）：**`defaultValues`**
+- 底层 `useForm`（`@vformjs/vue`）：**`defaultValues`**
 
 adapter 包已 re-export `r` / `fieldPath`，单包安装即可：
 
 ```ts
-import { useElForm, r } from '@veform/element-plus'
+import { useElForm, r } from '@vformjs/element-plus'
 ```
 
 源码地图：
@@ -112,7 +112,7 @@ import { useElForm, r } from '@veform/element-plus'
 ### 1. Element 主路径（默认）
 
 ```ts
-import { useElForm, r } from '@veform/element-plus'
+import { useElForm, r } from '@vformjs/element-plus'
 
 const form = useElForm({
   defaults: { name: '', email: '' },
@@ -174,18 +174,18 @@ whenRules: { extra: (m) => m.type === 'b' ? [r.required()] : [] }
 Zod：
 
 ```ts
-import { useZodForm } from '@veform/element-plus'
+import { useZodForm } from '@vformjs/element-plus'
 const form = useZodForm({ schema, defaults, onSubmit })
 ```
 
-换 UI 时用 `@veform/zod` 并传入 `adapter`。
+换 UI 时用 `@vformjs/zod` 并传入 `adapter`。
 
 ### 4. 自定义 adapter（A/B 库）
 
 见 [@references/define-adapter.md](references/define-adapter.md)。
 
 ```ts
-import { defineAdapter, useForm, r } from '@veform/vue'
+import { defineAdapter, useForm, r } from '@vformjs/vue'
 
 export const createXxxAdapter = defineAdapter<HostFormInst>({
   name: 'xxx-ui',

@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
   "installCommand": "cd ../.. && corepack enable && pnpm install --frozen-lockfile",
-  "buildCommand": "cd ../.. && pnpm --filter @veform/playground-vue3-element-plus run build",
+  "buildCommand": "cd ../.. && pnpm --filter @vformjs/playground-vue3-element-plus run build",
   "outputDirectory": "dist",
   "rewrites": [
     { "source": "/((?!assets/).*)", "destination": "/index.html" }

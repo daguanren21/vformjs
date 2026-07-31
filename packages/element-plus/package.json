@@ -1,7 +1,7 @@
 {
-  "name": "@veform/element-plus",
+  "name": "@vformjs/element-plus",
   "version": "0.1.0",
-  "description": "Element Plus adapter for veform (useElForm)",
+  "description": "Element Plus adapter for vformjs (useElForm)",
   "license": "MIT",
   "type": "module",
   "exports": {
@@ -43,9 +43,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@veform/core": "workspace:^",
-    "@veform/vue": "workspace:^",
-    "@veform/zod": "workspace:^"
+    "@vformjs/core": "workspace:^",
+    "@vformjs/vue": "workspace:^",
+    "@vformjs/zod": "workspace:^"
   },
   "peerDependencies": {
     "element-plus": ">=2.0.0",

@@ -59,7 +59,7 @@ export function normalizeRuleInput(input: RuleInput): RuleItem[] {
       const rule = parseSugar(item)
       if (!rule) {
         throw new Error(
-          `[veform] unknown rule "${item}". `
+          `[vformjs] unknown rule "${item}". `
           + `Use r.required / r.email / r.custom(...) or RuleItem objects.`,
         )
       }

@@ -3,7 +3,7 @@
 ## 基础提交（Element Plus）
 
 ```ts
-import { useElForm, r } from '@veform/element-plus'
+import { useElForm, r } from '@vformjs/element-plus'
 
 const form = useElForm({
   defaults: { title: '', owner: '' },
@@ -54,7 +54,7 @@ useElForm({
 ## 动态数组
 
 ```ts
-import { useElForm, r, fieldPath } from '@veform/element-plus'
+import { useElForm, r, fieldPath } from '@vformjs/element-plus'
 
 const form = useElForm({ /* ... */ })
 const members = form.list('members', {
@@ -67,7 +67,7 @@ const members = form.list('members', {
 ## Zod
 
 ```ts
-import { useZodForm } from '@veform/element-plus'
+import { useZodForm } from '@vformjs/element-plus'
 import { z } from 'zod'
 
 const schema = z.object({
@@ -81,7 +81,7 @@ const form = useZodForm({
 })
 ```
 
-非 Element：`import { useZodForm } from '@veform/zod'` + **必传** `adapter`（否则无宿主校验/红字路径）。
+非 Element：`import { useZodForm } from '@vformjs/zod'` + **必传** `adapter`（否则无宿主校验/红字路径）。
 
 ## 服务端错误
 
@@ -114,7 +114,7 @@ const form = useElForm({
 注意：通用 `useForm` 选项名是 **`defaultValues`**（不是 `useElForm` 的 `defaults`）。
 
 ```ts
-import { useForm, r } from '@veform/vue'
+import { useForm, r } from '@vformjs/vue'
 
 const form = useForm({
   defaultValues: defaults,
@@ -128,12 +128,12 @@ const form = useForm({
 
 ## 明确拒绝 D
 
-用户：「帮我写 vee-validate 的 veform adapter」
+用户：「帮我写 vee-validate 的 vformjs adapter」
 
 Agent 回复：
 
 > vee-validate 是完整校验引擎（D），与本库并列。不应写 defineAdapter。  
 > 请选择：  
 > 1) 只用 vee-validate  
-> 2) 只用 veform + UI 控件（A/B 宿主）或 Zod  
+> 2) 只用 vformjs + UI 控件（A/B 宿主）或 Zod  
 > 不能双状态机，也不能「无 adapter + 仅 r.*」。

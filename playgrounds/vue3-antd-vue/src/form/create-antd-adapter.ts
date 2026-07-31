@@ -1,4 +1,4 @@
-import { defineAdapter } from '@veform/core'
+import { defineAdapter } from '@vformjs/core'
 import type { FormInstance } from 'ant-design-vue/es/form'
 import type { NamePath } from 'ant-design-vue/es/form/interface'
 

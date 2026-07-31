@@ -1,5 +1,5 @@
 {
-  "name": "@veform/playground-vue3-element-plus",
+  "name": "@vformjs/playground-vue3-element-plus",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,10 +8,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@veform/element-plus": "workspace:*",
-    "@veform/core": "workspace:*",
-    "@veform/vue": "workspace:*",
-    "@veform/zod": "workspace:*",
+    "@vformjs/element-plus": "workspace:*",
+    "@vformjs/core": "workspace:*",
+    "@vformjs/vue": "workspace:*",
+    "@vformjs/zod": "workspace:*",
     "element-plus": "^2.14.3",
     "vue": "catalog:",
     "vue-demi": "catalog:",

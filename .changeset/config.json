@@ -4,11 +4,11 @@
   "commit": false,
   "fixed": [
     [
-      "@veform/core",
-      "@veform/vue",
-      "@veform/zod",
-      "@veform/element-plus",
-      "@veform/element-ui"
+      "@vformjs/core",
+      "@vformjs/vue",
+      "@vformjs/zod",
+      "@vformjs/element-plus",
+      "@vformjs/element-ui"
     ]
   ],
   "linked": [],
@@ -16,11 +16,11 @@
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
   "ignore": [
-    "@veform/shared",
-    "@veform/schema",
-    "@veform/playground-vue3-element-plus",
-    "@veform/playground-vue2-element-ui",
-    "@veform/playground-vue3-naive-ui",
-    "@veform/playground-vue3-antd-vue"
+    "@vformjs/shared",
+    "@vformjs/schema",
+    "@vformjs/playground-vue3-element-plus",
+    "@vformjs/playground-vue2-element-ui",
+    "@vformjs/playground-vue3-naive-ui",
+    "@vformjs/playground-vue3-antd-vue"
   ]
 }

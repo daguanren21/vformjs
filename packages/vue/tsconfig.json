@@ -2,8 +2,8 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "paths": {
-      "@veform/core": ["../core/src/index.ts"],
-      "@veform/shared": ["../shared/src/index.ts"]
+      "@vformjs/core": ["../core/src/index.ts"],
+      "@vformjs/shared": ["../shared/src/index.ts"]
     }
   },
   "include": ["src", "test"]

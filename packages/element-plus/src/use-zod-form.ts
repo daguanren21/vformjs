@@ -1,5 +1,5 @@
-import type { UseZodFormOptions, UseZodFormReturn } from '@veform/zod'
-import { useZodForm as useZodFormBase } from '@veform/zod'
+import type { UseZodFormOptions, UseZodFormReturn } from '@vformjs/zod'
+import { useZodForm as useZodFormBase } from '@vformjs/zod'
 import type { ZodType } from 'zod'
 import { createElementPlusAdapter } from './create-adapter'
 
@@ -7,7 +7,7 @@ import { createElementPlusAdapter } from './create-adapter'
  * Zod + Element Plus — one import, no manual adapter.
  *
  * ```ts
- * import { useZodForm } from '@veform/element-plus/zod'
+ * import { useZodForm } from '@vformjs/element-plus/zod'
  * // or from package root if re-exported
  *
  * const form = useZodForm({
@@ -29,4 +29,4 @@ export function useZodForm<S extends ZodType<Record<string, unknown>>>(
   })
 }
 
-export type { UseZodFormOptions, UseZodFormReturn } from '@veform/zod'
+export type { UseZodFormOptions, UseZodFormReturn } from '@vformjs/zod'

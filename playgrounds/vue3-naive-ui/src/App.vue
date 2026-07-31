@@ -9,7 +9,7 @@ const current = computed(() => demos.find(d => d.id === active.value)!)
 <template>
   <div class="page">
     <header>
-      <h1>veform · Naive UI</h1>
+      <h1>vformjs · Naive UI</h1>
       <p>
         自定义 FormHostAdapter 实测 ·
         <a href="https://www.naiveui.com/" target="_blank" rel="noreferrer">naiveui.com</a>

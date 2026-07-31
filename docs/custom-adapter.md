@@ -14,7 +14,7 @@ pnpm dev:antd    # http://127.0.0.1:5286  Ant Design Vue
 
 **全库接入评估**（Vuetify / Quasar / TDesign / Arco / Vant …）：见 [ecosystem-adapters.md](./ecosystem-adapters.md)。
 
-**Agent Skill**（强制决策树 + D 禁止 adapter）：`skills/veform/`。
+**Agent Skill**（强制决策树 + D 禁止 adapter）：`skills/vformjs/`。
 
 ---
 
@@ -60,7 +60,7 @@ validate：
 ## Naive（可运行）
 
 ```ts
-import { defineAdapter } from '@veform/vue'
+import { defineAdapter } from '@vformjs/vue'
 import type { FormInst, FormItemRule } from 'naive-ui'
 
 export const createNaiveAdapter = defineAdapter<FormInst>({
@@ -89,7 +89,7 @@ export const createNaiveAdapter = defineAdapter<FormInst>({
 ## Ant Design Vue（可运行）
 
 ```ts
-import { defineAdapter } from '@veform/vue'
+import { defineAdapter } from '@vformjs/vue'
 import type { FormInstance } from 'ant-design-vue/es/form'
 import type { NamePath } from 'ant-design-vue/es/form/interface'
 
@@ -152,7 +152,7 @@ export function useAntdForm(options) {
 Zod：
 
 ```ts
-import { useZodForm } from '@veform/zod'
+import { useZodForm } from '@vformjs/zod'
 
 const form = useZodForm({
   schema,

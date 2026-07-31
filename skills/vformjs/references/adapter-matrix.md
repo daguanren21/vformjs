@@ -54,7 +54,7 @@ useForm({ defaultValues, rules, adapter: createXxxAdapter(), onSubmit })
 ```
 if (target has own form state machine AND own validate/submit cycle)
   → D: do not call defineAdapter
-  → tell user: pick veform OR the other engine
+  → tell user: pick vformjs OR the other engine
 ```
 
 ## C 判定

@@ -1,4 +1,4 @@
-import type { FormRulesMap } from '@veform/core';
+import type { FormRulesMap } from '@vformjs/core';
 import type { ZodType } from 'zod';
 type Trigger = string | string[];
 export interface ZodToRulesOptions {
