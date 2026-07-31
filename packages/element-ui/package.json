@@ -6,36 +6,32 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./src/index.ts",
       "import": {
-        "types": "./src/index.ts",
-        "default": "./src/index.ts"
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
       },
       "require": {
         "types": "./dist/index.d.cts",
         "default": "./dist/index.cjs"
-      },
-      "default": "./src/index.ts"
+      }
     },
     "./zod": {
-      "types": "./src/use-zod-form.ts",
       "import": {
-        "types": "./src/use-zod-form.ts",
-        "default": "./src/use-zod-form.ts"
+        "types": "./dist/use-zod-form.d.ts",
+        "default": "./dist/use-zod-form.js"
       },
       "require": {
         "types": "./dist/use-zod-form.d.cts",
         "default": "./dist/use-zod-form.cjs"
-      },
-      "default": "./src/use-zod-form.ts"
+      }
     }
   },
   "main": "./dist/index.cjs",
-  "module": "./src/index.ts",
-  "types": "./src/index.ts",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "files": [
     "dist",
-    "src"
+    "README.md"
   ],
   "sideEffects": false,
   "scripts": {
