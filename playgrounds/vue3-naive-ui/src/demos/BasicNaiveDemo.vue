@@ -47,7 +47,7 @@ function onReset() {
   <div class="demo">
     <p class="hint">
       真实 Naive UI（n-form）+ 自定义 FormHostAdapter。
-      文档：docs/custom-adapter.md · 对照 naiveui.com Form。
+      文档：docs/guide.md · docs/api.md · 对照 naiveui.com Form。
     </p>
 
     <n-form

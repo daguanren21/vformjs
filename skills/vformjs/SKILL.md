@@ -100,10 +100,8 @@ import { useElForm, r } from '@vformjs/element-plus'
 | `packages/core/src/types.ts` | `when` / `whenRules` / `CreateFormOptions` |
 | `playgrounds/vue3-naive-ui/src/form/` | Naive adapter + useNaiveForm |
 | `playgrounds/vue3-antd-vue/src/form/` | Antd adapter |
-| `docs/custom-adapter.md` | adapter 文档 |
-| `docs/ecosystem-adapters.md` | 全库兼容等级 |
-| `docs/use-form-modes.md` | create/edit/detail |
-| `docs/scenarios.md` | 业务场景 |
+| `docs/guide.md` | 安装与用法 |
+| `docs/api.md` | API 表 |
 
 ---
 

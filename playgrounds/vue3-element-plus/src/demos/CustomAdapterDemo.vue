@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * 演示：不依赖 Element 宿主 API，自己实现 FormHostAdapter。
- * 真实 Naive UI 写法见 docs/custom-adapter.md。
+ * 真实 Naive UI 写法见 docs/guide.md（Custom UI adapter）与 playgrounds/vue3-naive-ui。
  */
 import type {
   FieldPath,
@@ -142,7 +142,7 @@ function onReset() {
   <div class="demo">
     <p class="hint">
       自定义 Adapter：宿主不是 el-form，而是自己的 miniHost。
-      业务侧仍用 useForm / rules / submit。Naive 完整示例见 docs/custom-adapter.md。
+      业务侧仍用 useForm / rules / submit。Naive 完整示例见 playgrounds/vue3-naive-ui 与 docs/guide.md。
     </p>
 
     <div class="mini-form">

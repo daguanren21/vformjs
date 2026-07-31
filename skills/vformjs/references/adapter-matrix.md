@@ -1,6 +1,6 @@
 # Adapter 兼容矩阵（写法）
 
-完整说明见仓库 `docs/ecosystem-adapters.md`。本文件给 Agent 速查。
+用法见 `docs/guide.md` / `docs/api.md`。本文件给 Agent 速查。
 
 ## 等级
 

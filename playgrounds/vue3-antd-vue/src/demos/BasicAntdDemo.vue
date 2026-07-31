@@ -41,7 +41,7 @@ function onReset() {
   <div class="demo">
     <p class="hint">
       真实 Ant Design Vue（a-form）+ defineAdapter。
-      文档：docs/custom-adapter.md
+      文档：docs/guide.md · docs/api.md
     </p>
 
     <a-form
