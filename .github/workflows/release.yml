@@ -9,7 +9,8 @@ concurrency:
   cancel-in-progress: false
 
 # npm Trusted Publishing (OIDC)：id-token: write
-# 首次：本地 npm login 发布 → npm 包设置 Trusted Publisher = release.yml
+# Trusted Publisher on each package must match:
+#   owner=daguanren21 repo=vformjs workflow=release.yml environment=<empty>
 # 之后 CI 不需要 NPM_TOKEN
 permissions:
   contents: write
@@ -28,7 +29,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
@@ -52,7 +53,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
           registry-url: https://registry.npmjs.org
 

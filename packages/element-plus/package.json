@@ -62,6 +62,16 @@
     "zod": "catalog:"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/daguanren21/vformjs.git",
+    "directory": "packages/element-plus"
+  },
+  "homepage": "https://github.com/daguanren21/vformjs",
+  "bugs": {
+    "url": "https://github.com/daguanren21/vformjs/issues"
   }
 }
