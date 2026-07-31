@@ -52,9 +52,8 @@ jobs:
       - uses: pnpm/action-setup@v4
 
       # Node 24 ships npm 11.x (OIDC needs npm >= 11.5.1).
-      # Do NOT set registry-url here: setup-node would write
-      # NODE_AUTH_TOKEN=XXXXX into .npmrc and npm prefers that
-      # fake token over OIDC exchange → misleading E404.
+      # Do NOT set registry-url: setup-node would write a placeholder
+      # NODE_AUTH_TOKEN into .npmrc and npm prefers that over OIDC → E404.
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -65,22 +64,17 @@ jobs:
 
       - name: Clear setup-node placeholder auth
         run: |
-          # Defensive: remove any auth token leftovers so OIDC is used.
           npm config delete //registry.npmjs.org/:_authToken || true
           npm config delete //registry.npmjs.org/:always-auth || true
-          unset NODE_AUTH_TOKEN || true
           echo "npm=$(npm -v) node=$(node -v)"
-          echo "ACTIONS_ID_TOKEN_REQUEST_URL set? $([ -n \"$ACTIONS_ID_TOKEN_REQUEST_URL\" ] && echo yes || echo no)"
+          if [ -n "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ]; then
+            echo "ACTIONS_ID_TOKEN_REQUEST_URL=yes"
+          else
+            echo "ACTIONS_ID_TOKEN_REQUEST_URL=no"
+          fi
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Create Release PR or Publish (OIDC)
-        id: changesets
-        uses: changesets/action@v1
-        with:
-          title: 'chore: version packages'
-          commit: 'chore: version packages'
-          version: pnpm run version-packages
       - name: Build packages before publish
         run: pnpm build
 
@@ -91,8 +85,6 @@ jobs:
           title: 'chore: version packages'
           commit: 'chore: version packages'
           version: pnpm run version-packages
-          # Prefer bare changeset publish (not `pnpm release`) so OIDC env
-          # reaches the npm/pnpm publish child process more reliably.
           publish: pnpm exec changeset publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
