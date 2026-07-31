@@ -1,6 +1,6 @@
 {
   "name": "@veform/core",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Headless form state machine for veform",
   "license": "MIT",
   "type": "module",

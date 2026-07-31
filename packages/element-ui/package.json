@@ -1,6 +1,6 @@
 {
   "name": "@veform/element-ui",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "element-ui (Vue 2.7) adapter for veform (useElForm)",
   "license": "MIT",
   "type": "module",

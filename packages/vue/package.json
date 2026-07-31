@@ -1,6 +1,6 @@
 {
   "name": "@veform/vue",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Vue bindings for veform (useForm, defineAdapter, r)",
   "license": "MIT",
   "type": "module",

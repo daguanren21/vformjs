@@ -1,6 +1,6 @@
 {
   "name": "@veform/element-plus",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Element Plus adapter for veform (useElForm)",
   "license": "MIT",
   "type": "module",
