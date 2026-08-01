@@ -1,4 +1,4 @@
-export { createForm } from './create-form'
+export { createForm, diffChangedPaths } from './create-form'
 export {
   defineAdapter,
   adapterOk,

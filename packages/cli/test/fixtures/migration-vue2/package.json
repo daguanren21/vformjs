@@ -1,0 +1,13 @@
+{
+  "name": "migration-vue2-fixture",
+  "private": true,
+  "dependencies": {
+    "@vformjs/element-ui": "^0.1.1",
+    "element-ui": "^2.15.14",
+    "vue": "^2.7.16"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue2": "^2.3.4",
+    "vue-template-compiler": "^2.7.16"
+  }
+}

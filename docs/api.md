@@ -1,6 +1,6 @@
 # API
 
-Types and methods you touch after install. Prefer the UI entry (`useElForm`) unless you build a custom adapter.
+Types and methods you touch after install. Prefer the official UI entry (`useElForm`, `useNaiveForm`, or `useAntdForm`) unless you build a custom adapter.
 
 ## Imports
 
@@ -15,11 +15,14 @@ import {
   type UseElFormOptions,
   type UseFormReturn,
   type FormMode,
+  type FormErrors,
 } from '@vformjs/element-plus'
 // Zod-only subpath:
 import { useZodForm } from '@vformjs/element-plus/zod'
 
 // element-ui (Vue 2.7) — same surface from '@vformjs/element-ui'
+// Naive UI (Vue 3): useNaiveForm / useZodForm from '@vformjs/naive-ui'
+// Ant Design Vue (Vue 3): useAntdForm / useZodForm from '@vformjs/ant-design-vue'
 
 // Headless / custom UI
 import {
@@ -101,6 +104,9 @@ function useForm<T>(options: UseFormOptions<T>): UseFormReturn<T>
 | `formProps` | `{ model, rules }` | Without ref binder |
 | `formRef` | `unknown` | Host instance if bound |
 | `submitting` | `boolean` | True during `submit` |
+| `errors` | `Readonly<FormErrors>` | Reactive core/server error snapshot |
+| `dirty` | `boolean` | Whether values differ from the current reset baseline |
+| `changedPaths` | `ReadonlyArray<FieldPath>` | Changed dotted leaf paths |
 | `mode` | `FormMode` | create / edit / detail |
 | `editable` | `boolean` | create \| edit |
 | `readonly` | `boolean` | detail |
@@ -133,6 +139,17 @@ function useForm<T>(options: UseFormOptions<T>): UseFormReturn<T>
 | `validateField` | `(paths?) => Promise<FormResult<T>>` | Alias of partial validate |
 | `submit` | `(handler?) => Promise<FormResult<T>>` | Validate → handler/`onSubmit` |
 | `clearValidate` | `(paths?) => void` | Host + internal errors |
+
+#### Errors
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `setErrors` | `(errors: FormErrors) => void` | Replace errors, typically from an API response |
+| `setFieldError` | `(path, messages) => void` | Set one field error |
+| `clearErrors` | `(paths?) => void` | Clear core errors only |
+| `scrollToFirstError` | `() => FieldPath \| undefined` | Ask the bound host to scroll to the first field error |
+
+Changing a field clears stale core/server errors for that path. `clearValidate` clears both core errors and host validation UI.
 
 ```ts
 type FormResult<T> =
@@ -298,6 +315,11 @@ fieldPath('contacts', index, 'phone') // 'contacts.3.phone'
 
 Headless, no Vue. Same options/API as `FormApi` under `form.raw`.  
 Vue apps should use `useForm` / `useElForm` so model is `reactive` and modes work.
+
+`FormRulesMap` is a host-rule description, not a headless validator. If active `rules`
+exist without an adapter, `validate()` / `submit()` return `{ ok: false }` with a
+configuration error instead of silently succeeding. Use a UI adapter or `useZodForm`
+for schema-only validation.
 
 ---
 

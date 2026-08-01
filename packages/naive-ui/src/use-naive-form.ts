@@ -1,6 +1,6 @@
 import type { UseFormOptions, UseFormReturn } from '@vformjs/vue'
 import { useForm } from '@vformjs/vue'
-import { createNaiveAdapter } from './create-naive-adapter'
+import { createNaiveAdapter } from './create-adapter'
 
 /**
  * Vue3 + Naive UI 入口。

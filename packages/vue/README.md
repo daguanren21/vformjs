@@ -2,10 +2,12 @@
 
 Vue 2.7 / Vue 3 bindings for [vformjs](https://github.com/daguanren21/vformjs): `useForm`, `defineAdapter`, rule helpers `r`.
 
-Prefer a UI package when you use Element:
+Prefer an official adapter package when your project uses a supported UI Form:
 
 - Vue 3 + Element Plus → [`@vformjs/element-plus`](https://www.npmjs.com/package/@vformjs/element-plus)
 - Vue 2.7 + element-ui → [`@vformjs/element-ui`](https://www.npmjs.com/package/@vformjs/element-ui)
+- Vue 3 + Naive UI → [`@vformjs/naive-ui`](https://www.npmjs.com/package/@vformjs/naive-ui)
+- Vue 3 + Ant Design Vue → [`@vformjs/ant-design-vue`](https://www.npmjs.com/package/@vformjs/ant-design-vue)
 
 ## Install
 
@@ -40,6 +42,20 @@ form.load('edit', detail)
 form.load('detail', detail)
 ```
 
+## Errors and dirty state
+
+```ts
+form.setErrors({ email: ['Already registered'] })
+form.errors.email
+form.scrollToFirstError()
+
+form.dirty
+form.changedPaths
+```
+
+Active `rules` require a bound adapter. Without one, validation returns a
+configuration error; use `useZodForm` for schema-only validation.
+
 ## Related
 
 | Package | Role |
@@ -48,5 +64,7 @@ form.load('detail', detail)
 | `@vformjs/zod` | Zod bridge |
 | `@vformjs/element-plus` | Element Plus adapter |
 | `@vformjs/element-ui` | element-ui adapter |
+| `@vformjs/naive-ui` | Naive UI adapter |
+| `@vformjs/ant-design-vue` | Ant Design Vue adapter |
 
 MIT · [Repo](https://github.com/daguanren21/vformjs)

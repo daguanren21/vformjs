@@ -1,0 +1,65 @@
+{
+  "name": "vformjs",
+  "version": "0.1.0",
+  "description": "Deterministic project scaffolding and diagnostics for vformjs",
+  "keywords": [
+    "vue",
+    "forms",
+    "crud",
+    "scaffold",
+    "cli",
+    "coding-agent",
+    "typescript"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "vformjs": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/cli.d.ts",
+        "default": "./dist/cli.js"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "build": "tsdown && node scripts/copy-skill.mjs",
+    "dev": "tsdown --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --root ../.. packages/cli/test"
+  },
+  "dependencies": {
+    "@babel/parser": "7.29.7",
+    "@vue/compiler-dom": "3.5.40",
+    "@vue/compiler-sfc": "3.5.40",
+    "magic-string": "0.30.21"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.0",
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/daguanren21/vformjs.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://vformjs.vercel.app/guide",
+  "bugs": {
+    "url": "https://github.com/daguanren21/vformjs/issues"
+  }
+}

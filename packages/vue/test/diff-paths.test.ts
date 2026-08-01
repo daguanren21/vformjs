@@ -24,4 +24,12 @@ describe('diffChangedPaths', () => {
     const obj = { a: 1, b: { c: 2 } }
     expect(diffChangedPaths(obj, { a: 1, b: { c: 2 } })).toEqual([])
   })
+
+  it('compares Date values instead of object identity', () => {
+    const previous = { birthday: new Date('2026-01-01') }
+    expect(diffChangedPaths(previous, { birthday: new Date('2026-01-01') })).toEqual([])
+    expect(diffChangedPaths(previous, { birthday: new Date('2026-02-01') })).toEqual([
+      'birthday',
+    ])
+  })
 })

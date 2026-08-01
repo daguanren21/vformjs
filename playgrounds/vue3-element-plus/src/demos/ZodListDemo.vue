@@ -47,7 +47,7 @@ async function onSubmit() {
       </el-form-item>
 
       <el-form-item
-        v-for="(row, index) in members.fields"
+        v-for="(row, index) in members.fields.value"
         :key="row.key"
         :label="`成员 ${index + 1}`"
         :prop="fieldPath('members', index, 'name')"

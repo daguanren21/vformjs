@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Usage question or design discussion
+    url: https://github.com/daguanren21/vformjs/discussions/new/choose
+    about: Ask about host adapters, CRUD form ownership, migration, or API design.
+  - name: Live documentation and examples
+    url: https://vformjs.vercel.app/examples
+    about: Try the real Element Plus flows before filing an issue.

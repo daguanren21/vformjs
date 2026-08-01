@@ -1,10 +1,10 @@
 ---
 name: vformjs
 description: >-
-  Implement Vue forms with vformjs: useElForm, r.* rules, load modes,
-  defineAdapter for UI hosts, Zod. Use when user mentions vformjs, useElForm,
-  useElForm, useForm, defineAdapter, form adapter, Element Plus form state,
-  Naive/Ant Design Vue form bridge, or simplifying Element form rules/submit/load.
+  Implement Vue forms with vformjs: useElForm, useNaiveForm, useAntdForm,
+  r.* rules, load modes, official UI adapters, and Zod. Use when the user
+  mentions vformjs, Element Plus, element-ui, Naive UI, Ant Design Vue,
+  form lifecycle, server errors, dirty state, or simplifying CRUD forms.
   Do NOT use defineAdapter for vee-validate, Vuelidate, or PrimeVue+VeeValidate —
   those are parallel engines.
 ---
@@ -16,8 +16,7 @@ Vue 表单**状态 + 校验周期**层。UI 库只负责画控件和跑宿主 va
 
 ## 何时读本 skill
 
-- 用 Element Plus / Element UI 写可提交表单、弹窗 CRUD
-- 换 Naive / Ant Design Vue / TDesign 等，要 `defineAdapter`
+- 用 Element Plus、element-ui、Naive UI、Ant Design Vue 写可提交表单、弹窗 CRUD
 - 问「rules 太繁琐怎么简化」「form hook 怎么写」
 - 评估某个 Vue 组件库能不能接
 
@@ -32,9 +31,14 @@ Vue 表单**状态 + 校验周期**层。UI 库只负责画控件和跑宿主 va
 ├─ Element UI (Vue2.7)
 │     → useElForm / useZodForm  (@vformjs/element-ui)
 │
-├─ 有 Form 实例 + Form 级 rules（Naive / Antd / TDesign / Arco / View UI…）
-│     → 优先包一层 useXxxForm({ defaults, rules }) 内部映射 defaultValues + adapter
-│     → 或 useForm({ defaultValues, adapter, rules })
+├─ Naive UI (Vue3)
+│     → useNaiveForm / useZodForm  (@vformjs/naive-ui)
+│
+├─ Ant Design Vue (Vue3)
+│     → useAntdForm / useZodForm  (@vformjs/ant-design-vue)
+│
+├─ 其它有 Form 实例 + Form 级 rules 的 UI（TDesign / Arco / View UI…）
+│     → useForm({ defaultValues, adapter, rules })
 │     → defineAdapter 只写 validate / clear / scroll
 │
 ├─ 仅有 formRef.validate() + 规则挂在控件上（Quasar / Vuetify / 部分 Vant）
@@ -61,8 +65,9 @@ Vue 表单**状态 + 校验周期**层。UI 库只负责画控件和跑宿主 va
 口诀：**对方是否自带 form 状态 + validate 周期？** 有 → D，不接 adapter。
 
 **无 adapter 时 core 不会执行 `FormRulesMap`/`r.*`。**  
-`validate`/`submit` 只看已有 errors 或宿主；无宿主 + 仅 `rules` = 空表也能 `ok: true`。  
-无 UI Form 时用 **Zod `useZodForm`** 或接 A/B 宿主，不要写「headless + r.*」。
+有 active `rules` 却没有宿主时，`validate`/`submit` 返回带 `_form` 配置错误的
+`{ ok: false }`，不会再静默成功。无 UI Form 时用 **Zod `useZodForm`**
+做 schema 校验，或接 A/B 宿主。
 
 参考：[@references/adapter-matrix.md](references/adapter-matrix.md)
 
@@ -74,12 +79,14 @@ Vue 表单**状态 + 校验周期**层。UI 库只负责画控件和跑宿主 va
 |------|------|------|
 | Vue3 + Element Plus | `@vformjs/element-plus` | `useElForm` `useZodForm` `r` |
 | Vue2.7 + element-ui | `@vformjs/element-ui` | `useElForm` `useZodForm` `r` |
+| Vue3 + Naive UI | `@vformjs/naive-ui` | `useNaiveForm` `useZodForm` `r` |
+| Vue3 + Ant Design Vue | `@vformjs/ant-design-vue` | `useAntdForm` `useZodForm` `r` |
 | 换 UI / 自研 | `@vformjs/vue` + 可选 core | `useForm` `defineAdapter` `r` |
 | Zod 跨 UI | `@vformjs/zod` | `useZodForm({ adapter, schema, defaults })` |
 
 命名：
 
-- `useElForm` / playground `useXxxForm` / `useZodForm`：**`defaults`**
+- `useElForm` / `useNaiveForm` / `useAntdForm` / `useZodForm`：**`defaults`**
 - 底层 `useForm`（`@vformjs/vue`）：**`defaultValues`**
 
 adapter 包已 re-export `r` / `fieldPath`，单包安装即可：
@@ -98,8 +105,8 @@ import { useElForm, r } from '@vformjs/element-plus'
 | `packages/core/src/define-adapter.ts` | defineAdapter / normalizeHostErrors |
 | `packages/core/src/rule-builders.ts` | `r.*` |
 | `packages/core/src/types.ts` | `when` / `whenRules` / `CreateFormOptions` |
-| `playgrounds/vue3-naive-ui/src/form/` | Naive adapter + useNaiveForm |
-| `playgrounds/vue3-antd-vue/src/form/` | Antd adapter |
+| `packages/naive-ui/src/` | Naive UI 官方 adapter 与入口 |
+| `packages/ant-design-vue/src/` | Ant Design Vue 官方 adapter 与入口 |
 | `docs/guide.md` | 安装与用法 |
 | `docs/api.md` | API 表 |
 
@@ -176,7 +183,7 @@ import { useZodForm } from '@vformjs/element-plus'
 const form = useZodForm({ schema, defaults, onSubmit })
 ```
 
-换 UI 时用 `@vformjs/zod` 并传入 `adapter`。
+Naive UI / Ant Design Vue 使用各自官方包的 `/zod`；其它 UI 才从 `@vformjs/zod` 传入自定义 `adapter`。
 
 ### 4. 自定义 adapter（A/B 库）
 
@@ -203,7 +210,7 @@ const form = useForm({
   onSubmit,
 })
 
-// 推荐：业务封装与 useElForm 对齐（见 playground use-naive-form）
+// 推荐：业务封装与官方 useXxxForm 保持同一签名
 // useXxxForm({ defaults, rules, onSubmit }) → 内部 defaultValues + adapter
 ```
 
@@ -244,8 +251,8 @@ bindHost：
 6. C 库硬把 `r.*` 转成控件函数数组并声称「官方完整接入」
 7. 双状态机：本库 rules + vee validate 同时跑
 8. 把 `useForm({ defaults })` 当合法 API（底层是 `defaultValues`）
-9. 无 adapter 时写 `rules: { x: [r.required()] }` 并以为 submit 会校验  
-   （core **不会**跑 FormRulesMap；无宿主时用 Zod 或接 A/B 宿主）
+9. 无 adapter 时写 `rules: { x: [r.required()] }` 并以为 rules 会自行校验
+   （core 会返回宿主未绑定错误；无宿主时用 Zod 或接 A/B 宿主）
 
 ---
 

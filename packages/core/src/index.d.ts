@@ -1,4 +1,4 @@
-export { createForm } from './create-form';
+export { createForm, diffChangedPaths } from './create-form';
 export { defineAdapter, adapterOk, adapterFail, normalizeHostErrors, } from './define-adapter';
 export type { DefineAdapterOptions, DefineAdapterFactory, AdapterValidateContext, } from './define-adapter';
 export { createFieldArray } from './field-array';

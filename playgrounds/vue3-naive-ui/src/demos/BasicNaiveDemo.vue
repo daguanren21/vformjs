@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { r } from '@vformjs/vue'
+import { r, useNaiveForm } from '@vformjs/naive-ui'
 import {
   NButton,
   NForm,
@@ -8,7 +8,6 @@ import {
   NSpace,
 } from 'naive-ui'
 import { ref } from 'vue'
-import { useNaiveForm } from '../form/use-naive-form'
 
 const log = ref('')
 

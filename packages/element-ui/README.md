@@ -41,6 +41,16 @@ const form = useElForm({
 </template>
 ```
 
+Reactive production state:
+
+```ts
+form.errors
+form.setErrors({ email: ['Already registered'] })
+form.scrollToFirstError()
+form.dirty
+form.changedPaths
+```
+
 ## Zod
 
 ```ts
@@ -53,6 +63,8 @@ import { useZodForm } from '@vformjs/element-ui/zod'
 | Package | Role |
 |---|---|
 | `@vformjs/element-plus` | Vue 3 + Element Plus |
+| `@vformjs/naive-ui` | Vue 3 + Naive UI |
+| `@vformjs/ant-design-vue` | Vue 3 + Ant Design Vue |
 | `@vformjs/vue` | Headless `useForm` / `defineAdapter` |
 | `@vformjs/zod` | Zod bridge |
 

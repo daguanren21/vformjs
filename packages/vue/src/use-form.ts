@@ -1,11 +1,13 @@
 import {
   createForm,
   deepClone,
+  diffChangedPaths,
   type CreateFormOptions,
   type FieldArrayApi,
   type FieldPath,
   type FormApi,
   type FormEvent,
+  type FormErrors,
   type FormResult,
   type FormRulesMap,
   type LinkageRule,
@@ -21,6 +23,8 @@ import {
   toRaw,
   watch,
 } from 'vue-demi'
+
+export { diffChangedPaths }
 
 /** Unified form modes: create / edit / detail all share useForm. */
 export type FormMode = 'create' | 'edit' | 'detail'
@@ -44,6 +48,12 @@ export interface UseFormReturn<T extends Record<string, unknown>> {
   }
   formRef: unknown
   submitting: boolean
+  /** Reactive snapshot of core and server-side field errors. */
+  errors: Readonly<FormErrors>
+  /** True when the model differs from the current reset baseline. */
+  dirty: boolean
+  /** Dotted leaf paths that differ from the current reset baseline. */
+  changedPaths: ReadonlyArray<FieldPath>
 
   /** create | edit | detail */
   mode: FormMode
@@ -71,6 +81,10 @@ export interface UseFormReturn<T extends Record<string, unknown>> {
   getFieldValue: FormApi<T>['getFieldValue']
   setValues: FormApi<T>['setValues']
   getValues: FormApi<T>['getValues']
+  setErrors: FormApi<T>['setErrors']
+  setFieldError: FormApi<T>['setFieldError']
+  clearErrors: FormApi<T>['clearErrors']
+  scrollToFirstError: FormApi<T>['scrollToFirstError']
   clearValidate: FormApi<T>['clearValidate']
   notifyChange: FormApi<T>['notifyChange']
   rebaseDefaults: FormApi<T>['rebaseDefaults']
@@ -87,61 +101,6 @@ export interface UseFormReturn<T extends Record<string, unknown>> {
   raw: FormApi<T>
 }
 
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === 'object' && !Array.isArray(value)
-}
-
-/** Diff two snapshots and return dotted paths that changed. */
-export function diffChangedPaths(
-  prev: unknown,
-  next: unknown,
-  base = '',
-  out: string[] = [],
-  depth = 0,
-): string[] {
-  if (depth > 8)
-    return out
-
-  if (Object.is(prev, next))
-    return out
-
-  if (Array.isArray(prev) || Array.isArray(next)) {
-    if (!Array.isArray(prev) || !Array.isArray(next) || prev.length !== next.length) {
-      if (base)
-        out.push(base)
-      return out
-    }
-    for (let i = 0; i < next.length; i++) {
-      const path = base ? `${base}.${i}` : String(i)
-      diffChangedPaths(prev[i], next[i], path, out, depth + 1)
-    }
-    return out
-  }
-
-  if (isPlainObject(prev) && isPlainObject(next)) {
-    const keys = new Set([...Object.keys(prev), ...Object.keys(next)])
-    for (const key of keys) {
-      const path = base ? `${base}.${key}` : key
-      if (!(key in prev) || !(key in next)) {
-        out.push(path)
-        continue
-      }
-      const pv = prev[key]
-      const nv = next[key]
-      if (isPlainObject(pv) || Array.isArray(pv) || isPlainObject(nv) || Array.isArray(nv)) {
-        diffChangedPaths(pv, nv, path, out, depth + 1)
-      }
-      else if (!Object.is(pv, nv)) {
-        out.push(path)
-      }
-    }
-    return out
-  }
-
-  if (base)
-    out.push(base)
-  return out
-}
 
 export type UseFormOptions<T extends Record<string, unknown>> = CreateFormOptions<T> & {
   /** Initial mode. Default create. */
@@ -161,10 +120,12 @@ export function useForm<T extends Record<string, unknown>>(
   const formRef = shallowRef<unknown>()
   const rules = ref(form.getRules()) as Ref<FormRulesMap>
   const submitting = ref(false)
+  const errors = shallowRef<FormErrors>(form.getErrors())
+  const dirty = shallowRef(form.dirty)
+  const changedPaths = shallowRef<ReadonlyArray<FieldPath>>(form.changedPaths)
   const mode = ref<FormMode>(initialMode)
   const metaVersion = ref(0)
   const arrayVersion = ref(0)
-  let syncingFromNotify = false
   let snapshot = deepClone(toRaw(form.model)) as T
 
   const readonly = computed(() => mode.value === 'detail')
@@ -206,6 +167,12 @@ export function useForm<T extends Record<string, unknown>>(
       arrayVersion.value += 1
     if (event.type === 'reset')
       refreshSnapshot()
+    if (event.type === 'errors')
+      errors.value = form.getErrors()
+    if (event.type === 'dirty') {
+      dirty.value = form.dirty
+      changedPaths.value = form.changedPaths
+    }
     if (event.type === 'submit-start')
       submitting.value = true
     if (event.type === 'submit-end')
@@ -215,27 +182,11 @@ export function useForm<T extends Record<string, unknown>>(
   const stopModelWatch = watch(
     () => form.model,
     () => {
-      if (syncingFromNotify) {
-        refreshSnapshot()
-        return
-      }
-
       const next = deepClone(toRaw(form.model)) as T
       const paths = diffChangedPaths(snapshot, next)
       snapshot = next
-      if (!paths.length)
-        return
-
-      syncingFromNotify = true
-      try {
+      if (paths.length)
         form.notifyChange(paths)
-      }
-      finally {
-        queueMicrotask(() => {
-          refreshSnapshot()
-          syncingFromNotify = false
-        })
-      }
     },
     { deep: true, flush: 'sync' },
   )
@@ -299,9 +250,8 @@ export function useForm<T extends Record<string, unknown>>(
     ) as T
     form.setValues(nextValues as Partial<T> & Record<string, unknown>, { merge: false })
     form.clearValidate()
-    // edit baseline = loaded values so reset returns to this record
-    if (next === 'edit')
-      form.rebaseDefaults(nextValues)
+    // A loaded record is the clean baseline in both edit and detail modes.
+    form.rebaseDefaults(nextValues)
     refreshSnapshot()
   }
 
@@ -325,6 +275,9 @@ export function useForm<T extends Record<string, unknown>>(
     el,
     formRef,
     submitting,
+    errors,
+    dirty,
+    changedPaths,
     mode,
     readonly,
     editable,
@@ -338,6 +291,10 @@ export function useForm<T extends Record<string, unknown>>(
     getFieldValue: form.getFieldValue,
     setValues: form.setValues,
     getValues: form.getValues,
+    setErrors: form.setErrors,
+    setFieldError: form.setFieldError,
+    clearErrors: form.clearErrors,
+    scrollToFirstError: form.scrollToFirstError,
     clearValidate: form.clearValidate,
     notifyChange: form.notifyChange,
     rebaseDefaults: form.rebaseDefaults,
@@ -355,6 +312,7 @@ export type {
   CreateFormOptions,
   FormApi,
   FormResult,
+  FormErrors,
   FieldArrayApi,
   LinkageRule,
 }

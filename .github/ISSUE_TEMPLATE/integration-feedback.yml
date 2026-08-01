@@ -1,0 +1,67 @@
+name: Integration feedback
+description: Tell us what happened while adopting vformjs in a real CRUD form.
+title: "[integration]: "
+body:
+  - type: dropdown
+    id: host
+    attributes:
+      label: UI Form host
+      description: Which existing UI library owns rendering and field validation?
+      options:
+        - Element Plus
+        - element-ui (Vue 2.7)
+        - Naive UI
+        - Ant Design Vue
+        - Custom UI / adapter
+    validations:
+      required: true
+  - type: dropdown
+    id: vue
+    attributes:
+      label: Vue version
+      options:
+        - Vue 3
+        - Vue 2.7
+    validations:
+      required: true
+  - type: dropdown
+    id: outcome
+    attributes:
+      label: Adoption outcome
+      description: This helps distinguish a completed first form from a blocked attempt.
+      options:
+        - Completed the first form and will use vformjs again
+        - Completed the first form but will not use vformjs again
+        - Started integration but did not complete it
+        - Evaluated the docs/demo only
+    validations:
+      required: true
+  - type: textarea
+    id: scenario
+    attributes:
+      label: Form scenario
+      description: Describe the CRUD form, mode flow, conditional logic, dynamic rows, or schema validation you tried.
+      placeholder: Edit dialog with create/edit/detail modes, API errors, and a dynamic contacts list.
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: What worked or blocked you?
+      description: Include the exact API, host behavior, error, or missing example.
+    validations:
+      required: true
+  - type: textarea
+    id: boilerplate
+    attributes:
+      label: Existing form code you wanted to remove
+      description: Which repeated state, validation, reset, or mode code led you to try vformjs?
+    validations:
+      required: false
+  - type: input
+    id: reproduction
+    attributes:
+      label: Reproduction or project link
+      description: Optional public repository, StackBlitz, or minimal reproduction.
+    validations:
+      required: false

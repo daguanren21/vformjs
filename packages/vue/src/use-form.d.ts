@@ -1,5 +1,6 @@
-import { createForm, type CreateFormOptions, type FieldArrayApi, type FieldPath, type FormApi, type FormResult, type FormRulesMap, type LinkageRule } from '@vformjs/core';
+import { createForm, diffChangedPaths, type CreateFormOptions, type FieldArrayApi, type FieldPath, type FormApi, type FormErrors, type FormResult, type FormRulesMap, type LinkageRule } from '@vformjs/core';
 import type { ComputedRef } from 'vue-demi';
+export { diffChangedPaths };
 /** Unified form modes: create / edit / detail all share useForm. */
 export type FormMode = 'create' | 'edit' | 'detail';
 /**
@@ -24,6 +25,12 @@ export interface UseFormReturn<T extends Record<string, unknown>> {
     };
     formRef: unknown;
     submitting: boolean;
+    /** Reactive snapshot of core and server-side field errors. */
+    errors: Readonly<FormErrors>;
+    /** True when the model differs from the current reset baseline. */
+    dirty: boolean;
+    /** Dotted leaf paths that differ from the current reset baseline. */
+    changedPaths: ReadonlyArray<FieldPath>;
     /** create | edit | detail */
     mode: FormMode;
     /** detail => true */
@@ -48,6 +55,10 @@ export interface UseFormReturn<T extends Record<string, unknown>> {
     getFieldValue: FormApi<T>['getFieldValue'];
     setValues: FormApi<T>['setValues'];
     getValues: FormApi<T>['getValues'];
+    setErrors: FormApi<T>['setErrors'];
+    setFieldError: FormApi<T>['setFieldError'];
+    clearErrors: FormApi<T>['clearErrors'];
+    scrollToFirstError: FormApi<T>['scrollToFirstError'];
     clearValidate: FormApi<T>['clearValidate'];
     notifyChange: FormApi<T>['notifyChange'];
     rebaseDefaults: FormApi<T>['rebaseDefaults'];
@@ -66,12 +77,10 @@ export interface UseFormReturn<T extends Record<string, unknown>> {
     };
     raw: FormApi<T>;
 }
-/** Diff two snapshots and return dotted paths that changed. */
-export declare function diffChangedPaths(prev: unknown, next: unknown, base?: string, out?: string[], depth?: number): string[];
 export type UseFormOptions<T extends Record<string, unknown>> = CreateFormOptions<T> & {
     /** Initial mode. Default create. */
     mode?: FormMode;
 };
 export declare function useForm<T extends Record<string, unknown>>(options: UseFormOptions<T>): UseFormReturn<T>;
 export { createForm };
-export type { CreateFormOptions, FormApi, FormResult, FieldArrayApi, LinkageRule, };
+export type { CreateFormOptions, FormApi, FormResult, FormErrors, FieldArrayApi, LinkageRule, };

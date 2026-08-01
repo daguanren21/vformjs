@@ -2,6 +2,14 @@
   "name": "@vformjs/zod",
   "version": "0.1.1",
   "description": "Zod bridge for vformjs",
+  "keywords": [
+    "vue",
+    "zod",
+    "forms",
+    "schema-validation",
+    "typescript",
+    "crud"
+  ],
   "license": "MIT",
   "type": "module",
   "exports": {
@@ -54,7 +62,7 @@
     "url": "https://github.com/daguanren21/vformjs.git",
     "directory": "packages/zod"
   },
-  "homepage": "https://github.com/daguanren21/vformjs",
+  "homepage": "https://vformjs.vercel.app/guide",
   "bugs": {
     "url": "https://github.com/daguanren21/vformjs/issues"
   }

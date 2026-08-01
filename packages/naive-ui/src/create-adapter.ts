@@ -1,6 +1,21 @@
 import { defineAdapter } from '@vformjs/core'
 import type { FormInst, FormItemRule } from 'naive-ui'
 
+interface NaiveFormHost extends FormInst {
+  $el?: ParentNode
+}
+
+function findScrollTarget(host: NaiveFormHost, path: string): Element | undefined {
+  if (!host.$el)
+    return undefined
+  for (const item of host.$el.querySelectorAll<HTMLElement>('[data-vform-path]')) {
+    if (item.dataset.vformPath === path)
+      return item
+  }
+  const invalid = host.$el.querySelector<HTMLElement>('.n-form-item-blank--error')
+  return invalid?.closest('.n-form-item') ?? invalid ?? undefined
+}
+
 /**
  * Naive UI n-form adapter — defineAdapter 写法。
  *
@@ -11,7 +26,7 @@ import type { FormInst, FormItemRule } from 'naive-ui'
  *
  * @see https://www.naiveui.com/
  */
-export const createNaiveAdapter = defineAdapter<FormInst>({
+export const createNaiveAdapter = defineAdapter<NaiveFormHost>({
   name: 'naive-ui',
 
   async validate(host, { paths }) {
@@ -41,6 +56,10 @@ export const createNaiveAdapter = defineAdapter<FormInst>({
 
   clearValidate(host) {
     host.restoreValidation()
+  },
+
+  scrollToField(host, path) {
+    findScrollTarget(host, path)?.scrollIntoView({ block: 'center' })
   },
 
   afterModelReset(host) {

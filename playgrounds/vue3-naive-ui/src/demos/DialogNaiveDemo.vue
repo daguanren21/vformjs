@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { r } from '@vformjs/vue'
+import { r, useNaiveForm } from '@vformjs/naive-ui'
 import {
   NButton,
   NDataTable,
@@ -15,7 +15,6 @@ import {
 } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import { computed, h, ref } from 'vue'
-import { useNaiveForm } from '../form/use-naive-form'
 
 interface Row {
   id: string

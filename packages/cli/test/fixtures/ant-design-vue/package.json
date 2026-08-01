@@ -1,0 +1,9 @@
+{
+  "name": "fixture-ant-design-vue",
+  "private": true,
+  "dependencies": {
+    "@vformjs/ant-design-vue": "0.2.0",
+    "ant-design-vue": "^4.2.6",
+    "vue": "^3.5.0"
+  }
+}

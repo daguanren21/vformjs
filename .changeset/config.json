@@ -8,7 +8,9 @@
       "@vformjs/vue",
       "@vformjs/zod",
       "@vformjs/element-plus",
-      "@vformjs/element-ui"
+      "@vformjs/element-ui",
+      "@vformjs/naive-ui",
+      "@vformjs/ant-design-vue"
     ]
   ],
   "linked": [],

@@ -1,0 +1,206 @@
+/* ─────────────────────────────────────────────────────────────
+   vformjs theme — "precision engineering / technical editorial"
+   Warm paper + graphite, one signal accent (vermilion),
+   monospaced technical detail, visible rule/grid logic.
+   ───────────────────────────────────────────────────────────── */
+
+/* 1 · Tokens ─────────────────────────────────────────────── */
+
+:root {
+  /* type stacks — system fonts only */
+  --ph-font-display: "Iowan Old Style", "Palatino Linotype", Palatino,
+    "Source Han Serif SC", "Noto Serif CJK SC", "Songti SC", STSong,
+    ui-serif, Georgia, "Times New Roman", serif;
+  --ph-font-body: "Avenir Next", "Helvetica Neue", "Segoe UI",
+    -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", ui-sans-serif, system-ui, sans-serif;
+  --ph-font-mono: ui-monospace, "SF Mono", "Cascadia Mono",
+    "JetBrains Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+  /* light palette — warm paper + graphite */
+  --ph-paper: #f6f1e7;
+  --ph-raised: #fcf9f2;
+  --ph-sunken: #efe9db;
+  --ph-ink: #211d15;
+  --ph-ink-soft: #57503f;
+  --ph-ink-faint: #6f6650;
+  --ph-line: #d9cfba;
+  --ph-line-strong: #b3a98c;
+
+  /* signal accent — vermilion, text-safe on paper */
+  --ph-accent: #b6401a;
+  --ph-accent-strong: #93320f;
+  --ph-accent-fg: #fdf8ef; /* text sitting on accent fill */
+  --ph-accent-wash: rgba(182, 64, 26, 0.07);
+  --ph-accent-on-ink: #ff7a45; /* accent rendered on graphite */
+
+  /* contrast band (used by the final CTA plate) */
+  --ph-band-ink: #221e16;
+  --ph-band-fg: #f3ecdb;
+  --ph-band-line: rgba(243, 236, 219, 0.22);
+
+  /* structure */
+  --ph-radius: 3px;
+  --ph-measure: 1140px;
+  --ph-gutter: clamp(20px, 4vw, 48px);
+  --ph-section-gap: clamp(72px, 11vw, 128px);
+  --ph-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* feed the default theme so docs + chrome share the identity */
+  --vp-font-family-base: var(--ph-font-body);
+  --vp-font-family-mono: var(--ph-font-mono);
+  --vp-c-bg: var(--ph-paper);
+  --vp-c-bg-alt: var(--ph-sunken);
+  --vp-c-bg-elv: var(--ph-raised);
+  --vp-c-bg-soft: var(--ph-sunken);
+  --vp-c-text-1: var(--ph-ink);
+  --vp-c-text-2: var(--ph-ink-soft);
+  --vp-c-text-3: var(--ph-ink-faint);
+  --vp-c-border: var(--ph-line-strong);
+  --vp-c-divider: var(--ph-line);
+  --vp-c-gutter: var(--ph-line);
+  --vp-c-gray-soft: rgba(94, 76, 44, 0.12); /* warm inline-code chip bg */
+  --vp-c-brand-1: #b6401a;
+  --vp-c-brand-2: #93320f;
+  --vp-c-brand-3: #cc5a30;
+  --vp-c-brand-soft: rgba(182, 64, 26, 0.12);
+  --vp-c-tip-1: var(--vp-c-brand-1);
+  --vp-c-tip-2: var(--vp-c-brand-2);
+  --vp-c-tip-3: var(--vp-c-brand-3);
+}
+
+.dark {
+  --ph-paper: #17140f;
+  --ph-raised: #1e1a13;
+  --ph-sunken: #12100b;
+  --ph-ink: #ece4d4;
+  --ph-ink-soft: #aba08a;
+  --ph-ink-faint: #948972;
+  --ph-line: #332d22;
+  --ph-line-strong: #554b3a;
+
+  --ph-accent: #ff7a45;
+  --ph-accent-strong: #ff9a6f;
+  --ph-accent-fg: #241302;
+  --ph-accent-wash: rgba(255, 122, 69, 0.09);
+  --ph-accent-on-ink: var(--ph-accent);
+
+  --ph-band-ink: #232018;
+  --ph-band-fg: #f1e9d7;
+  --ph-band-line: rgba(241, 233, 215, 0.2);
+
+  --vp-c-brand-1: #ff7a45;
+  --vp-c-brand-2: #ff9a6f;
+  --vp-c-brand-3: #e8662f;
+  --vp-c-brand-soft: rgba(255, 122, 69, 0.14);
+  --vp-c-gray-soft: rgba(232, 216, 184, 0.1);
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+/* 2 · Global identity touches ────────────────────────────── */
+
+::selection {
+  background: rgba(182, 64, 26, 0.16);
+}
+
+.dark ::selection {
+  background: rgba(255, 122, 69, 0.22);
+}
+
+/* editorial serif for doc headings; body stays sans */
+.vp-doc h1,
+.vp-doc h2 {
+  font-family: var(--ph-font-display);
+  letter-spacing: -0.01em;
+}
+
+/* 3 · Landing foundation (.ph namespace only) ────────────── */
+
+.ph {
+  --ph-hair: var(--ph-line);
+  color: var(--ph-ink);
+  background-color: var(--ph-paper);
+  text-rendering: optimizeLegibility;
+}
+
+.ph *,
+.ph *::before,
+.ph *::after {
+  box-sizing: border-box;
+}
+
+/* section rhythm: vertical spacing lives on each section */
+.ph-section {
+  padding: var(--ph-section-gap) var(--ph-gutter) 0;
+}
+
+.ph-inner {
+  max-width: var(--ph-measure);
+  margin: 0 auto;
+}
+
+/* ruled join: hairline top border + registration ticks at both edges */
+.ph-ruled {
+  position: relative;
+  border-top: 1px solid var(--ph-hair);
+  padding-top: clamp(56px, 8vw, 84px);
+}
+
+.ph-ruled::before,
+.ph-ruled::after {
+  content: "";
+  position: absolute;
+  top: -5px;
+  width: 1px;
+  height: 9px;
+  background: var(--ph-line-strong);
+}
+
+.ph-ruled::before {
+  left: 0;
+}
+
+.ph-ruled::after {
+  right: 0;
+}
+
+/* visible keyboard focus everywhere on the landing */
+.ph a:focus-visible,
+.ph button:focus-visible,
+.ph [tabindex]:focus-visible {
+  outline: 2px solid var(--ph-accent);
+  outline-offset: 3px;
+  border-radius: 1px;
+}
+
+.ph-anchor {
+  scroll-margin-top: calc(var(--vp-nav-height, 64px) + 24px);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+
+}
+
+/* 4 · .ph-page: keep the VitePress page chrome out of the way ── */
+
+.ph-page .VPPage {
+  padding-bottom: 0;
+}
+
+/* 5 · Live examples embedded in doc pages ────────────────── */
+
+/* frame anchors clear the fixed nav, same offset as .ph-anchor */
+.vp-doc .example-frame {
+  scroll-margin-top: calc(var(--vp-nav-height, 64px) + 24px);
+}
+
+/* stacked demos keep the landing rhythm at doc scale */
+.vp-doc .example-frame + .example-frame {
+  margin-top: clamp(40px, 6vw, 64px);
+}

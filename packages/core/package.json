@@ -2,6 +2,15 @@
   "name": "@vformjs/core",
   "version": "0.1.1",
   "description": "Headless form state machine for vformjs",
+  "keywords": [
+    "vue",
+    "vue2",
+    "vue3",
+    "forms",
+    "form-state",
+    "typescript",
+    "crud"
+  ],
   "license": "MIT",
   "type": "module",
   "exports": {
@@ -45,7 +54,7 @@
     "url": "https://github.com/daguanren21/vformjs.git",
     "directory": "packages/core"
   },
-  "homepage": "https://github.com/daguanren21/vformjs",
+  "homepage": "https://vformjs.vercel.app/",
   "bugs": {
     "url": "https://github.com/daguanren21/vformjs/issues"
   }

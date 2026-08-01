@@ -1,5 +1,5 @@
 {
-  "name": "vformjs",
+  "name": "vformjs-workspace",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@11.17.0",
@@ -11,10 +11,15 @@
     "build": "turbo run build --filter=./packages/*",
     "build:play:vue3": "pnpm --filter @vformjs/playground-vue3-element-plus run build",
     "build:play:vue2": "pnpm --filter @vformjs/playground-vue2-element-ui run build",
+    "build:play:naive": "pnpm --filter @vformjs/playground-vue3-naive-ui run build",
+    "build:play:antd": "pnpm --filter @vformjs/playground-vue3-antd-vue run build",
     "dev:vue3": "pnpm --filter @vformjs/playground-vue3-element-plus run dev",
     "dev:vue2": "pnpm --filter @vformjs/playground-vue2-element-ui run dev",
     "dev:naive": "pnpm --filter @vformjs/playground-vue3-naive-ui run dev",
     "dev:antd": "pnpm --filter @vformjs/playground-vue3-antd-vue run dev",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs",
     "typecheck": "turbo run typecheck --filter=./packages/*",
     "lint": "oxlint -c .oxlintrc.json packages playgrounds",
     "lint:fix": "oxlint -c .oxlintrc.json --fix packages playgrounds",
@@ -23,7 +28,7 @@
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "pnpm build && changeset publish",
-    "ci": "pnpm lint && pnpm test && pnpm build && pnpm build:play:vue3 && pnpm build:play:vue2",
+    "ci": "pnpm lint && pnpm test && pnpm build && pnpm docs:build && pnpm build:play:vue3 && pnpm build:play:vue2 && pnpm build:play:naive && pnpm build:play:antd",
     "commitlint": "commitlint --edit"
   },
   "devDependencies": {
@@ -31,13 +36,15 @@
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
     "@types/node": "^22.19.0",
-    "@vitejs/plugin-vue": "catalog:",
     "@vformjs/core": "workspace:*",
+    "@vformjs/ant-design-vue": "workspace:*",
+    "@vformjs/naive-ui": "workspace:*",
     "@vformjs/element-plus": "workspace:*",
     "@vformjs/element-ui": "workspace:*",
     "@vformjs/shared": "workspace:*",
     "@vformjs/vue": "workspace:*",
     "@vformjs/zod": "workspace:*",
+    "@vitejs/plugin-vue": "catalog:",
     "@vue/test-utils": "2.4.11",
     "element-plus": "^2.14.3",
     "happy-dom": "20.11.1",
@@ -45,8 +52,10 @@
     "oxlint": "1.76.0",
     "turbo": "^2.5.4",
     "typescript": "catalog:",
+    "vitepress": "2.0.0-alpha.18",
     "vitest": "catalog:",
     "vue": "catalog:",
-    "vue-demi": "catalog:"
+    "vue-demi": "catalog:",
+    "zod": "catalog:"
   }
 }

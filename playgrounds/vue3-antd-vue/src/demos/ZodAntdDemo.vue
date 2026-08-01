@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { useZodForm } from '@vformjs/zod'
+import { useZodForm } from '@vformjs/ant-design-vue/zod'
 import { Button, Form, FormItem, Input, InputNumber, Space } from 'ant-design-vue'
 import { ref } from 'vue'
 import { z } from 'zod'
-import { createAntdAdapter } from '../form/create-antd-adapter'
 
 const log = ref('')
 
@@ -23,7 +22,6 @@ const form = useZodForm({
     email: '',
     age: 18,
   },
-  adapter: createAntdAdapter(),
   onSubmit: async (values) => {
     log.value = JSON.stringify(values, null, 2)
   },
@@ -43,7 +41,7 @@ async function onSubmit() {
 <template>
   <div class="demo">
     <p class="hint">
-      useZodForm + createAntdAdapter。输入 admin 看 refine 是否挂在 username。
+      useZodForm（@vformjs/ant-design-vue/zod）已经绑定官方 adapter。输入 admin 测试 refine。
     </p>
 
     <a-form

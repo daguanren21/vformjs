@@ -51,18 +51,18 @@ export const createXxxAdapter = defineAdapter<HostInst>({
 
 ## 可复制模板
 
-### Naive（A，已验证）
+### Naive（A，官方包）
 
-路径：`playgrounds/vue3-naive-ui/src/form/create-naive-adapter.ts`
+路径：`packages/naive-ui/src/create-adapter.ts`
 
 - 整表：`await host.validate()`
 - 局部：第二参 `shouldRuleBeApplied`
 - clear：`host.restoreValidation()`
 - 字段属性：`path`
 
-### Ant Design Vue（A，已验证）
+### Ant Design Vue（A，官方包）
 
-路径：`playgrounds/vue3-antd-vue/src/form/create-antd-adapter.ts`
+路径：`packages/ant-design-vue/src/create-adapter.ts`
 
 - `validateFields` / `clearValidate` / `scrollToField`
 - 字段属性：`name`

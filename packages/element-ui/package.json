@@ -2,6 +2,15 @@
   "name": "@vformjs/element-ui",
   "version": "0.1.1",
   "description": "element-ui (Vue 2.7) adapter for vformjs (useElForm)",
+  "keywords": [
+    "vue",
+    "vue2",
+    "element-ui",
+    "forms",
+    "form-validation",
+    "typescript",
+    "crud"
+  ],
   "license": "MIT",
   "type": "module",
   "exports": {
@@ -70,7 +79,7 @@
     "url": "https://github.com/daguanren21/vformjs.git",
     "directory": "packages/element-ui"
   },
-  "homepage": "https://github.com/daguanren21/vformjs",
+  "homepage": "https://vformjs.vercel.app/",
   "bugs": {
     "url": "https://github.com/daguanren21/vformjs/issues"
   }

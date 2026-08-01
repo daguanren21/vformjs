@@ -18,21 +18,28 @@ pnpm add @vformjs/core
 
 ## Surface
 
-- `createForm` — mutable model, rules, `when` / `whenRules`, linkage, submit
-- `defineAdapter` / `adapterOk` / `adapterFail` — host form bridge
-- `r` / `ruleBuilders` — async-validator-style rule helpers
+- `createForm` — mutable model, baseline/dirty state, linkage, submit lifecycle
+- `defineAdapter` / `adapterOk` / `adapterFail` — host form validation bridge
+- `r` / `ruleBuilders` — async-validator-style host rule helpers
 - `fieldArray` — list fields with stable keys
 
 ```ts
-import { createForm, r } from '@vformjs/core'
+import { createForm } from '@vformjs/core'
 
 const form = createForm({
   defaultValues: { name: '' },
-  rules: { name: [r.required()] },
   onSubmit: async (values) => {
     await api.save(values)
   },
 })
+
+form.setFieldValue('name', 'Alice')
+form.dirty        // true
+form.changedPaths // ['name']
 ```
+
+`rules` are executed by a bound host adapter. Active rules without an adapter
+return a configuration error from `validate()` / `submit()`; they never silently
+pass. Prefer a UI package, or use `useZodForm` for schema-only validation.
 
 MIT · [Repo](https://github.com/daguanren21/vformjs)

@@ -1,0 +1,10 @@
+{
+  "name": "fixture-naive-ui",
+  "private": true,
+  "dependencies": {
+    "@vformjs/naive-ui": "0.2.0",
+    "naive-ui": "^2.44.1",
+    "vue": "^3.5.0",
+    "zod": "^4.4.3"
+  }
+}

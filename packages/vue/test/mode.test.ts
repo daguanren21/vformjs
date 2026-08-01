@@ -62,4 +62,34 @@ describe('useForm modes', () => {
     expect(form.model.age).toBe(20)
     expect(form.model.note).toBe('')
   })
+  it('projects server errors and direct model dirty state reactively', () => {
+    const form = useForm({
+      defaultValues: { name: '', profile: { city: '' } },
+    })
+
+    form.setErrors({ name: ['already used'] })
+    expect(form.errors.name).toEqual(['already used'])
+
+    form.model.profile.city = 'Nanjing'
+    expect(form.dirty).toBe(true)
+    expect(form.changedPaths).toEqual(['profile.city'])
+
+    form.load('detail', { name: 'Alice', profile: { city: 'Shanghai' } })
+    expect(form.errors).toEqual({})
+    expect(form.dirty).toBe(false)
+    expect(form.changedPaths).toEqual([])
+  })
+
+  it('tracks multiple direct model mutations in the same tick', () => {
+    const form = useForm({
+      defaultValues: { first: '', second: '' },
+    })
+
+    form.model.first = 'one'
+    form.model.second = 'two'
+
+    expect(form.dirty).toBe(true)
+    expect(form.changedPaths).toEqual(['first', 'second'])
+  })
+
 })

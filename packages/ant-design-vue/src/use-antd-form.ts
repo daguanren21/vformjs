@@ -1,6 +1,6 @@
 import type { UseFormOptions, UseFormReturn } from '@vformjs/vue'
 import { useForm } from '@vformjs/vue'
-import { createAntdAdapter } from './create-antd-adapter'
+import { createAntdAdapter } from './create-adapter'
 
 /**
  * Vue3 + Ant Design Vue 入口。

@@ -17,8 +17,8 @@
 |----|----|-----------|----------|------|
 | Element Plus | A | `prop` | Form + Item | `useElForm`；`r` 从 adapter 包导入 |
 | Element UI | A | `prop` | Form + Item | element-ui |
-| Naive UI | A | `path` | Form `rules` | playground `create-naive-adapter` |
-| Ant Design Vue | A | `name` | Form `rules` | playground `create-antd-adapter` |
+| Naive UI | A | `path` | Form `rules` | `@vformjs/naive-ui` |
+| Ant Design Vue | A | `name` | Form `rules` | `@vformjs/ant-design-vue` |
 | TDesign Vue Next | B | `name` | Form | validate 可能返回对象非 throw |
 | Arco Design Vue | B | `field` | Form | 类似 Ant |
 | View UI Plus | B | `prop` | Form | 近 Element |
@@ -34,16 +34,17 @@
 ## 关键：无 adapter 时 rules 不跑
 
 `createForm.validate()` **没有 adapter 时不会执行 FormRulesMap**。  
-它只检查 core `errors` 里是否已有消息；否则直接 `{ ok: true }`。
+只要目标路径仍有 active rules，它会返回 `_form` 宿主未绑定错误，
+不再把未校验的表单当作 `{ ok: true }`。
 
 因此：
 
 ```ts
-// ❌ 危险：空 required 也能 submit 成功
+// ❌ 配置错误：submit 返回宿主未绑定，不会执行 onSubmit
 useForm({ defaultValues, rules: { name: [r.required()] }, onSubmit })
 
 // ✅ Zod 无 UI 宿主（schema 在 zod 包内跑）
-useZodForm({ schema, defaults, adapter, onSubmit }) // 仍建议有宿主红字；跨 UI 必传 adapter
+useZodForm({ schema, defaults, onSubmit }) // 若要宿主红字，再传 adapter
 
 // ✅ 真实宿主
 useForm({ defaultValues, rules, adapter: createXxxAdapter(), onSubmit })

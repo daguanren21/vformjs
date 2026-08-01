@@ -11,10 +11,16 @@ pnpm add @vformjs/element-plus element-plus vue
 # Vue 2.7 + element-ui
 pnpm add @vformjs/element-ui element-ui vue@^2.7
 
+# Vue 3 + Naive UI
+pnpm add @vformjs/naive-ui naive-ui vue
+
+# Vue 3 + Ant Design Vue
+pnpm add @vformjs/ant-design-vue ant-design-vue vue
+
 # Custom UI only
 pnpm add @vformjs/vue vue
 
-# Optional Zod bridge
+# Optional schema validation
 pnpm add @vformjs/zod zod
 ```
 
@@ -22,6 +28,8 @@ pnpm add @vformjs/zod zod
 |---------|------------|
 | `@vformjs/element-plus` | `useElForm`, `r`, `useZodForm` |
 | `@vformjs/element-ui` | same for Vue 2.7 |
+| `@vformjs/naive-ui` | `useNaiveForm`, `r`, `useZodForm` |
+| `@vformjs/ant-design-vue` | `useAntdForm`, `r`, `useZodForm` |
 | `@vformjs/vue` | `useForm`, `defineAdapter`, `r` |
 | `@vformjs/zod` | `useZodForm` (or via UI package) |
 | `@vformjs/core` | transitive — rarely direct |
@@ -86,6 +94,13 @@ form.setValues({ name: 'x' })          // merge partial
 form.getValues()                       // snapshot
 form.getValues({ hidden: 'omit' })     // drop hidden fields
 
+// server errors / unsaved changes
+form.errors.email
+form.setErrors({ email: ['Already registered'] })
+form.scrollToFirstError()
+form.dirty
+form.changedPaths
+
 // validate
 await form.validate()
 await form.validateField('email')
@@ -102,6 +117,34 @@ form.reset()
 form.reset('email')
 form.rebaseDefaults(detail)            // next reset() returns to detail
 ```
+
+## Server errors and unsaved changes
+
+`errors` is reactive. Bind an API field error to the host item when the UI library
+does not expose an imperative server-error API:
+
+```vue
+<el-form-item
+  label="Email"
+  prop="email"
+  :error="form.errors.email?.[0]"
+>
+  <el-input v-model="form.model.email" />
+</el-form-item>
+```
+
+```ts
+const result = await api.save(form.getValues())
+if (!result.ok) {
+  form.setErrors(result.fieldErrors)
+  form.scrollToFirstError()
+}
+```
+
+Changing a field clears its stale core/server error. `dirty` and `changedPaths`
+compare the live model with the current reset baseline. `load('edit', detail)`,
+`load('detail', detail)`, `rebaseDefaults()`, and `reset()` update that baseline
+predictably.
 
 ## Modes: create / edit / detail
 
@@ -258,47 +301,55 @@ const form = useZodForm({
 Field blur/change runs full `safeParse` (including `refine`).  
 Success `submit` / `validate` return **parsed output**.
 
-## Custom UI adapter
+## Official UI adapters
 
-Official packages cover Element only. Naive / Ant Design Vue / custom shells:
+Naive UI and Ant Design Vue use the same form lifecycle through official packages:
 
 ```ts
-import { defineAdapter, useForm, r, adapterOk, adapterFail } from '@vformjs/vue'
+import { r, useNaiveForm } from '@vformjs/naive-ui'
+// import { r, useAntdForm } from '@vformjs/ant-design-vue'
 
-const createNaiveAdapter = defineAdapter({
-  name: 'naive-ui',
-  async validate(host, { paths }) {
-    // host is your FormInst; throw or return adapterFail(errors)
-    await host.validate(/* filter by paths if needed */)
-  },
-  clearValidate(host) {
-    host.restoreValidation()
-  },
-})
-
-const form = useForm({
-  defaultValues: { name: '' },
+const form = useNaiveForm({
+  defaults: { name: '' },
   rules: { name: [r.required()] },
-  adapter: createNaiveAdapter(),
-  onSubmit: async (v) => api.save(v),
+  onSubmit: async values => api.save(values),
 })
 ```
 
 ```vue
-<!-- bind host instance so adapter can validate -->
-<n-form ref="formRef" :model="form.model" :rules="naiveRules">
-  ...
+<n-form :ref="form.bindHost" :model="form.model" :rules="form.rules">
+  <n-form-item path="name" data-vform-path="name">
+    <n-input v-model:value="form.model.name" />
+  </n-form-item>
 </n-form>
 ```
 
-```ts
-// after mount / when ref ready
-form.bindHost(formRef.value)
+Use `name` on Ant Design Vue fields. Import schema-aware entries from
+`@vformjs/naive-ui/zod` or `@vformjs/ant-design-vue/zod`.
+
+For another host with form-level rules and a validation instance, use
+`defineAdapter` from `@vformjs/vue`. The adapter should only bridge the host's
+`validate`, `clear`, and `scroll` methods; form state remains in `useForm`.
+
+Runnable host integrations: `playgrounds/vue3-naive-ui` and
+`playgrounds/vue3-antd-vue` (`pnpm dev:naive` / `pnpm dev:antd`).
+
+## Agent-friendly CLI
+
+The unscoped `vformjs` CLI detects the installed UI host and Zod, then writes a
+typed form module without generating a second UI abstraction:
+
+```bash
+pnpm dlx vformjs init
+pnpm dlx vformjs add form profile
+pnpm dlx vformjs doctor
+pnpm dlx vformjs migrate vue2-to-vue3 --dry-run --json
+pnpm dlx vformjs skill install --agent agents
 ```
 
-Runnable copies: `playgrounds/vue3-naive-ui`, `playgrounds/vue3-antd-vue` (`pnpm dev:naive` / `pnpm dev:antd`).
-
-`normalizeHostErrors` already maps common Naive / Ant Design error shapes.
+`init` and `add` are idempotent. They refuse to overwrite edited output unless
+`--force` is explicit. `--dry-run --json` produces a deterministic plan for a
+coding agent or CI job.
 
 ## Local playgrounds
 

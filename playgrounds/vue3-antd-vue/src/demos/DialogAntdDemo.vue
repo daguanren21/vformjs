@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { r } from '@vformjs/vue'
+import { r, useAntdForm } from '@vformjs/ant-design-vue'
 import {
   Button,
   Descriptions,
@@ -16,7 +16,6 @@ import {
   Textarea,
 } from 'ant-design-vue'
 import { computed, ref } from 'vue'
-import { useAntdForm } from '../form/use-antd-form'
 
 interface Row {
   id: string

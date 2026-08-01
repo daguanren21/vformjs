@@ -8,7 +8,7 @@ Zod bridge for [vformjs](https://github.com/daguanren21/vformjs): schema → fie
 pnpm add @vformjs/zod zod vue
 ```
 
-With Element Plus / element-ui you can also use the UI package entry:
+With an official UI adapter, prefer its preconfigured `/zod` entry:
 
 ```ts
 import { useZodForm } from '@vformjs/element-plus/zod'
@@ -44,5 +44,7 @@ const form = useZodForm({
 | `@vformjs/vue` | `useForm` / adapters |
 | `@vformjs/element-plus` | Element Plus + `./zod` |
 | `@vformjs/element-ui` | element-ui + `./zod` |
+| `@vformjs/naive-ui` | Naive UI + `./zod` |
+| `@vformjs/ant-design-vue` | Ant Design Vue + `./zod` |
 
 MIT · [Repo](https://github.com/daguanren21/vformjs)

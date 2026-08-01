@@ -16,6 +16,8 @@ export default defineConfig({
       '@vformjs/shared': path.join(repo, 'packages/shared/src/index.ts'),
       '@vformjs/vue': path.join(repo, 'packages/vue/src/index.ts'),
       '@vformjs/zod': path.join(repo, 'packages/zod/src/index.ts'),
+      '@vformjs/naive-ui/zod': path.join(repo, 'packages/naive-ui/src/use-zod-form.ts'),
+      '@vformjs/naive-ui': path.join(repo, 'packages/naive-ui/src/index.ts'),
       'vue-demi': path.join(root, 'node_modules/vue-demi/lib/index.mjs'),
     },
   },
@@ -25,6 +27,8 @@ export default defineConfig({
       '@vformjs/shared',
       '@vformjs/vue',
       '@vformjs/zod',
+      '@vformjs/naive-ui',
+      '@vformjs/naive-ui/zod',
     ],
   },
 })

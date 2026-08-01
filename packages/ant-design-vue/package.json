@@ -1,0 +1,91 @@
+{
+  "name": "@vformjs/ant-design-vue",
+  "version": "0.1.0",
+  "description": "Ant Design Vue adapter for vformjs (useAntdForm)",
+  "keywords": [
+    "vue",
+    "vue3",
+    "ant-design-vue",
+    "forms",
+    "form-validation",
+    "typescript",
+    "crud"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./zod": {
+      "import": {
+        "types": "./dist/use-zod-form.d.ts",
+        "default": "./dist/use-zod-form.js"
+      },
+      "require": {
+        "types": "./dist/use-zod-form.d.cts",
+        "default": "./dist/use-zod-form.cjs"
+      }
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --root ../.. packages/ant-design-vue/test"
+  },
+  "dependencies": {
+    "@vformjs/core": "workspace:^",
+    "@vformjs/vue": "workspace:^",
+    "@vformjs/zod": "workspace:^"
+  },
+  "peerDependencies": {
+    "ant-design-vue": ">=4.0.0",
+    "vue": "^3.0.0",
+    "zod": "^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "ant-design-vue": {
+      "optional": true
+    },
+    "zod": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "ant-design-vue": "^4.2.6",
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "vue": "catalog:",
+    "zod": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/daguanren21/vformjs.git",
+    "directory": "packages/ant-design-vue"
+  },
+  "homepage": "https://vformjs.vercel.app/guide",
+  "bugs": {
+    "url": "https://github.com/daguanren21/vformjs/issues"
+  }
+}

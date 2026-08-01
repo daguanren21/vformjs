@@ -1,4 +1,4 @@
-import type { FormResult } from '@vformjs/core'
+import type { FieldPath, FormErrors, FormResult } from '@vformjs/core'
 import { deepClone } from '@vformjs/core'
 import type { UseFormOptions, UseFormReturn } from '@vformjs/vue'
 import { useForm } from '@vformjs/vue'
@@ -36,7 +36,7 @@ export interface UseZodFormOptions<S extends ZodType<Record<string, unknown>>>
 }
 
 export type UseZodFormReturn<S extends ZodType<Record<string, unknown>>> =
-  Omit<UseFormReturn<ZodInput<S>>, 'submit' | 'validate'> & {
+  Omit<UseFormReturn<ZodInput<S>>, 'submit' | 'validate' | 'validateField'> & {
     schema: S
     /**
      * Validate. On success, `values` are **parsed output** (`z.output`).
@@ -44,6 +44,10 @@ export type UseZodFormReturn<S extends ZodType<Record<string, unknown>>> =
      */
     validate: (
       paths?: Parameters<UseFormReturn<ZodInput<S>>['validate']>[0],
+    ) => Promise<FormResult<ZodOutput<S>> | FormResult<ZodInput<S>>>
+    /** Validate one or more fields through the same Zod-aware path. */
+    validateField: (
+      paths?: Parameters<UseFormReturn<ZodInput<S>>['validateField']>[0],
     ) => Promise<FormResult<ZodOutput<S>> | FormResult<ZodInput<S>>>
     /**
      * Submit with parsed output values on success.
@@ -82,6 +86,24 @@ function isDetailMode(mode: unknown): boolean {
 function isHostUnboundError(errors: Record<string, string[]> | undefined): boolean {
   const msg = errors?._form?.[0]
   return typeof msg === 'string' && msg.includes('not bound')
+}
+
+function pathsOverlap(left: FieldPath, right: FieldPath): boolean {
+  return left === right
+    || left.startsWith(`${right}.`)
+    || right.startsWith(`${left}.`)
+}
+
+function pickErrorsForPaths(
+  errors: FormErrors,
+  paths: ReadonlyArray<FieldPath>,
+): FormErrors {
+  const picked: FormErrors = {}
+  for (const [path, messages] of Object.entries(errors)) {
+    if (path !== '_form' && paths.some(target => pathsOverlap(path, target)))
+      picked[path] = [...messages]
+  }
+  return picked
 }
 
 /**
@@ -158,8 +180,7 @@ export function useZodForm<S extends ZodType<Record<string, unknown>>>(
   })
 
   const surfaceZodErrors = async (errors: Record<string, string[]>) => {
-    for (const [path, messages] of Object.entries(errors))
-      form.raw.setFieldError(path, messages)
+    form.raw.setErrors(errors)
 
     let errorPaths = Object.keys(errors).filter(p => p !== '_form')
     if (!errorPaths.length && firstRulePath)
@@ -184,35 +205,50 @@ export function useZodForm<S extends ZodType<Record<string, unknown>>>(
     resyncArrayRulesIfNeeded()
     parser.invalidate()
 
-    // Always clear previous core error map so headless re-validate is not sticky
-    form.raw.clearErrors()
+    const requested = paths == null
+      ? undefined
+      : Array.isArray(paths) ? paths : [paths]
+
+    // Full validation replaces the error map; partial validation preserves
+    // unrelated server errors.
+    form.raw.clearErrors(requested)
 
     const fieldResult = await hostValidate(paths)
 
-    // Host unbound (or headless): fall back to schema-only validation
+    // Host unbound (or headless): fall back to schema-only validation.
     if (!fieldResult.ok && isHostUnboundError(fieldResult.errors)) {
       const live = form.getValues()
       const result = parseLive(live)
-      if (!result.ok) {
-        for (const [path, messages] of Object.entries(result.errors))
-          form.raw.setFieldError(path, messages)
+      if (!requested) {
+        form.raw.setErrors(result.ok ? {} : result.errors)
+        return result
       }
-      return result
+
+      const selectedErrors = result.ok
+        ? {}
+        : pickErrorsForPaths(result.errors, requested)
+      if (!Object.keys(selectedErrors).length)
+        return { ok: true, values: live }
+
+      form.raw.setErrors({
+        ...form.raw.getErrors(),
+        ...selectedErrors,
+      })
+      return { ok: false, values: live, errors: selectedErrors }
     }
 
     if (!fieldResult.ok)
       return fieldResult as FormResult<TIn>
 
-    // Partial validate — field rules already ran full-schema for those props
+    // Partial validate — field rules already ran full-schema for those props.
     if (paths != null)
       return fieldResult as FormResult<TIn>
 
-    // Prefer host-trimmed values when available (trimOnSuccess)
+    // Prefer host-trimmed values when available (trimOnSuccess).
     const live = (fieldResult.values ?? form.getValues()) as TIn
     const result = parseLive(live)
     if (!result.ok) {
-      for (const [path, messages] of Object.entries(result.errors))
-        form.raw.setFieldError(path, messages)
+      form.raw.setErrors(result.errors)
       await surfaceZodErrors(result.errors)
     }
     return result
@@ -252,6 +288,7 @@ export function useZodForm<S extends ZodType<Record<string, unknown>>>(
   // Mutate the reactive form object — do NOT spread (would unwrap refs)
   return Object.assign(form, {
     validate,
+    validateField: validate,
     submit,
     schema,
   }) as UseZodFormReturn<S>

@@ -1,0 +1,91 @@
+{
+  "name": "@vformjs/naive-ui",
+  "version": "0.1.0",
+  "description": "Naive UI adapter for vformjs (useNaiveForm)",
+  "keywords": [
+    "vue",
+    "vue3",
+    "naive-ui",
+    "forms",
+    "form-validation",
+    "typescript",
+    "crud"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./zod": {
+      "import": {
+        "types": "./dist/use-zod-form.d.ts",
+        "default": "./dist/use-zod-form.js"
+      },
+      "require": {
+        "types": "./dist/use-zod-form.d.cts",
+        "default": "./dist/use-zod-form.cjs"
+      }
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --root ../.. packages/naive-ui/test"
+  },
+  "dependencies": {
+    "@vformjs/core": "workspace:^",
+    "@vformjs/vue": "workspace:^",
+    "@vformjs/zod": "workspace:^"
+  },
+  "peerDependencies": {
+    "naive-ui": ">=2.34.0",
+    "vue": "^3.0.0",
+    "zod": "^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "naive-ui": {
+      "optional": true
+    },
+    "zod": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "naive-ui": "^2.44.1",
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "vue": "catalog:",
+    "zod": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/daguanren21/vformjs.git",
+    "directory": "packages/naive-ui"
+  },
+  "homepage": "https://vformjs.vercel.app/guide",
+  "bugs": {
+    "url": "https://github.com/daguanren21/vformjs/issues"
+  }
+}

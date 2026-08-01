@@ -2,7 +2,7 @@
  * Smoke: playground Naive adapter built with defineAdapter.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { createNaiveAdapter } from '../../../playgrounds/vue3-naive-ui/src/form/create-naive-adapter'
+import { createNaiveAdapter } from '../src/create-adapter'
 
 describe('createNaiveAdapter (defineAdapter)', () => {
   it('fails when host unbound', async () => {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useZodForm } from '@vformjs/zod'
+import { useZodForm } from '@vformjs/naive-ui/zod'
 import {
   NButton,
   NForm,
@@ -10,7 +10,6 @@ import {
 } from 'naive-ui'
 import { ref } from 'vue'
 import { z } from 'zod'
-import { createNaiveAdapter } from '../form/create-naive-adapter'
 
 const log = ref('')
 
@@ -23,7 +22,7 @@ const schema = z.object({
   path: ['username'],
 })
 
-// 换 UI：用 zod 底层包 + 自带 adapter，不要用 element-plus 的 useZodForm
+// The official package preconfigures the Naive UI host adapter.
 const form = useZodForm({
   schema,
   defaults: {
@@ -31,7 +30,6 @@ const form = useZodForm({
     email: '',
     age: 18,
   },
-  adapter: createNaiveAdapter(),
   onSubmit: async (values) => {
     log.value = JSON.stringify(values, null, 2)
   },
@@ -51,7 +49,7 @@ async function onSubmit() {
 <template>
   <div class="demo">
     <p class="hint">
-      useZodForm（@vformjs/zod）+ createNaiveAdapter。
+      useZodForm（@vformjs/naive-ui/zod）已经绑定官方 adapter。
       输入 admin 看 refine 是否挂在 username 上。
     </p>
 

@@ -1,4 +1,7 @@
 import type { FormInst } from 'naive-ui';
+interface NaiveFormHost extends FormInst {
+    $el?: ParentNode;
+}
 /**
  * Naive UI n-form adapter — defineAdapter 写法。
  *
@@ -9,4 +12,5 @@ import type { FormInst } from 'naive-ui';
  *
  * @see https://www.naiveui.com/
  */
-export declare const createNaiveAdapter: import("@vformjs/core").DefineAdapterFactory<FormInst>;
+export declare const createNaiveAdapter: import("@vformjs/core").DefineAdapterFactory<NaiveFormHost>;
+export {};

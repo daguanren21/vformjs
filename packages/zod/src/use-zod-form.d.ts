@@ -23,13 +23,15 @@ export interface UseZodFormOptions<S extends ZodType<Record<string, unknown>>> e
      */
     arrays?: boolean;
 }
-export type UseZodFormReturn<S extends ZodType<Record<string, unknown>>> = Omit<UseFormReturn<ZodInput<S>>, 'submit' | 'validate'> & {
+export type UseZodFormReturn<S extends ZodType<Record<string, unknown>>> = Omit<UseFormReturn<ZodInput<S>>, 'submit' | 'validate' | 'validateField'> & {
     schema: S;
     /**
      * Validate. On success, `values` are **parsed output** (`z.output`).
      * On failure, `values` remain the live model (**input** shape).
      */
     validate: (paths?: Parameters<UseFormReturn<ZodInput<S>>['validate']>[0]) => Promise<FormResult<ZodOutput<S>> | FormResult<ZodInput<S>>>;
+    /** Validate one or more fields through the same Zod-aware path. */
+    validateField: (paths?: Parameters<UseFormReturn<ZodInput<S>>['validateField']>[0]) => Promise<FormResult<ZodOutput<S>> | FormResult<ZodInput<S>>>;
     /**
      * Submit with parsed output values on success.
      */

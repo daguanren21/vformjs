@@ -1,0 +1,49 @@
+title: "[showcase] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Share a real vformjs form. Concrete adoption notes help decide which adapters and migration tools should become official packages.
+  - type: dropdown
+    id: host
+    attributes:
+      label: UI Form host
+      options:
+        - Element Plus
+        - element-ui (Vue 2.7)
+        - Naive UI
+        - Ant Design Vue
+        - Custom UI / adapter
+    validations:
+      required: true
+  - type: textarea
+    id: scenario
+    attributes:
+      label: Form scenario
+      description: What create/edit/detail, linkage, array, API-error, or Zod behavior does the form use?
+    validations:
+      required: true
+  - type: dropdown
+    id: reuse
+    attributes:
+      label: Will you use vformjs in another form?
+      options:
+        - Yes
+        - No
+        - Not sure yet
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Adoption notes
+      description: What code disappeared, what stayed awkward, and what nearly blocked the integration?
+    validations:
+      required: true
+  - type: input
+    id: link
+    attributes:
+      label: Project or demo link
+      description: Optional public source or running demo.
+    validations:
+      required: false

@@ -120,6 +120,86 @@ describe('createForm', () => {
     if (!result.ok)
       expect(result.errors.name).toEqual(['bad'])
   })
+  it('rejects rules when no validation host is bound', async () => {
+    const onSubmit = vi.fn()
+    const form = createForm({
+      defaultValues: { name: '' },
+      rules: { name: ['required'] },
+      onSubmit,
+    })
+
+    const result = await form.submit()
+    expect(result.ok).toBe(false)
+    if (!result.ok)
+      expect(result.errors._form?.[0]).toMatch(/not bound/)
+    expect(onSubmit).not.toHaveBeenCalled()
+  })
+
+  it('stores server errors, scrolls to the first field, and clears changed paths', () => {
+    const scrollToField = vi.fn()
+    const form = createForm({
+      defaultValues: { email: '', name: '' },
+      adapter: {
+        validate: async () => ({ valid: true }),
+        scrollToField,
+      },
+    })
+    const incoming = { email: ['already used'], name: ['required'] }
+
+    form.setErrors(incoming)
+    incoming.email.push('mutated outside')
+    expect(form.getErrors().email).toEqual(['already used'])
+    expect(form.scrollToFirstError()).toBe('email')
+    expect(scrollToField).toHaveBeenCalledWith('email')
+
+    form.setFieldValue('email', 'next@example.com')
+    expect(form.getErrors()).toEqual({ name: ['required'] })
+  })
+
+  it('tracks changed paths against rebase and reset baselines', () => {
+    const form = createForm({
+      defaultValues: {
+        profile: { email: '' },
+        birthday: new Date('2026-01-01'),
+      },
+    })
+
+    expect(form.dirty).toBe(false)
+    form.setFieldValue('profile.email', 'first@example.com')
+    expect(form.dirty).toBe(true)
+    expect(form.changedPaths).toEqual(['profile.email'])
+
+    form.rebaseDefaults()
+    expect(form.dirty).toBe(false)
+    form.setFieldValue('birthday', new Date('2026-02-01'))
+    expect(form.changedPaths).toEqual(['birthday'])
+
+    form.reset()
+    expect(form.dirty).toBe(false)
+    expect(form.changedPaths).toEqual([])
+    expect(form.model.birthday).toEqual(new Date('2026-01-01'))
+  })
+
+  it('keeps unrelated errors during partial host validation', async () => {
+    const form = createForm({
+      defaultValues: { email: '', name: '' },
+      adapter: {
+        validate: async () => ({
+          valid: false,
+          errors: { email: ['invalid'] },
+        }),
+      },
+    })
+    form.setErrors({ name: ['server error'] })
+
+    const result = await form.validateField('email')
+    expect(result.ok).toBe(false)
+    expect(form.getErrors()).toEqual({
+      email: ['invalid'],
+      name: ['server error'],
+    })
+  })
+
 
   it('runs linkage on field change', async () => {
     const form = createForm({

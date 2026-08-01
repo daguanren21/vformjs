@@ -252,6 +252,48 @@ describe('useZodForm', () => {
     expect(res.errors.username?.[0]).toBe('no admin')
   })
 
+  it('headless validate uses schema without an explicit adapter', async () => {
+    const form = useZodForm({
+      schema: z.object({ email: z.email('invalid email') }),
+      defaults: { email: 'bad' },
+    })
+
+    const first = await form.validate()
+    expect(first.ok).toBe(false)
+    expect(form.errors.email).toEqual(['invalid email'])
+    expect(form.errors._form).toBeUndefined()
+
+    form.model.email = 'valid@example.com'
+    const second = await form.validate()
+    expect(second.ok).toBe(true)
+    expect(form.errors).toEqual({})
+  })
+
+  it('headless validateField uses Zod and preserves unrelated server errors', async () => {
+    const form = useZodForm({
+      schema: z.object({
+        email: z.email('invalid email'),
+        name: z.string(),
+      }),
+      defaults: { email: 'bad', name: 'Ada' },
+    })
+    form.setErrors({ name: ['server error'] })
+
+    const invalid = await form.validateField('email')
+    expect(invalid.ok).toBe(false)
+    if (!invalid.ok)
+      expect(invalid.errors).toEqual({ email: ['invalid email'] })
+    expect(form.errors).toEqual({
+      email: ['invalid email'],
+      name: ['server error'],
+    })
+
+    form.model.email = 'valid@example.com'
+    const valid = await form.validateField('email')
+    expect(valid.ok).toBe(true)
+    expect(form.errors).toEqual({ name: ['server error'] })
+  })
+
   it('headless revalidate clears stale errors after fix', async () => {
     const schema = z.object({
       username: z.string().min(3),

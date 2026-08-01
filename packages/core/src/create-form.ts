@@ -2,6 +2,7 @@ import {
   deepClone,
   deepMerge,
   getByPath,
+  isObjectLike,
   restoreInPlace,
   setByPath,
   type DeepPartial,
@@ -91,6 +92,108 @@ function trimTopLevelStrings<T extends Record<string, unknown>>(values: T): T {
 function defaultMeta(): FieldMeta {
   return { hidden: false, disabled: false }
 }
+function cloneErrors(source: FormErrors): FormErrors {
+  const cloned: FormErrors = {}
+  for (const [path, messages] of Object.entries(source)) {
+    if (messages.length)
+      cloned[path] = [...messages]
+  }
+  return cloned
+}
+
+function pathsOverlap(left: FieldPath, right: FieldPath): boolean {
+  return left === right
+    || left.startsWith(`${right}.`)
+    || right.startsWith(`${left}.`)
+}
+
+
+/** Diff two form snapshots and return changed dotted leaf paths. */
+export function diffChangedPaths(
+  previous: unknown,
+  next: unknown,
+  base = '',
+  out: FieldPath[] = [],
+): FieldPath[] {
+  if (Object.is(previous, next))
+    return out
+
+  if (previous instanceof Date || next instanceof Date) {
+    if (
+      (!(previous instanceof Date) || !(next instanceof Date) || previous.getTime() !== next.getTime())
+      && base
+    ) {
+      out.push(base)
+    }
+    return out
+  }
+
+  if (previous instanceof RegExp || next instanceof RegExp) {
+    if (
+      (!(previous instanceof RegExp)
+        || !(next instanceof RegExp)
+        || previous.source !== next.source
+        || previous.flags !== next.flags)
+      && base
+    ) {
+      out.push(base)
+    }
+    return out
+  }
+
+  if (previous instanceof Map || next instanceof Map) {
+    const nested: FieldPath[] = []
+    if (previous instanceof Map && next instanceof Map)
+      diffChangedPaths([...previous.entries()], [...next.entries()], '$', nested)
+    if ((!(previous instanceof Map) || !(next instanceof Map) || nested.length) && base)
+      out.push(base)
+    return out
+  }
+
+  if (previous instanceof Set || next instanceof Set) {
+    const nested: FieldPath[] = []
+    if (previous instanceof Set && next instanceof Set)
+      diffChangedPaths([...previous.values()], [...next.values()], '$', nested)
+    if ((!(previous instanceof Set) || !(next instanceof Set) || nested.length) && base)
+      out.push(base)
+    return out
+  }
+
+  if (Array.isArray(previous) || Array.isArray(next)) {
+    if (
+      !Array.isArray(previous)
+      || !Array.isArray(next)
+      || previous.length !== next.length
+    ) {
+      if (base)
+        out.push(base)
+      return out
+    }
+    for (let index = 0; index < next.length; index++) {
+      const path = base ? `${base}.${index}` : String(index)
+      diffChangedPaths(previous[index], next[index], path, out)
+    }
+    return out
+  }
+
+  if (isObjectLike(previous) && isObjectLike(next)) {
+    const keys = new Set([...Object.keys(previous), ...Object.keys(next)])
+    for (const key of keys) {
+      const path = base ? `${base}.${key}` : key
+      if (!(key in previous) || !(key in next)) {
+        out.push(path)
+        continue
+      }
+      diffChangedPaths(previous[key], next[key], path, out)
+    }
+    return out
+  }
+
+  if (base)
+    out.push(base)
+  return out
+}
+
 
 export function createForm<T extends Record<string, unknown>>(
   options: CreateFormOptions<T>,
@@ -112,6 +215,7 @@ export function createForm<T extends Record<string, unknown>>(
   const fieldRuleOverrides = new Map<string, ReturnType<typeof normalizeRuleInput> | null>()
   const metaMap = new Map<string, FieldMeta>()
   let errors: FormErrors = {}
+  let changedPaths: FieldPath[] = []
   let adapter: FormHostAdapter | undefined = options.adapter
   let submitting = false
   let form!: FormApi<T>
@@ -150,21 +254,68 @@ export function createForm<T extends Record<string, unknown>>(
 
   let linkageEngine: LinkageEngine | undefined
 
+  const setErrorState = (next: FormErrors) => {
+    errors = cloneErrors(next)
+    emit({ type: 'errors' })
+  }
+
+  const deleteErrorsForPaths = (paths?: ReadonlyArray<FieldPath>): boolean => {
+    const keys = Object.keys(errors)
+    if (!keys.length)
+      return false
+    if (!paths || paths.includes('*')) {
+      errors = {}
+      return true
+    }
+    let changed = false
+    for (const key of keys) {
+      if (key !== '_form' && paths.some(path => pathsOverlap(key, path))) {
+        delete errors[key]
+        changed = true
+      }
+    }
+    return changed
+  }
+
+  const refreshChangedState = () => {
+    const next = diffChangedPaths(baseline, values)
+    if (
+      changedPaths.length === next.length
+      && changedPaths.every((path, index) => path === next[index])
+    )
+      return
+    changedPaths = next
+    emit({ type: 'dirty' })
+  }
+
   const notifyValues = (paths: FieldPath[]) => {
+    if (deleteErrorsForPaths(paths))
+      emit({ type: 'errors' })
+    refreshChangedState()
     emit({ type: 'values', paths })
     linkageEngine?.schedule(paths)
   }
 
   const clearErrorsInternal = (paths?: FieldPath | FieldPath[]) => {
     if (paths == null) {
-      errors = {}
-      emit({ type: 'errors' })
+      setErrorState({})
       return
     }
     const list = Array.isArray(paths) ? paths : [paths]
-    for (const p of list)
-      delete errors[p]
-    emit({ type: 'errors' })
+    if (deleteErrorsForPaths(list))
+      emit({ type: 'errors' })
+  }
+
+  const invalidResult = (resultErrors: FormErrors): FormResult<T> => {
+    const result: FormResult<T> = {
+      ok: false,
+      values: snapshotValues(),
+      errors: cloneErrors(resultErrors),
+    }
+    if (options.throwOnInvalid)
+      throw Object.assign(new Error('form invalid'), result)
+    options.onInvalid?.(result.errors, { form })
+    return result
   }
 
   const createCtx = (): LinkageCtx<T> => ({
@@ -234,6 +385,13 @@ export function createForm<T extends Record<string, unknown>>(
     get submitting() {
       return submitting
     },
+    get dirty() {
+      return changedPaths.length > 0
+    },
+    get changedPaths() {
+      return [...changedPaths]
+    },
+
 
     getValues(opts) {
       return snapshotValues(opts?.hidden)
@@ -270,26 +428,24 @@ export function createForm<T extends Record<string, unknown>>(
           values as Record<string, unknown>,
           baseline as Record<string, unknown>,
         )
-        errors = {}
+        setErrorState({})
         emit({ type: 'reset' })
-        emit({ type: 'errors' })
         notifyValues(['*'])
         adapter?.afterModelReset?.()
         adapter?.clearValidate?.()
         return
       }
       const list = Array.isArray(paths) ? paths : [paths]
-      for (const p of list) {
-        setByPath(values, p, deepClone(getByPath(baseline, p)))
-        delete errors[p]
-      }
-      emit({ type: 'errors' })
+      for (const path of list)
+        setByPath(values, path, deepClone(getByPath(baseline, path)))
+      clearErrorsInternal(list)
       notifyValues(list)
       adapter?.clearValidate?.(list)
     },
 
     rebaseDefaults(next) {
       baseline = deepClone(next ?? values)
+      refreshChangedState()
     },
 
     getCreateDefaults() {
@@ -303,9 +459,8 @@ export function createForm<T extends Record<string, unknown>>(
         values as Record<string, unknown>,
         createDefaults as Record<string, unknown>,
       )
-      errors = {}
+      setErrorState({})
       emit({ type: 'reset' })
-      emit({ type: 'errors' })
       notifyValues(['*'])
       adapter?.afterModelReset?.()
       adapter?.clearValidate?.()
@@ -347,12 +502,27 @@ export function createForm<T extends Record<string, unknown>>(
     },
 
     getErrors() {
-      return { ...errors }
+      return cloneErrors(errors)
     },
 
     setFieldError(path, messages) {
-      errors[path] = Array.isArray(messages) ? messages : [messages]
+      const list = Array.isArray(messages) ? messages : [messages]
+      if (list.length)
+        errors[path] = [...list]
+      else
+        delete errors[path]
       emit({ type: 'errors' })
+    },
+
+    setErrors(next) {
+      setErrorState(next)
+    },
+
+    scrollToFirstError() {
+      const path = Object.keys(errors).find(key => key !== '_form')
+      if (path)
+        adapter?.scrollToField?.(path)
+      return path
     },
 
     clearErrors: clearErrorsInternal,
@@ -373,22 +543,27 @@ export function createForm<T extends Record<string, unknown>>(
       if (!adapter) {
         const localKeys = Object.keys(errors)
         const relevant = list
-          ? localKeys.filter(k => list.some(p => k === p || k.startsWith(`${p}.`)))
+          ? localKeys.filter(key => list.some(path => pathsOverlap(key, path)))
           : localKeys
         if (relevant.length) {
           const filtered: FormErrors = {}
-          for (const k of relevant)
-            filtered[k] = errors[k]!
-          const result: FormResult<T> = {
-            ok: false,
-            values: snapshotValues(),
-            errors: filtered,
-          }
-          if (options.throwOnInvalid)
-            throw Object.assign(new Error('form invalid'), result)
-          options.onInvalid?.(filtered, { form })
-          return result
+          for (const key of relevant)
+            filtered[key] = [...errors[key]!]
+          return invalidResult(filtered)
         }
+
+        const hasUnboundRules = Object.entries(computeRules()).some(([path, rules]) =>
+          rules.length > 0 && (!list || list.some(target => pathsOverlap(path, target))),
+        )
+        if (hasUnboundRules) {
+          return invalidResult({
+            _form: [
+              '[vformjs] Form validation host is not bound. '
+              + 'Pass an adapter, use a UI package, or use useZodForm().',
+            ],
+          })
+        }
+
         let vals = snapshotValues()
         if (options.trimOnSuccess)
           vals = trimTopLevelStrings(vals)
@@ -397,18 +572,28 @@ export function createForm<T extends Record<string, unknown>>(
 
       const host = await adapter.validate(list)
       if (!host.valid) {
-        errors = host.errors ?? errors
-        emit({ type: 'errors' })
-        const result: FormResult<T> = {
-          ok: false,
-          values: snapshotValues(),
-          errors: host.errors ?? errors,
+        const hostErrors = cloneErrors(
+          host.errors ?? { _form: ['Form validation failed'] },
+        )
+        if (list) {
+          const merged = cloneErrors(errors)
+          for (const key of Object.keys(merged)) {
+            if (key !== '_form' && list.some(path => pathsOverlap(key, path)))
+              delete merged[key]
+          }
+          Object.assign(merged, hostErrors)
+          setErrorState(merged)
         }
-        if (options.throwOnInvalid)
-          throw Object.assign(new Error('form invalid'), result)
-        options.onInvalid?.(result.errors, { form })
-        return result
+        else {
+          setErrorState(hostErrors)
+        }
+        return invalidResult(hostErrors)
       }
+
+      if (list)
+        clearErrorsInternal(list)
+      else if (Object.keys(errors).length)
+        setErrorState({})
 
       let vals = snapshotValues()
       if (options.trimOnSuccess)

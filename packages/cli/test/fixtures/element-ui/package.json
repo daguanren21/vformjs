@@ -1,0 +1,9 @@
+{
+  "name": "fixture-element-ui",
+  "private": true,
+  "dependencies": {
+    "@vformjs/element-ui": "0.2.0",
+    "element-ui": "^2.15.14",
+    "vue": "^2.7.16"
+  }
+}

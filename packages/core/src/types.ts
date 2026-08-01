@@ -121,6 +121,11 @@ export interface FormApi<T extends Record<string, unknown>> {
   /** Alias for values — Element `:model` binding. */
   readonly model: T
 
+  /** True when live values differ from the current reset baseline. */
+  readonly dirty: boolean
+  /** Dotted leaf paths that differ from the current reset baseline. */
+  readonly changedPaths: ReadonlyArray<FieldPath>
+
   getValues: (opts?: { hidden?: GetValuesMode }) => T
   setValues: (partial: DeepPartial<T>, opts?: { merge?: boolean }) => void
   setFieldValue: (path: FieldPath, value: unknown) => void
@@ -145,6 +150,10 @@ export interface FormApi<T extends Record<string, unknown>> {
 
   getErrors: () => FormErrors
   setFieldError: (path: FieldPath, messages: string | string[]) => void
+  /** Replace the complete core error map (for example, API field errors). */
+  setErrors: (errors: FormErrors) => void
+  /** Scroll the bound host to the first field error and return its path. */
+  scrollToFirstError: () => FieldPath | undefined
   clearErrors: (paths?: FieldPath | FieldPath[]) => void
   clearValidate: (paths?: FieldPath | FieldPath[]) => void
 
@@ -183,5 +192,6 @@ export type FormEvent =
   | { type: 'meta', path: FieldPath }
   | { type: 'rules' }
   | { type: 'errors' }
+  | { type: 'dirty' }
   | { type: 'reset' }
   | { type: 'submit-start' | 'submit-end' }

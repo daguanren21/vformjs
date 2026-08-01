@@ -13,7 +13,7 @@ interface ElementUiFormInstance {
   ) => void
   clearValidate?: (props?: string | string[]) => void
   /** Registered form items (element-ui internal) */
-  fields?: Array<{ prop?: string }>
+  fields?: Array<{ prop?: string, $el?: Element }>
 }
 
 function fieldsToErrors(fields: unknown): FormErrors {
@@ -123,6 +123,10 @@ export function createElementUiAdapter(): FormHostAdapter {
     },
     clearValidate(paths) {
       host?.clearValidate?.(paths)
+    },
+    scrollToField(path) {
+      const field = host?.fields?.find(item => item.prop != null && String(item.prop) === path)
+      field?.$el?.scrollIntoView({ block: 'center' })
     },
     afterModelReset() {
       host?.clearValidate?.()

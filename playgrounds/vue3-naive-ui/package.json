@@ -8,9 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@vformjs/core": "workspace:*",
-    "@vformjs/vue": "workspace:*",
-    "@vformjs/zod": "workspace:*",
+    "@vformjs/naive-ui": "workspace:*",
     "naive-ui": "^2.44.1",
     "vue": "catalog:",
     "vue-demi": "catalog:",

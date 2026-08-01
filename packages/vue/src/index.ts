@@ -4,6 +4,7 @@ export type {
   CreateFormOptions,
   FormApi,
   FormResult,
+  FormErrors,
   FieldArrayApi,
   LinkageRule,
   FormHostAdapter,

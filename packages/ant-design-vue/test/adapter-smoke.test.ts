@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createAntdAdapter } from '../../../playgrounds/vue3-antd-vue/src/form/create-antd-adapter'
+import { createAntdAdapter } from '../src/create-adapter'
 import { normalizeHostErrors } from '@vformjs/core'
 
 describe('createAntdAdapter (defineAdapter)', () => {
