@@ -1,6 +1,6 @@
 {
   "name": "vformjs",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Deterministic project scaffolding and diagnostics for vformjs",
   "keywords": [
     "vue",

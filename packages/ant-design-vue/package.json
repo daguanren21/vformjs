@@ -1,6 +1,6 @@
 {
   "name": "@vformjs/ant-design-vue",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Ant Design Vue adapter for vformjs (useAntdForm)",
   "keywords": [
     "vue",
