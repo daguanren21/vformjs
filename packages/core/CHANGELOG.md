@@ -4,7 +4,8 @@
 
 ### Minor Changes
 
-- 86fae5f: Add production-safe form state and validation contracts: active rules without a host now fail explicitly, server errors are reactive and scrollable, and `dirty`/`changedPaths` track the current reset baseline across core and Vue APIs.
+- 86fae5f: Unify production form contracts across core and Vue: external models, latest-wins cancellable validation, wildcard array rules, opaque value policies, joined submissions, exact-path bindings, and explicit `useFormGroup` composition now share the same reactive errors, dirty baselines, typed paths, host binding, reset, and validated-output pipeline.
+- d2a536d: Add typed API submission outcomes across every form entry. `onSubmit` and inline submit handlers can return `submitFail(error, { errors })`; `form.submit()` preserves the inferred error as `submitError`, copies optional field errors into form state, and keeps the existing `FormResult` return type when no submit error is configured.
 
 ## 0.1.1
 
