@@ -119,11 +119,11 @@ test('validates evidence coverage and human-attention invariants', () => {
 test('preserves partial runner output when a process times out', async () => {
   const result = await executeInvocation({
     command: process.execPath,
-    args: ['-e', 'process.stdout.write("partial"); setTimeout(() => {}, 1000)'],
-  }, process.cwd(), 20)
+    args: ['-e', 'process.stdout.write("partial"); setTimeout(() => {}, 10_000)'],
+  }, process.cwd(), 250)
   assert.equal(result.code, 124)
   assert.equal(result.stdout, 'partial')
-  assert.match(result.stderr, /exceeded 20ms/)
+  assert.match(result.stderr, /exceeded 250ms/)
 })
 
 test('collects a normalized repository signal without live network access', async () => {
