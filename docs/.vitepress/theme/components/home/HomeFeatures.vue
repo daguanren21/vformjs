@@ -15,12 +15,14 @@ defineProps<{
         :title="features.title"
         :description="features.description"
       />
-      <div class="ledger ph-reveal">
-        <article v-for="item in features.items" :key="item.title" class="cell">
-          <span class="marker">{{ item.marker }}</span>
-          <h3 class="cell-title">{{ item.title }}</h3>
-          <p class="cell-desc">{{ item.description }}</p>
-          <p class="cell-detail">{{ item.detail }}</p>
+      <div class="rows ph-reveal">
+        <article v-for="item in features.items" :key="item.title" class="row">
+          <span class="marker" aria-hidden="true">{{ item.marker }}</span>
+          <div class="row-body">
+            <h3 class="row-title">{{ item.title }}</h3>
+            <p class="row-desc">{{ item.description }}</p>
+            <p class="row-detail">{{ item.detail }}</p>
+          </div>
         </article>
       </div>
     </div>
@@ -28,96 +30,67 @@ defineProps<{
 </template>
 
 <style scoped>
-/* spec ledger: hairline grid, two columns */
-.ledger {
+/* two-column capability list: hairline rows, no card wall */
+.rows {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1px;
-  border: 1px solid var(--ph-line);
-  background: var(--ph-line);
+  column-gap: clamp(32px, 5vw, 64px);
+  border-top: 1px solid var(--ph-line);
 }
 
-.cell {
-  position: relative;
-  padding: clamp(24px, 3vw, 36px) clamp(22px, 2.6vw, 32px)
-    clamp(26px, 3vw, 38px);
-  background: var(--ph-paper);
-  transition: background-color 0.2s var(--ph-ease);
-}
-
-.cell:hover {
-  background: var(--ph-raised);
+.row {
+  display: flex;
+  gap: 16px;
+  padding: 26px 0;
+  border-bottom: 1px solid var(--ph-line);
 }
 
 .marker {
-  display: inline-block;
-  margin-bottom: 18px;
+  flex: none;
+  padding-top: 4px;
   font-family: var(--ph-font-mono);
   font-size: 12px;
-  letter-spacing: 0.12em;
-  color: var(--ph-ink-faint);
-  transition: color 0.2s var(--ph-ease);
-}
-
-.marker::after {
-  content: "";
-  display: block;
-  width: 100%;
-  height: 2px;
-  margin-top: 6px;
-  background: var(--ph-line-strong);
-  transition: background-color 0.2s var(--ph-ease), width 0.25s var(--ph-ease);
-}
-
-.cell:hover .marker {
+  font-weight: 600;
   color: var(--ph-accent);
 }
 
-.cell:hover .marker::after {
-  background: var(--ph-accent);
+.row-body {
+  min-width: 0;
 }
 
-.cell-title {
+.row-title {
   margin: 0;
-  font-family: var(--ph-font-display);
-  font-size: 1.3rem;
-  font-weight: 500;
-  line-height: 1.25;
+  font-size: 1.0625rem;
+  font-weight: 650;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
 }
 
-.cell-desc {
-  margin: 10px 0 0;
+.row-desc {
+  margin: 8px 0 0;
   font-size: 0.9375rem;
-  line-height: 1.65;
-  color: var(--ph-ink-soft);
-}
-
-.cell-detail {
-  margin: 16px 0 0;
-  padding-left: 12px;
-  border-left: 2px solid var(--ph-line);
-  font-family: var(--ph-font-mono);
-  font-size: 12px;
   line-height: 1.6;
-  color: var(--ph-ink-faint);
+  color: var(--ph-ink-soft);
 }
 
-.cell:hover .cell-detail {
-  border-left-color: var(--ph-accent);
+.row-detail {
+  display: inline-block;
+  max-width: 100%;
+  margin: 14px 0 0;
+  padding: 6px 10px;
+  border: 1px solid var(--ph-line);
+  border-radius: var(--ph-radius-sm);
+  background: var(--ph-sunken);
+  font-family: var(--ph-font-mono);
+  font-size: 11.5px;
+  line-height: 1.55;
   color: var(--ph-ink-soft);
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 760px) {
-  .ledger {
+  .rows {
     grid-template-columns: 1fr;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .cell,
-  .marker,
-  .marker::after {
-    transition: none;
   }
 }
 </style>

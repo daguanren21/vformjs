@@ -1,11 +1,13 @@
 import type {
   FieldPath,
   FormErrors,
+  FormItemBinding,
   FormHostAdapter,
+  FormValidationContext,
   HostValidateResult,
 } from './types'
 
-export interface AdapterValidateContext {
+export interface AdapterValidateContext extends FormValidationContext {
   /** Partial validate paths from form.validate(['a','b']). Empty = whole form. */
   paths?: FieldPath[]
 }
@@ -35,6 +37,7 @@ export interface DefineAdapterOptions<THost = unknown> {
   clearValidate?: (host: THost, paths?: FieldPath[]) => void
 
   scrollToField?: (host: THost, path: FieldPath) => void
+  itemProps?: (path: FieldPath, error?: string) => FormItemBinding
 
   /** After form.reset / load('create'). Usually same as clearValidate. */
   afterModelReset?: (host: THost) => void
@@ -221,9 +224,9 @@ export function normalizeHostErrors(err: unknown): FormErrors {
  * })
  *
  * // usage
- * const form = useForm({ adapter: createNaiveAdapter(), defaults, rules })
- * form.bindHost(nFormInst)
- * ```
+ * const form = useForm({ adapter: createNaiveAdapter(), defaultValues, rules })
+ * // <n-form v-bind="form.host">...</n-form>
+ * // <n-form-item v-bind="form.item('name')">...</n-form-item>
  */
 export function defineAdapter<THost = unknown>(
   options: DefineAdapterOptions<THost>,
@@ -231,8 +234,8 @@ export function defineAdapter<THost = unknown>(
   const mapErrors = options.mapErrors ?? normalizeHostErrors
   const unboundMessage = options.unboundMessage
     ?? (options.name
-      ? `[${options.name}] form host is not bound. Call form.bindHost(formRef).`
-      : 'Form host is not bound. Call form.bindHost(formRef).')
+      ? `[${options.name}] form host is not bound. Bind it with v-bind="form.host".`
+      : 'Form host is not bound. Bind it with v-bind="form.host".')
 
   return function createAdapter() {
     let host: THost | null = null
@@ -242,16 +245,23 @@ export function defineAdapter<THost = unknown>(
         host = (instance as THost | null) ?? null
       },
 
-      async validate(paths?: FieldPath[]): Promise<HostValidateResult> {
+      async validate(
+        paths?: FieldPath[],
+        validation?: FormValidationContext,
+      ): Promise<HostValidateResult> {
         if (host == null) {
           return {
             valid: false,
             errors: { _form: [unboundMessage] },
+            unbound: true,
           }
         }
 
         try {
-          const ctx: AdapterValidateContext = {}
+          const ctx: AdapterValidateContext = {
+            signal: validation?.signal ?? new AbortController().signal,
+            validationId: validation?.validationId ?? 0,
+          }
           if (paths?.length)
             ctx.paths = paths
           const result = await options.validate(host, ctx)
@@ -277,6 +287,11 @@ export function defineAdapter<THost = unknown>(
         if (host == null || !options.scrollToField)
           return
         options.scrollToField(host, path)
+      },
+
+      getItemProps(path, error) {
+        return options.itemProps?.(path, error)
+          ?? { 'data-vform-path': path }
       },
 
       afterModelReset() {

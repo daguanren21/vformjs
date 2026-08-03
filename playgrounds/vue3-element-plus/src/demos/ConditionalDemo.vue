@@ -70,7 +70,7 @@ async function onSubmit() {
     <p class="hint">
       when / whenRules 条件显隐；省变更清空市（linkage deps 精确触发）
     </p>
-    <el-form v-bind="form.el" label-width="110px" style="max-width: 520px">
+    <el-form v-bind="form.host" label-width="110px" style="max-width: 520px">
       <el-form-item label="需要发票" prop="needInvoice">
         <el-switch v-model="form.model.needInvoice" />
       </el-form-item>

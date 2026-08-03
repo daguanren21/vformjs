@@ -20,12 +20,14 @@ import { createElementPlusAdapter } from './create-adapter'
  * })
  * ```
  * ```vue
- * <el-form v-bind="form.el">...</el-form>
+ * <el-form v-bind="form.host">...</el-form>
  * <el-button @click="form.submit()">提交</el-button>
  * ```
  */
-export type UseElFormOptions<T extends Record<string, unknown>> =
-  Omit<UseFormOptions<T>, 'defaultValues' | 'adapter'> & {
+export type UseElFormOptions<
+  T extends object,
+  TSubmitError = never,
+> = Omit<UseFormOptions<T, TSubmitError>, 'defaultValues' | 'adapter'> & {
     /**
      * 初始值（必填）。推断表单模型类型 `T` 的主要来源。
      * 也可用 `() => T` 惰性创建。
@@ -33,9 +35,12 @@ export type UseElFormOptions<T extends Record<string, unknown>> =
     defaults: T | (() => T)
   }
 
-export function useElForm<T extends Record<string, unknown>>(
-  options: UseElFormOptions<T>,
-): UseFormReturn<T> {
+export function useElForm<
+  T extends object,
+  TSubmitError = never,
+>(
+  options: UseElFormOptions<T, TSubmitError>,
+): UseFormReturn<T, TSubmitError> {
   const { defaults, ...rest } = options
   return useForm({
     ...rest,

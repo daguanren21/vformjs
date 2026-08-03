@@ -16,17 +16,22 @@ import { createElementUiAdapter } from './create-adapter'
  * })
  * ```
  */
-export type UseElFormOptions<T extends Record<string, unknown>> =
-  Omit<UseFormOptions<T>, 'defaultValues' | 'adapter'> & {
+export type UseElFormOptions<
+  T extends object,
+  TSubmitError = never,
+> = Omit<UseFormOptions<T, TSubmitError>, 'defaultValues' | 'adapter'> & {
     /**
      * 初始值（必填）。推断表单模型类型 `T` 的主要来源。
      */
     defaults: T | (() => T)
   }
 
-export function useElForm<T extends Record<string, unknown>>(
-  options: UseElFormOptions<T>,
-): UseFormReturn<T> {
+export function useElForm<
+  T extends object,
+  TSubmitError = never,
+>(
+  options: UseElFormOptions<T, TSubmitError>,
+): UseFormReturn<T, TSubmitError> {
   const { defaults, ...rest } = options
   return useForm({
     ...rest,

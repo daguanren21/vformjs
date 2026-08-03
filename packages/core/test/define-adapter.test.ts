@@ -106,14 +106,22 @@ describe('defineAdapter', () => {
     expect((await okAdapter.validate()).valid).toBe(true)
   })
 
-  it('passes paths into validate ctx', async () => {
+  it('passes validation context into the adapter hook', async () => {
     const spy = vi.fn(async () => {})
     const create = defineAdapter({
       validate: spy,
     })
     const adapter = create()
+    const controller = new AbortController()
     adapter.bind?.({})
-    await adapter.validate(['email', 'name'])
-    expect(spy).toHaveBeenCalledWith({}, { paths: ['email', 'name'] })
+    await adapter.validate(
+      ['email', 'name'],
+      { signal: controller.signal, validationId: 42 },
+    )
+    expect(spy).toHaveBeenCalledWith({}, {
+      paths: ['email', 'name'],
+      signal: controller.signal,
+      validationId: 42,
+    })
   })
 })

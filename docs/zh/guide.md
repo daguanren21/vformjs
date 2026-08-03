@@ -29,7 +29,7 @@ pnpm add @vformjs/naive-ui naive-ui vue
 `defaults` 会推导 `form.model` 和 `onSubmit(values)` 的类型。
 
 ```ts
-import { useElForm, r } from '@vformjs/element-plus'
+import { createRuleBuilders, enUSRuleMessages, r, submitFail, useElForm } from '@vformjs/element-plus'
 
 const form = useElForm({
   defaults: {
@@ -46,22 +46,25 @@ const form = useElForm({
 })
 ```
 
+需要英文规则消息时创建独立实例，不修改全局状态：
+
+```ts
+const en = createRuleBuilders(enUSRuleMessages)
+en.required() // Required
+```
+
 ## 绑定现有 Form
 
-`form.el` 包含宿主需要的 `ref`、`model`、`rules`。
+`form.host` 包含宿主需要的 `ref`、`model`、`rules`；`form.item(path)` 负责字段属性与错误。
 
 ```vue
 <template>
-  <el-form v-bind="form.el" label-width="96px">
-    <el-form-item label="姓名" prop="name">
+  <el-form v-bind="form.host" label-width="96px">
+    <el-form-item label="姓名" v-bind="form.item('name')">
       <el-input v-model="form.model.name" />
     </el-form-item>
 
-    <el-form-item
-      label="邮箱"
-      prop="email"
-      :error="form.errors.email?.[0]"
-    >
+    <el-form-item label="邮箱" v-bind="form.item('email')">
       <el-input v-model="form.model.email" />
     </el-form-item>
 
@@ -87,7 +90,7 @@ form.load('detail', detail)
 ```
 
 ```vue
-<el-form v-if="form.editable" v-bind="form.el">
+<el-form v-if="form.editable" v-bind="form.host">
   <!-- inputs -->
 </el-form>
 
@@ -103,18 +106,35 @@ form.load('detail', detail)
 ## 接口错误和未保存状态
 
 ```ts
-const result = await api.save(form.getValues())
+const result = await form.submit(async (values) => {
+  const response = await api.save(values)
+  if (!response.ok) {
+    return submitFail(response.error, {
+      errors: response.fieldErrors,
+    })
+  }
+})
 
-if (!result.ok) {
-  form.setErrors(result.fieldErrors)
-  form.scrollToFirstError()
-}
+if (!result.ok && 'submitError' in result)
+  result.submitError // 保留 API 错误的具体类型
+```
 
+`submitFail` 会把可选字段错误同步到响应式 `form.errors`。校验失败仍是原来的
+`{ ok: false, values, errors }` 分支。handler 抛出或 reject 时仍然按异常传播；
+可预期的 API 失败需要显式转换。
+提交失败默认滚动到第一个字段错误；只有页面自行处理错误导航时才设置
+`scrollToError: false`。
+
+```ts
 form.dirty        // 是否偏离当前重置基线
 form.changedPaths // 例如 ['email']
 ```
 
 字段值变化后，对应的旧接口错误会自动清掉。`load('edit')`、`load('detail')`、`rebaseDefaults()`、`reset()` 都会更新基线。
+
+大型表单可设置 `modelTracking: 'explicit'`，并用
+`form.field('profile.email')` 获得类型安全的可写 computed。此模式不会
+全量 deep watch / clone 模型；更新必须经过 field 或 form 方法。
 
 ## 条件字段
 
@@ -152,7 +172,13 @@ contacts.remove(0)
 contacts.move(1, 0)
 ```
 
-`contacts.fields.value` 提供稳定 key 和当前 index。
+`contacts.fields` 提供稳定 key 和当前 index，key 不会写入业务数据。
+
+行规则可写成 `'contacts.*.name': [r.required()]`。`whenRules` 的第二个
+参数提供当前 `item`、`index` 和展开后的 `path`。
+
+多个独立宿主表单使用 `useFormGroup({ base, details, fees })` 显式组合；
+group 聚合 `validate`、`submit`、`dirty`、`changedPaths`、错误滚动和 `reset`。
 
 ## Zod
 
@@ -176,16 +202,23 @@ const form = useZodForm({
 
 Naive UI 与 Ant Design Vue 项目只需把导入路径换成各自官方包的 `/zod` 子路径。
 
+Zod 是 core 的唯一 resolver，支持异步 refine；UI adapter 只处理宿主绑定、错误展示和滚动。
+
 ## Agent CLI
 
 ```bash
 pnpm dlx vformjs init
 pnpm dlx vformjs add form profile
+pnpm dlx vformjs audit forms --json
 pnpm dlx vformjs doctor
 pnpm dlx vformjs migrate vue2-to-vue3 --dry-run --json
 pnpm dlx vformjs skill install
 ```
 
-CLI 根据 `package.json` 选择官方 adapter，并生成带类型的 form 模块。`init`、`add` 重复执行结果一致；文件被修改后默认拒绝覆盖。自动化流程先用 `--dry-run --json` 查看计划。
+CLI 根据 `package.json` 选择官方 adapter。生成模块包含类型安全路径、类型化提交结果、独立语言规则，以及唯一的 `form.host` / `form.item(path)` 绑定；Zod 只从 `/zod` 子入口导入。`init`、`add` 可重复执行，已编辑文件默认拒绝覆盖。
+
+`audit forms` 只读取源码，标记单/多宿主、条件字段、动态数组、外部模型、
+自定义宿主和 Options API，并给出保守的自动/人工分类。私有 UI 包不做
+自动检测；使用 `--adapter-package` 和 `--form-factory` 显式配置业务 preset。
 
 完整类型和底层方法见 [API 速查](/zh/api)。英文完整指南保留在 [Guide](/guide)。

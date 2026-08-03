@@ -3,6 +3,7 @@ import {
   cpSync,
   existsSync,
   mkdtempSync,
+  mkdirSync,
   readFileSync,
   rmSync,
 } from 'node:fs'
@@ -108,6 +109,21 @@ describe('vformjs CLI fixtures', () => {
     const formPath = resolve(root, 'src/forms/use-example-form.ts')
     const formSource = readFileSync(formPath, 'utf8')
     expect(formSource).toContain(`from '${adapter}'`)
+    expect(formSource).toContain('createFieldPath')
+    expect(formSource).toContain('SubmitHandlerResult<TError>')
+    expect(formSource).toContain('v-bind="form.host"')
+    expect(formSource).toContain('form.item(')
+    expect(formSource).not.toContain('scrollToFirstError')
+    if (zod) {
+      expect(adapter.endsWith('/zod')).toBe(true)
+      expect(formSource).toContain('z.input<')
+      expect(formSource).toContain('z.output<')
+    }
+    else {
+      expect(formSource).toContain('createRuleBuilders')
+      expect(formSource).toContain('enUSRuleMessages')
+      expect(formSource).not.toContain('useZodForm')
+    }
     expectValidTypeScript(formPath)
 
     const second = captureIo()
@@ -134,6 +150,121 @@ describe('vformjs CLI fixtures', () => {
     expect(await runCli(['init', '--cwd', root, '--dry-run', '--json'], root, capture.io)).toBe(0)
     expect(existsSync(resolve(root, '.vformjs.json'))).toBe(false)
     expect(capture.output.join('\n')).toContain('would-create')
+  })
+
+  it('generates forms from an explicit custom preset', async () => {
+    const root = copyFixture('element-plus')
+    const capture = captureIo()
+    expect(await runCli([
+      'init',
+      '--cwd',
+      root,
+      '--host',
+      'company',
+      '--adapter-package',
+      '@vformjs/element-plus',
+      '--form-factory',
+      'useElForm',
+    ], root, capture.io), capture.errors.join('\n')).toBe(0)
+
+    const config = JSON.parse(
+      readFileSync(resolve(root, '.vformjs.json'), 'utf8'),
+    ) as {
+      host: string
+      preset: {
+        adapterPackage: string
+        formFactory: string
+      }
+    }
+    expect(config).toMatchObject({
+      host: 'company',
+      preset: {
+        adapterPackage: '@vformjs/element-plus',
+        formFactory: 'useElForm',
+      },
+    })
+
+    const formPath = resolve(root, 'src/forms/use-example-form.ts')
+    expect(readFileSync(formPath, 'utf8')).toContain(
+      `from '@vformjs/element-plus'`,
+    )
+    expectValidTypeScript(formPath)
+
+    const doctor = captureIo()
+    expect(await runCli(['doctor', '--cwd', root], root, doctor.io)).toBe(0)
+    expect(doctor.output).toContain('[PASS] Configured host: company')
+  })
+
+  it('audits simple and complex forms without modifying sources', async () => {
+    const root = copyFixture('element-plus')
+    const sourceRoot = resolve(root, 'src')
+    mkdirSync(sourceRoot, { recursive: true })
+    writeFileSync(resolve(sourceRoot, 'SimpleForm.vue'), `
+<script setup lang="ts">
+import { useElForm } from '@vformjs/element-plus'
+const form = useElForm({ defaults: { name: '' } })
+</script>
+<template><el-form v-bind="form.host" /></template>
+`)
+    writeFileSync(resolve(sourceRoot, 'ComplexForm.vue'), `
+<script>
+export default {
+  props: { modelValue: Object },
+  data() { return { rows: [] } },
+  methods: { validate() { return this.$refs.form.validate() } },
+}
+</script>
+<template>
+  <CustomForm v-if="modelValue" ref="form">
+    <div v-for="(row, index) in rows" :key="index" />
+  </CustomForm>
+</template>
+`)
+
+    const capture = captureIo()
+    expect(await runCli([
+      'audit',
+      'forms',
+      '--cwd',
+      root,
+      '--report',
+      'reports/forms.json',
+      '--json',
+    ], root, capture.io), capture.errors.join('\n')).toBe(0)
+
+    const output = JSON.parse(capture.output.join('\n')) as {
+      result: {
+        formsFound: number
+        mechanical: number
+        manual: number
+        forms: Array<{
+          file: string
+          labels: string[]
+          migration: string
+        }>
+      }
+    }
+    expect(output.result).toMatchObject({
+      formsFound: 2,
+      mechanical: 1,
+      manual: 1,
+    })
+    expect(output.result.forms).toContainEqual(expect.objectContaining({
+      file: 'src/SimpleForm.vue',
+      migration: 'mechanical',
+    }))
+    expect(output.result.forms).toContainEqual(expect.objectContaining({
+      file: 'src/ComplexForm.vue',
+      migration: 'manual',
+      labels: expect.arrayContaining([
+        'conditional',
+        'custom-host',
+        'dynamic-array',
+        'external-model',
+        'options-api',
+      ]),
+    }))
+    expect(existsSync(resolve(root, 'reports/forms.json'))).toBe(true)
   })
 
   it('installs the canonical coding-agent skill idempotently', async () => {

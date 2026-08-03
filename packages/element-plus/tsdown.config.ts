@@ -4,7 +4,7 @@ export default defineConfig({
   entry: ['src/index.ts', 'src/use-zod-form.ts'],
   tsconfig: 'tsconfig.build.json',
   format: ['esm', 'cjs'],
-  dts: true,
+  dts: { generator: 'oxc' },
   external: [
     'vue',
     'vue-demi',

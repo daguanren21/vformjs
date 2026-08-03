@@ -3,13 +3,18 @@ import {
   deepMerge,
   getByPath,
   isObjectLike,
+  isAtomicValue,
   restoreInPlace,
   setByPath,
   type DeepPartial,
+  type FormValuePolicy,
 } from './vendor/shared'
 import { createFieldArray } from './field-array'
 import { createLinkageEngine, type LinkageEngine } from './linkage'
 import {
+  createRulePatternContext,
+  expandPathPattern,
+  materializeRulesMap,
   mergeFieldRules,
   normalizeRuleInput,
   resolveRulesSource,
@@ -23,54 +28,110 @@ import type {
   FormEvent,
   FormHostAdapter,
   FormResult,
+  FormValidationResult,
   FormRulesMap,
   LinkageCtx,
   LinkageRule,
   RulesSource,
+  SubmitAction,
+  SubmitFailureResult,
+  SubmitOutcome,
+  SubmitResult,
 } from './types'
 
-function buildDeclarativeLinkage<T extends Record<string, unknown>>(
-  options: CreateFormOptions<T>,
+/** Explicit successful API submission outcome. Returning `void` is equivalent. */
+export function submitOk(): SubmitOutcome<never> {
+  return { ok: true }
+}
+
+/** Typed API submission failure, optionally carrying field errors for the form state. */
+export function submitFail<TError>(
+  error: TError,
+  options?: { errors?: FormErrors },
+): SubmitOutcome<TError> {
+  if (options?.errors === undefined)
+    return { ok: false, error }
+  return { ok: false, error, errors: options.errors }
+}
+
+function buildDeclarativeLinkage<
+  T extends object,
+  TSubmitError,
+  TOutput extends object,
+>(
+  options: CreateFormOptions<T, TSubmitError, TOutput>,
 ): LinkageRule<T>[] {
   const rules: LinkageRule<T>[] = []
   const when = options.when
   if (when) {
-    const paths = Object.keys(when)
-    if (paths.length) {
+    const patterns = Object.keys(when)
+    const activeByPattern = new Map<string, Set<string>>()
+    if (patterns.length) {
       rules.push({
-        // predicates read arbitrary fields (e.g. needInvoice) — re-run on any change
+        // Predicates may read arbitrary fields — re-run on any change.
         deps: '*',
         run: ({ setHidden, setFieldRules, clearValidate, values }) => {
-          for (const path of paths) {
-            const visible = Boolean(when[path]?.(values))
-            setHidden(path, !visible)
-            if (!visible) {
-              setFieldRules(path, null)
-              clearValidate(path)
+          for (const pattern of patterns) {
+            const paths = expandPathPattern(values, pattern)
+            const active = new Set(paths)
+            for (const stale of activeByPattern.get(pattern) ?? []) {
+              if (active.has(stale))
+                continue
+              setHidden(stale, false)
+              setFieldRules(stale, undefined)
+              clearValidate(stale)
             }
-            else if (!options.whenRules?.[path]) {
-              // drop override so base rules apply again when shown
-              setFieldRules(path, undefined)
+            activeByPattern.set(pattern, active)
+
+            const predicate = when[pattern]!
+            for (const path of paths) {
+              const context = createRulePatternContext(values, pattern, path)
+              const visible = Boolean(predicate(values, context))
+              setHidden(path, !visible)
+              if (!visible) {
+                setFieldRules(path, null)
+                clearValidate(path)
+              }
+              else if (!options.whenRules?.[pattern]) {
+                // Drop override so materialized base rules apply again.
+                setFieldRules(path, undefined)
+              }
             }
           }
         },
       })
     }
   }
+
   const whenRules = options.whenRules
   if (whenRules) {
-    const paths = Object.keys(whenRules)
-    if (paths.length) {
+    const patterns = Object.keys(whenRules)
+    const activeByPattern = new Map<string, Set<string>>()
+    if (patterns.length) {
       rules.push({
         deps: '*',
-        run: ({ setFieldRules, values }) => {
-          for (const path of paths) {
-            if (when?.[path] && !when[path]!(values)) {
-              setFieldRules(path, null)
-              continue
+        run: ({ setFieldRules, clearValidate, values }) => {
+          for (const pattern of patterns) {
+            const paths = expandPathPattern(values, pattern)
+            const active = new Set(paths)
+            for (const stale of activeByPattern.get(pattern) ?? []) {
+              if (active.has(stale))
+                continue
+              setFieldRules(stale, undefined)
+              clearValidate(stale)
             }
-            const next = whenRules[path]?.(values) ?? null
-            setFieldRules(path, next)
+            activeByPattern.set(pattern, active)
+
+            const predicate = when?.[pattern]
+            const resolveRules = whenRules[pattern]!
+            for (const path of paths) {
+              const context = createRulePatternContext(values, pattern, path)
+              if (predicate && !predicate(values, context)) {
+                setFieldRules(path, null)
+                continue
+              }
+              setFieldRules(path, resolveRules(values, context) ?? null)
+            }
           }
         },
       })
@@ -79,12 +140,15 @@ function buildDeclarativeLinkage<T extends Record<string, unknown>>(
   return rules
 }
 
-function trimTopLevelStrings<T extends Record<string, unknown>>(values: T): T {
-  const out = deepClone(values)
-  for (const key of Object.keys(out)) {
-    const v = out[key]
-    if (typeof v === 'string')
-      (out as Record<string, unknown>)[key] = v.trim()
+function trimTopLevelStrings<T extends object>(
+  values: T,
+  valuePolicy?: FormValuePolicy,
+): T {
+  const out = deepClone(values, valuePolicy)
+  const record = out as Record<string, unknown>
+  for (const key of Object.keys(record)) {
+    if (typeof record[key] === 'string')
+      record[key] = record[key].trim()
   }
   return out
 }
@@ -114,7 +178,14 @@ export function diffChangedPaths(
   next: unknown,
   base = '',
   out: FieldPath[] = [],
+  valuePolicy?: FormValuePolicy,
 ): FieldPath[] {
+  const configuredEqual = valuePolicy?.equal?.(previous, next, { path: base })
+  if (configuredEqual !== undefined) {
+    if (!configuredEqual && base)
+      out.push(base)
+    return out
+  }
   if (Object.is(previous, next))
     return out
 
@@ -144,7 +215,13 @@ export function diffChangedPaths(
   if (previous instanceof Map || next instanceof Map) {
     const nested: FieldPath[] = []
     if (previous instanceof Map && next instanceof Map)
-      diffChangedPaths([...previous.entries()], [...next.entries()], '$', nested)
+      diffChangedPaths(
+        [...previous.entries()],
+        [...next.entries()],
+        base || '$',
+        nested,
+        valuePolicy,
+      )
     if ((!(previous instanceof Map) || !(next instanceof Map) || nested.length) && base)
       out.push(base)
     return out
@@ -153,8 +230,23 @@ export function diffChangedPaths(
   if (previous instanceof Set || next instanceof Set) {
     const nested: FieldPath[] = []
     if (previous instanceof Set && next instanceof Set)
-      diffChangedPaths([...previous.values()], [...next.values()], '$', nested)
+      diffChangedPaths(
+        [...previous.values()],
+        [...next.values()],
+        base || '$',
+        nested,
+        valuePolicy,
+      )
     if ((!(previous instanceof Set) || !(next instanceof Set) || nested.length) && base)
+      out.push(base)
+    return out
+  }
+
+  if (
+    isAtomicValue(previous, valuePolicy, base)
+    || isAtomicValue(next, valuePolicy, base)
+  ) {
+    if (base)
       out.push(base)
     return out
   }
@@ -171,7 +263,7 @@ export function diffChangedPaths(
     }
     for (let index = 0; index < next.length; index++) {
       const path = base ? `${base}.${index}` : String(index)
-      diffChangedPaths(previous[index], next[index], path, out)
+      diffChangedPaths(previous[index], next[index], path, out, valuePolicy)
     }
     return out
   }
@@ -184,7 +276,7 @@ export function diffChangedPaths(
         out.push(path)
         continue
       }
-      diffChangedPaths(previous[key], next[key], path, out)
+      diffChangedPaths(previous[key], next[key], path, out, valuePolicy)
     }
     return out
   }
@@ -195,30 +287,53 @@ export function diffChangedPaths(
 }
 
 
-export function createForm<T extends Record<string, unknown>>(
-  options: CreateFormOptions<T>,
-): FormApi<T> {
-  const initial = deepClone(
-    typeof options.defaultValues === 'function'
-      ? options.defaultValues()
-      : options.defaultValues,
-  )
-  let baseline = deepClone(initial)
+export function createForm<
+  T extends object,
+  TSubmitError = never,
+  TOutput extends object = T,
+>(
+  options: CreateFormOptions<T, TSubmitError, TOutput>,
+): FormApi<T, TSubmitError, TOutput> {
+  if (options.model !== undefined && options.createState !== undefined) {
+    throw new Error(
+      '[vformjs] model and createState are mutually exclusive. '
+      + 'Pass an existing model or a state factory, not both.',
+    )
+  }
+  const valuePolicy = options.valuePolicy
+  const submitPolicy = options.submitPolicy ?? 'join'
+
+  const sourceDefaults = typeof options.defaultValues === 'function'
+    ? options.defaultValues()
+    : options.defaultValues
+  const initial = deepClone(sourceDefaults, valuePolicy)
+  let baseline = deepClone(initial, valuePolicy)
   /** Immutable create-mode factory defaults (never rebased by edit). */
-  const createDefaults = deepClone(initial)
-  const rawValues = deepClone(initial) as T
-  const values = options.createState
-    ? options.createState(rawValues)
-    : rawValues
+  const createDefaults = deepClone(initial, valuePolicy)
+  const rawValues = deepClone(initial, valuePolicy) as T
+  const values = options.model
+    ?? (options.createState ? options.createState(rawValues) : rawValues)
 
   let rulesSource: RulesSource<T> | undefined = options.rules
   const fieldRuleOverrides = new Map<string, ReturnType<typeof normalizeRuleInput> | null>()
   const metaMap = new Map<string, FieldMeta>()
   let errors: FormErrors = {}
-  let changedPaths: FieldPath[] = []
+  let changedPaths: FieldPath[] = diffChangedPaths(
+    baseline,
+    values,
+    '',
+    [],
+    valuePolicy,
+  )
+  changedPaths.sort((left, right) => left < right ? -1 : left > right ? 1 : 0)
+  const changedPathSet = new Set<FieldPath>(changedPaths)
   let adapter: FormHostAdapter | undefined = options.adapter
   let submitting = false
-  let form!: FormApi<T>
+  let activeSubmissionCount = 0
+  let joinedSubmission:
+    | Promise<SubmitResult<TOutput, unknown, T>>
+    | undefined
+  let form!: FormApi<T, TSubmitError, TOutput>
 
   const listeners = new Set<(event: FormEvent) => void>()
   const emit = (event: FormEvent) => {
@@ -236,13 +351,16 @@ export function createForm<T extends Record<string, unknown>>(
   }
 
   const computeRules = (): FormRulesMap => {
-    const base = resolveRulesSource(rulesSource, values)
-    return mergeFieldRules(base, fieldRuleOverrides)
+    const base = materializeRulesMap(
+      resolveRulesSource(rulesSource, values),
+      values,
+    )
+    return mergeFieldRules(base, fieldRuleOverrides, values)
   }
 
   const snapshotValues = (hiddenMode?: 'keep' | 'omit'): T => {
     const mode = hiddenMode ?? options.hiddenValues ?? 'keep'
-    const cloned = deepClone(values)
+    const cloned = deepClone(values, valuePolicy)
     if (mode === 'omit') {
       for (const [path, meta] of metaMap) {
         if (meta.hidden)
@@ -277,8 +395,56 @@ export function createForm<T extends Record<string, unknown>>(
     return changed
   }
 
-  const refreshChangedState = () => {
-    const next = diffChangedPaths(baseline, values)
+  const refreshChangedState = (paths?: ReadonlyArray<FieldPath>) => {
+    let next: FieldPath[]
+
+    if (!paths || paths.includes('*')) {
+      next = diffChangedPaths(baseline, values, '', [], valuePolicy)
+      changedPathSet.clear()
+      for (const path of next)
+        changedPathSet.add(path)
+    }
+    else {
+      const scopes: FieldPath[] = []
+      for (const path of paths) {
+        let scope = path
+        for (const changed of changedPathSet) {
+          if (path.startsWith(`${changed}.`)) {
+            scope = changed
+            break
+          }
+        }
+        if (scopes.some(existing =>
+          scope === existing || scope.startsWith(`${existing}.`),
+        )) {
+          continue
+        }
+        for (let index = scopes.length - 1; index >= 0; index--) {
+          if (scopes[index]!.startsWith(`${scope}.`))
+            scopes.splice(index, 1)
+        }
+        scopes.push(scope)
+      }
+
+      for (const scope of scopes) {
+        for (const changed of changedPathSet) {
+          if (pathsOverlap(changed, scope))
+            changedPathSet.delete(changed)
+        }
+        const scoped = diffChangedPaths(
+          getByPath(baseline, scope),
+          getByPath(values, scope),
+          scope,
+          [],
+          valuePolicy,
+        )
+        for (const path of scoped)
+          changedPathSet.add(path)
+      }
+      next = [...changedPathSet]
+    }
+
+    next.sort((left, right) => left < right ? -1 : left > right ? 1 : 0)
     if (
       changedPaths.length === next.length
       && changedPaths.every((path, index) => path === next[index])
@@ -288,10 +454,16 @@ export function createForm<T extends Record<string, unknown>>(
     emit({ type: 'dirty' })
   }
 
+  const invalidateValidation = () => {
+    if (activeValidation && !activeValidation.settled)
+      activeValidation.controller.abort()
+  }
+
   const notifyValues = (paths: FieldPath[]) => {
+    invalidateValidation()
     if (deleteErrorsForPaths(paths))
       emit({ type: 'errors' })
-    refreshChangedState()
+    refreshChangedState(paths)
     emit({ type: 'values', paths })
     linkageEngine?.schedule(paths)
   }
@@ -306,8 +478,10 @@ export function createForm<T extends Record<string, unknown>>(
       emit({ type: 'errors' })
   }
 
-  const invalidResult = (resultErrors: FormErrors): FormResult<T> => {
-    const result: FormResult<T> = {
+  const invalidResult = (
+    resultErrors: FormErrors,
+  ): FormValidationResult<T, TOutput> => {
+    const result: FormValidationResult<T, TOutput> = {
       ok: false,
       values: snapshotValues(),
       errors: cloneErrors(resultErrors),
@@ -316,6 +490,178 @@ export function createForm<T extends Record<string, unknown>>(
       throw Object.assign(new Error('form invalid'), result)
     options.onInvalid?.(result.errors, { form })
     return result
+  }
+  type ValidationResult =
+    | FormValidationResult<T, TOutput>
+    | FormResult<T>
+
+  interface ValidationRun {
+    id: number
+    paths: FieldPath[] | undefined
+    controller: AbortController
+    settled: boolean
+    promise: Promise<ValidationResult>
+  }
+
+  let validationSequence = 0
+  let activeValidation: ValidationRun | undefined
+
+  const isCurrentValidation = (run: ValidationRun) =>
+    activeValidation === run && !run.controller.signal.aborted
+
+  const commitValidationErrors = (
+    nextErrors: FormErrors,
+    paths?: ReadonlyArray<FieldPath>,
+  ) => {
+    if (!paths) {
+      setErrorState(nextErrors)
+      return
+    }
+    const merged = cloneErrors(errors)
+    for (const key of Object.keys(merged)) {
+      if (key !== '_form' && paths.some(path => pathsOverlap(key, path)))
+        delete merged[key]
+    }
+    Object.assign(merged, nextErrors)
+    setErrorState(merged)
+  }
+
+  function rerouteValidation(run: ValidationRun): Promise<ValidationResult> {
+    if (activeValidation && activeValidation !== run)
+      return activeValidation.promise
+    return startValidation(run.paths)
+  }
+
+  function startValidation(paths?: FieldPath[]): Promise<ValidationResult> {
+    if (activeValidation && !activeValidation.settled)
+      activeValidation.controller.abort()
+
+    const run: ValidationRun = {
+      id: ++validationSequence,
+      paths,
+      controller: new AbortController(),
+      settled: false,
+      promise: undefined as unknown as Promise<ValidationResult>,
+    }
+    activeValidation = run
+    run.promise = performValidation(run)
+    return run.promise
+  }
+
+  async function performValidation(run: ValidationRun): Promise<ValidationResult> {
+    const list = run.paths
+    const validationContext = {
+      signal: run.controller.signal,
+      validationId: run.id,
+    }
+
+    try {
+      let resolved: ValidationResult | undefined
+
+      if (options.resolver) {
+        let input = snapshotValues()
+        if (options.trimOnSuccess)
+          input = trimTopLevelStrings(input, valuePolicy)
+        const resolverContext = list
+          ? { ...validationContext, paths: list }
+          : validationContext
+        try {
+          resolved = await options.resolver(input, resolverContext)
+        }
+        catch (error) {
+          if (!isCurrentValidation(run))
+            return rerouteValidation(run)
+          throw error
+        }
+        if (!isCurrentValidation(run))
+          return rerouteValidation(run)
+
+        if (!resolved.ok) {
+          const resolverErrors = cloneErrors(resolved.errors)
+
+          // Resolver errors are authoritative. Ask the host to project them,
+          // but never replace the resolver result with host-specific behavior.
+          if (adapter) {
+            const errorPaths = Object.keys(resolverErrors).filter(path => path !== '_form')
+            await adapter.validate(
+              errorPaths.length ? errorPaths : list,
+              validationContext,
+            ).catch(() => undefined)
+            if (!isCurrentValidation(run))
+              return rerouteValidation(run)
+          }
+
+          commitValidationErrors(resolverErrors, list)
+          return invalidResult(resolverErrors)
+        }
+      }
+
+      if (adapter) {
+        let host
+        try {
+          host = await adapter.validate(list, validationContext)
+        }
+        catch (error) {
+          if (!isCurrentValidation(run))
+            return rerouteValidation(run)
+          throw error
+        }
+        if (!isCurrentValidation(run))
+          return rerouteValidation(run)
+
+        if (!host.valid && !(options.resolver && host.unbound)) {
+          const hostErrors = cloneErrors(
+            host.errors ?? { _form: ['Form validation failed'] },
+          )
+          commitValidationErrors(hostErrors, list)
+          return invalidResult(hostErrors)
+        }
+      }
+      else if (!options.resolver) {
+        const localKeys = Object.keys(errors)
+        const relevant = list
+          ? localKeys.filter(key => list.some(path => pathsOverlap(key, path)))
+          : localKeys
+        if (relevant.length) {
+          const filtered: FormErrors = {}
+          for (const key of relevant)
+            filtered[key] = [...errors[key]!]
+          return invalidResult(filtered)
+        }
+
+        const hasUnboundRules = Object.entries(computeRules()).some(([path, rules]) =>
+          rules.length > 0 && (!list || list.some(target => pathsOverlap(path, target))),
+        )
+        if (hasUnboundRules) {
+          return invalidResult({
+            _form: [
+              '[vformjs] Form validation host is not bound. '
+              + 'Pass an adapter, use a UI package, or use useZodForm().',
+            ],
+          })
+        }
+      }
+
+      if (list)
+        clearErrorsInternal(list)
+      else if (Object.keys(errors).length)
+        setErrorState({})
+
+      if (resolved)
+        return resolved
+
+      let output = snapshotValues()
+      if (options.trimOnSuccess)
+        output = trimTopLevelStrings(output, valuePolicy)
+      return {
+        ok: true,
+        values: output as unknown as TOutput,
+      }
+    }
+    finally {
+      if (activeValidation === run)
+        run.settled = true
+    }
   }
 
   const createCtx = (): LinkageCtx<T> => ({
@@ -329,6 +675,7 @@ export function createForm<T extends Record<string, unknown>>(
       deepMerge(
         values as Record<string, unknown>,
         partial as DeepPartial<Record<string, unknown>>,
+        valuePolicy,
       )
       notifyValues(Object.keys(partial as object))
     },
@@ -401,16 +748,18 @@ export function createForm<T extends Record<string, unknown>>(
       if (opts?.merge === false) {
         restoreInPlace(
           values as Record<string, unknown>,
-          deepClone(partial) as Record<string, unknown>,
+          deepClone(partial, valuePolicy) as Record<string, unknown>,
+          valuePolicy,
         )
       }
       else {
         deepMerge(
           values as Record<string, unknown>,
           partial as DeepPartial<Record<string, unknown>>,
+          valuePolicy,
         )
       }
-      notifyValues(Object.keys(partial as object))
+      notifyValues(opts?.merge === false ? ['*'] : Object.keys(partial as object))
     },
 
     setFieldValue(path, value) {
@@ -427,6 +776,7 @@ export function createForm<T extends Record<string, unknown>>(
         restoreInPlace(
           values as Record<string, unknown>,
           baseline as Record<string, unknown>,
+          valuePolicy,
         )
         setErrorState({})
         emit({ type: 'reset' })
@@ -436,28 +786,34 @@ export function createForm<T extends Record<string, unknown>>(
         return
       }
       const list = Array.isArray(paths) ? paths : [paths]
-      for (const path of list)
-        setByPath(values, path, deepClone(getByPath(baseline, path)))
+      for (const path of list) {
+        setByPath(
+          values,
+          path,
+          deepClone(getByPath(baseline, path), valuePolicy, path),
+        )
+      }
       clearErrorsInternal(list)
       notifyValues(list)
       adapter?.clearValidate?.(list)
     },
 
     rebaseDefaults(next) {
-      baseline = deepClone(next ?? values)
+      baseline = deepClone(next ?? values, valuePolicy)
       refreshChangedState()
     },
 
     getCreateDefaults() {
-      return deepClone(createDefaults)
+      return deepClone(createDefaults, valuePolicy)
     },
 
     /** Restore factory defaults + baseline (for load('create')). */
     resetToCreateDefaults() {
-      baseline = deepClone(createDefaults)
+      baseline = deepClone(createDefaults, valuePolicy)
       restoreInPlace(
         values as Record<string, unknown>,
         createDefaults as Record<string, unknown>,
+        valuePolicy,
       )
       setErrorState({})
       emit({ type: 'reset' })
@@ -525,6 +881,11 @@ export function createForm<T extends Record<string, unknown>>(
       return path
     },
 
+    getItemProps(path) {
+      return adapter?.getItemProps?.(path, errors[path]?.[0])
+        ?? { 'data-vform-path': path }
+    },
+
     clearErrors: clearErrorsInternal,
 
     clearValidate(paths) {
@@ -535,92 +896,87 @@ export function createForm<T extends Record<string, unknown>>(
       adapter?.clearValidate?.(list)
     },
 
-    async validate(paths) {
+    validate(paths?: FieldPath | FieldPath[]) {
       const list = paths == null
         ? undefined
         : Array.isArray(paths) ? paths : [paths]
+      return startValidation(list)
+    },
 
-      if (!adapter) {
-        const localKeys = Object.keys(errors)
-        const relevant = list
-          ? localKeys.filter(key => list.some(path => pathsOverlap(key, path)))
-          : localKeys
-        if (relevant.length) {
-          const filtered: FormErrors = {}
-          for (const key of relevant)
-            filtered[key] = [...errors[key]!]
-          return invalidResult(filtered)
-        }
+    async validateField(paths?: FieldPath | FieldPath[]) {
+      return paths == null ? form.validate() : form.validate(paths)
+    },
 
-        const hasUnboundRules = Object.entries(computeRules()).some(([path, rules]) =>
-          rules.length > 0 && (!list || list.some(target => pathsOverlap(path, target))),
-        )
-        if (hasUnboundRules) {
-          return invalidResult({
-            _form: [
-              '[vformjs] Form validation host is not bound. '
-              + 'Pass an adapter, use a UI package, or use useZodForm().',
-            ],
-          })
-        }
-
-        let vals = snapshotValues()
-        if (options.trimOnSuccess)
-          vals = trimTopLevelStrings(vals)
-        return { ok: true, values: vals }
+    submit<TActionError = never>(
+      handler?: SubmitAction<TOutput, TActionError, T, TSubmitError>,
+    ): Promise<SubmitResult<TOutput, TSubmitError | TActionError, T>> {
+      if (submitPolicy === 'join' && joinedSubmission) {
+        return joinedSubmission as Promise<
+          SubmitResult<TOutput, TSubmitError | TActionError, T>
+        >
       }
 
-      const host = await adapter.validate(list)
-      if (!host.valid) {
-        const hostErrors = cloneErrors(
-          host.errors ?? { _form: ['Form validation failed'] },
-        )
-        if (list) {
-          const merged = cloneErrors(errors)
-          for (const key of Object.keys(merged)) {
-            if (key !== '_form' && list.some(path => pathsOverlap(key, path)))
-              delete merged[key]
+      const submission = (async (): Promise<
+        SubmitResult<TOutput, TSubmitError | TActionError, T>
+      > => {
+        activeSubmissionCount += 1
+        if (activeSubmissionCount === 1) {
+          submitting = true
+          emit({ type: 'submit-start' })
+        }
+        try {
+          const result = await form.validate()
+          if (!result.ok) {
+            if (options.scrollToError !== false)
+              form.scrollToFirstError()
+            return result
           }
-          Object.assign(merged, hostErrors)
-          setErrorState(merged)
+
+          const output = result.values as TOutput
+          const outcome = handler
+            ? await handler(output, { form })
+            : await options.onSubmit?.(output, { form })
+
+          if (outcome && !outcome.ok) {
+            const failure: SubmitFailureResult<
+              TOutput,
+              TSubmitError | TActionError
+            > = {
+              ok: false,
+              values: output,
+              submitError: outcome.error,
+            }
+            if (outcome.errors !== undefined) {
+              setErrorState(outcome.errors)
+              if (options.scrollToError !== false)
+                form.scrollToFirstError()
+              return {
+                ...failure,
+                errors: cloneErrors(outcome.errors),
+              } as SubmitResult<TOutput, TSubmitError | TActionError, T>
+            }
+            return failure as SubmitResult<TOutput, TSubmitError | TActionError, T>
+          }
+
+          return { ok: true, values: output }
         }
-        else {
-          setErrorState(hostErrors)
+        finally {
+          activeSubmissionCount -= 1
+          if (activeSubmissionCount === 0) {
+            submitting = false
+            emit({ type: 'submit-end' })
+          }
+          if (submitPolicy === 'join')
+            joinedSubmission = undefined
         }
-        return invalidResult(hostErrors)
+      })()
+
+      if (submitPolicy === 'join') {
+        joinedSubmission = submission as Promise<
+          SubmitResult<TOutput, unknown, T>
+        >
       }
-
-      if (list)
-        clearErrorsInternal(list)
-      else if (Object.keys(errors).length)
-        setErrorState({})
-
-      let vals = snapshotValues()
-      if (options.trimOnSuccess)
-        vals = trimTopLevelStrings(vals)
-      return { ok: true, values: vals }
-    },
-
-    async validateField(paths) {
-      return form.validate(paths)
-    },
-
-    async submit(handler) {
-      emit({ type: 'submit-start' })
-      submitting = true
-      try {
-        const result = await form.validate()
-        if (!result.ok)
-          return result
-        const run = handler ?? options.onSubmit
-        if (run)
-          await run(result.values, { form })
-        return result
-      }
-      finally {
-        submitting = false
-        emit({ type: 'submit-end' })
-      }
+      return submission
     },
 
     fieldArray(path, opts) {
@@ -629,7 +985,8 @@ export function createForm<T extends Record<string, unknown>>(
           values,
           notifyValues,
           clearValidate: paths => form.clearValidate(paths),
-          runLinkage: paths => linkageEngine?.schedule(paths),
+          cloneValue: (value, valuePath) =>
+            deepClone(value, valuePolicy, valuePath),
         },
         path,
         opts,

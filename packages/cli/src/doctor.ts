@@ -1,9 +1,9 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import {
-  HOSTS,
   detectEnvironment,
   readVformConfig,
+  resolveHostDefinition,
   type LoadedProject,
 } from './project'
 
@@ -29,34 +29,48 @@ export function doctorProject(project: LoadedProject): DoctorReport {
     return { ok: false, checks }
   }
 
-  const host = HOSTS[config.host]
+  const host = resolveHostDefinition(config)
   checks.push({ level: 'pass', message: `Configured host: ${host.id}` })
 
-  if (project.dependencies[host.uiPackage] == null)
+  if (!host.uiPackage) {
+    checks.push({
+      level: 'warn',
+      message: `Custom preset ${host.id} does not declare uiPackage; skipped UI dependency check`,
+    })
+  }
+  else if (project.dependencies[host.uiPackage] == null) {
     checks.push({ level: 'error', message: `Missing UI dependency ${host.uiPackage}` })
-  else
+  }
+  else {
     checks.push({ level: 'pass', message: `Found UI dependency ${host.uiPackage}` })
+  }
 
   if (project.dependencies[host.adapterPackage] == null) {
     checks.push({
       level: 'error',
-      message: `Missing adapter ${host.adapterPackage}; install ${host.adapterPackage} ${host.uiPackage}`,
+      message: host.uiPackage
+        ? `Missing adapter ${host.adapterPackage}; install ${host.adapterPackage} ${host.uiPackage}`
+        : `Missing adapter ${host.adapterPackage}; install ${host.adapterPackage}`,
     })
   }
   else {
     checks.push({ level: 'pass', message: `Found adapter ${host.adapterPackage}` })
   }
 
-  if (environment.vueMajor != null && environment.vueMajor !== host.vueMajor) {
+  if (
+    host.vueMajor != null
+    && environment.vueMajor != null
+    && environment.vueMajor !== host.vueMajor
+  ) {
     checks.push({
       level: 'error',
       message: `${host.id} expects Vue ${host.vueMajor}, found Vue ${environment.vueMajor}`,
     })
   }
-  else if (environment.vueMajor != null) {
+  else if (host.vueMajor != null && environment.vueMajor != null) {
     checks.push({ level: 'pass', message: `Vue ${environment.vueMajor} matches ${host.id}` })
   }
-  else {
+  else if (host.vueMajor != null) {
     checks.push({ level: 'warn', message: 'Could not determine the Vue major version' })
   }
 

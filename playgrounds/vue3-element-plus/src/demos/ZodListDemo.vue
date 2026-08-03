@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useZodForm } from '@vformjs/element-plus'
+import { useZodForm } from '@vformjs/element-plus/zod'
 import { fieldPath } from '@vformjs/vue'
 import { ref } from 'vue'
 import { z } from 'zod'
@@ -41,13 +41,13 @@ async function onSubmit() {
     <p class="hint">
       Zod + form.list：数组 path 自动生成 members.i.name 规则
     </p>
-    <el-form v-bind="form.el" label-width="100px" style="max-width: 640px">
+    <el-form v-bind="form.host" label-width="100px" style="max-width: 640px">
       <el-form-item label="项目名" prop="project">
         <el-input v-model="form.model.project" />
       </el-form-item>
 
       <el-form-item
-        v-for="(row, index) in members.fields.value"
+        v-for="(row, index) in members.fields"
         :key="row.key"
         :label="`成员 ${index + 1}`"
         :prop="fieldPath('members', index, 'name')"

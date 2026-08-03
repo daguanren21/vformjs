@@ -6,19 +6,19 @@ import {
 } from './vendor/shared'
 import type { FieldArrayApi, FieldPath } from './types'
 
-export interface FieldArrayOptions<TItem extends Record<string, unknown>> {
+export interface FieldArrayOptions<TItem extends object> {
   defaultItem?: () => TItem
   keyName?: string
 }
 
-export interface FieldArrayHost<T extends Record<string, unknown>> {
+export interface FieldArrayHost<T extends object> {
   values: T
   notifyValues: (paths: FieldPath[]) => void
   clearValidate: (paths?: FieldPath | FieldPath[]) => void
-  runLinkage: (changed: FieldPath[]) => void
+  cloneValue?: <V>(value: V, path?: FieldPath) => V
 }
 
-function ensureArray<TItem, T extends Record<string, unknown>>(
+function ensureArray<TItem, T extends object>(
   form: FieldArrayHost<T>,
   path: FieldPath,
 ): TItem[] {
@@ -33,60 +33,57 @@ function ensureArray<TItem, T extends Record<string, unknown>>(
 function readKeys(
   list: Record<string, unknown>[],
   keyName: string,
-  cache: string[],
+  keys: WeakMap<object, string>,
 ): Array<{ key: string, index: number }> {
-  const fields: Array<{ key: string, index: number }> = []
-  for (let i = 0; i < list.length; i++) {
-    const row = list[i]!
-    let key = row[keyName]
-    if (typeof key !== 'string' || !key) {
-      key = cache[i] ?? createId('row')
-      row[keyName] = key
+  return list.map((row, index) => {
+    const explicitKey = row[keyName]
+    if (typeof explicitKey === 'string' && explicitKey)
+      return { key: explicitKey, index }
+
+    let key = keys.get(row)
+    if (!key) {
+      key = createId('row')
+      keys.set(row, key)
     }
-    cache[i] = key as string
-    fields.push({ key: key as string, index: i })
-  }
-  cache.length = list.length
-  return fields
+    return { key, index }
+  })
 }
 
 export function createFieldArray<
-  T extends Record<string, unknown>,
-  TItem extends Record<string, unknown> = Record<string, unknown>,
+  T extends object,
+  TItem extends object = Record<string, unknown>,
 >(
   form: FieldArrayHost<T>,
   path: FieldPath,
   opts: FieldArrayOptions<TItem> = {},
 ): FieldArrayApi<TItem> {
   const keyName = opts.keyName ?? 'key'
-  const keyCache: string[] = []
+  const keys = new WeakMap<object, string>()
+  const cloneValue = <V>(value: V, itemPath?: FieldPath): V =>
+    form.cloneValue?.(value, itemPath) ?? deepClone(value)
 
-  const defaultItem = (): TItem => {
+  const defaultItem = (itemPath?: FieldPath): TItem => {
     if (opts.defaultItem)
-      return deepClone(opts.defaultItem())
-    return { [keyName]: createId('row') } as TItem
+      return cloneValue(opts.defaultItem(), itemPath)
+    return {} as TItem
   }
 
-  const materialize = (item?: Partial<TItem> | TItem): TItem => {
-    const base = defaultItem()
-    const merged = {
-      ...base,
-      ...(item ? deepClone(item) : {}),
-    } as TItem
-    if (typeof (merged as Record<string, unknown>)[keyName] !== 'string')
-      (merged as Record<string, unknown>)[keyName] = createId('row')
-    return merged
-  }
+  const materialize = (
+    item?: Partial<TItem> | TItem,
+    itemPath?: FieldPath,
+  ): TItem => ({
+    ...defaultItem(itemPath),
+    ...(item ? cloneValue(item, itemPath) : {}),
+  }) as TItem
 
   const snapshotFields = () => {
     const list = ensureArray<TItem, T>(form, path) as unknown as Record<string, unknown>[]
-    return readKeys(list, keyName, keyCache)
+    return readKeys(list, keyName, keys)
   }
 
   const touch = () => {
     form.notifyValues([path])
     form.clearValidate(path)
-    form.runLinkage([path])
   }
 
   return {
@@ -95,18 +92,18 @@ export function createFieldArray<
     },
     append(item) {
       const list = ensureArray<TItem, T>(form, path)
-      list.push(materialize(item))
+      list.push(materialize(item, `${path}.${list.length}`))
       touch()
     },
     prepend(item) {
       const list = ensureArray<TItem, T>(form, path)
-      list.unshift(materialize(item))
+      list.unshift(materialize(item, `${path}.0`))
       touch()
     },
     insert(index, item) {
       const list = ensureArray<TItem, T>(form, path)
       const i = Math.max(0, Math.min(index, list.length))
-      list.splice(i, 0, materialize(item))
+      list.splice(i, 0, materialize(item, `${path}.${i}`))
       touch()
     },
     remove(index) {
@@ -137,7 +134,7 @@ export function createFieldArray<
       const list = ensureArray<TItem, T>(form, path)
       if (index < 0 || index >= list.length)
         return
-      list[index] = materialize(item)
+      list[index] = materialize(item, `${path}.${index}`)
       touch()
     },
     update(index, partial) {
@@ -145,12 +142,11 @@ export function createFieldArray<
       if (index < 0 || index >= list.length)
         return
       const cur = list[index]!
-      list[index] = { ...cur, ...deepClone(partial) }
+      Object.assign(cur, cloneValue(partial, `${path}.${index}`))
       touch()
     },
     clear() {
       setByPath(form.values, path, [])
-      keyCache.length = 0
       touch()
     },
   }

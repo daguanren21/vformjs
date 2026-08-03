@@ -30,9 +30,9 @@ async function onSubmit() {
 <template>
   <div class="demo">
     <p class="hint">
-      最简单：defaults + rules + form.el + submit
+      最简单：defaults + rules + form.host + submit
     </p>
-    <el-form v-bind="form.el" label-width="100px" style="max-width: 480px">
+    <el-form v-bind="form.host" label-width="100px" style="max-width: 480px">
       <el-form-item label="姓名" prop="name">
         <el-input v-model="form.model.name" placeholder="至少 2 字" />
       </el-form-item>

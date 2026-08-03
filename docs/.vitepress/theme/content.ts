@@ -169,7 +169,7 @@ export const homeCopy: Record<HomeLocale, HomeCopy> = {
       description: 'The recommended Element Plus entry configures the adapter and infers the model type from defaults.',
       steps: [
         { number: '01', title: 'Describe defaults and rules', description: 'Defaults infer model and submit types.', code: "useElForm({ defaults, rules, onSubmit })" },
-        { number: '02', title: 'Bind the existing Form', description: 'One binding wires ref, model, and rules.', code: '<el-form v-bind="form.el">' },
+        { number: '02', title: 'Bind the existing Form', description: 'One binding wires ref, model, and rules.', code: '<el-form v-bind="form.host">' },
         { number: '03', title: 'Drive the lifecycle', description: 'Load records, submit, reset, and inspect dirty state.', code: "form.load('edit', detail)" },
       ],
     },
@@ -247,7 +247,7 @@ export const homeCopy: Record<HomeLocale, HomeCopy> = {
       description: 'Element Plus 入口已经配好 adapter，model 和 onSubmit 的类型直接从 defaults 推出来。',
       steps: [
         { number: '01', title: '写默认值和规则', description: 'defaults 同时确定模型和提交参数类型。', code: 'useElForm({ defaults, rules, onSubmit })' },
-        { number: '02', title: '绑定现有 Form', description: '一个 v-bind 接好 ref、model 和 rules。', code: '<el-form v-bind="form.el">' },
+        { number: '02', title: '绑定现有 Form', description: '一个 v-bind 接好 ref、model 和 rules。', code: '<el-form v-bind="form.host">' },
         { number: '03', title: '驱动表单生命周期', description: '加载记录、提交、重置，再读取 dirty。', code: "form.load('edit', detail)" },
       ],
     },

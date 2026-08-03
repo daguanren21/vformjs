@@ -29,7 +29,7 @@ defineProps<{
           <h3 class="panel-label">{{ problem.afterLabel }}</h3>
           <ul class="list">
             <li v-for="item in problem.after" :key="item" class="item code">
-              <span class="mark" aria-hidden="true">+</span>
+              <span class="mark" aria-hidden="true">&#10003;</span>
               <code>{{ item }}</code>
             </li>
           </ul>
@@ -43,24 +43,46 @@ defineProps<{
 .compare {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: clamp(20px, 3vw, 32px);
+  gap: clamp(16px, 2.5vw, 24px);
   align-items: stretch;
 }
 
 .panel {
   border: 1px solid var(--ph-line);
-  border-radius: var(--ph-radius);
-  padding: clamp(24px, 3vw, 36px);
+  border-radius: var(--ph-radius-lg);
+  padding: clamp(22px, 3vw, 32px);
+}
+
+/* repeated work: quiet sunken panel, muted items */
+.before {
+  background: var(--ph-sunken);
+}
+
+/* owned by the form instance: raised card, accent chip + checks */
+.after {
+  background: var(--ph-raised);
+  box-shadow: var(--ph-shadow-sm);
 }
 
 .panel-label {
-  margin: 0 0 22px;
-  font-family: var(--ph-font-mono);
-  font-size: 11.5px;
-  font-weight: 400;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
+  display: inline-flex;
+  margin: 0 0 16px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.before .panel-label {
+  border: 1px solid var(--ph-line);
+  background: var(--ph-paper);
   color: var(--ph-ink-faint);
+}
+
+.after .panel-label {
+  background: var(--ph-accent-wash);
+  color: var(--ph-accent);
 }
 
 .list {
@@ -74,37 +96,22 @@ defineProps<{
 .item {
   display: flex;
   align-items: baseline;
-  gap: 12px;
-  padding: 11px 0;
+  gap: 10px;
+  padding: 10px 0;
   border-top: 1px solid var(--ph-line);
   font-size: 0.9375rem;
   line-height: 1.55;
   color: var(--ph-ink-soft);
 }
 
+.item:first-child {
+  border-top: 0;
+}
+
 .mark {
   flex: none;
-  font-family: var(--ph-font-mono);
   font-size: 0.85em;
   color: var(--ph-ink-faint);
-}
-
-/* repeated work: hatched plate, greyed items */
-.before {
-  background:
-    repeating-linear-gradient(
-      -45deg,
-      transparent 0 7px,
-      var(--ph-accent-wash) 7px 8px
-    ),
-    var(--ph-sunken);
-}
-
-/* owned by the form instance: raised plate, accent edge */
-.after {
-  background: var(--ph-raised);
-  border-color: var(--ph-line-strong);
-  border-left: 3px solid var(--ph-accent);
 }
 
 .after .item {
@@ -120,7 +127,7 @@ defineProps<{
   font-family: var(--ph-font-mono);
   font-size: 0.85em;
   line-height: 1.5;
-  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 760px) {

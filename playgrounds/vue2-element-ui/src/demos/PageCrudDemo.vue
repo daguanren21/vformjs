@@ -181,7 +181,7 @@ export default defineComponent({
       <el-button @click="goList">
         ← 返回列表
       </el-button>
-      <el-form v-bind="form.el" label-width="90px" style="max-width:480px;margin-top:12px">
+      <el-form v-bind="form.host" label-width="90px" style="max-width:480px;margin-top:12px">
         <el-form-item v-if="form.model.id" label="ID">
           <el-input :value="form.model.id" disabled />
         </el-form-item>

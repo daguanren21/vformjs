@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, expectTypeOf, it, vi } from 'vitest'
+import { reactive } from 'vue-demi'
 import { useForm } from '../src/use-form'
 
 describe('useForm modes', () => {
@@ -62,7 +63,7 @@ describe('useForm modes', () => {
     expect(form.model.age).toBe(20)
     expect(form.model.note).toBe('')
   })
-  it('projects server errors and direct model dirty state reactively', () => {
+  it('projects server errors and direct model dirty state reactively', async () => {
     const form = useForm({
       defaultValues: { name: '', profile: { city: '' } },
     })
@@ -71,6 +72,7 @@ describe('useForm modes', () => {
     expect(form.errors.name).toEqual(['already used'])
 
     form.model.profile.city = 'Nanjing'
+    await Promise.resolve()
     expect(form.dirty).toBe(true)
     expect(form.changedPaths).toEqual(['profile.city'])
 
@@ -80,16 +82,95 @@ describe('useForm modes', () => {
     expect(form.changedPaths).toEqual([])
   })
 
-  it('tracks multiple direct model mutations in the same tick', () => {
+  it('batches multiple direct model mutations in the same tick', async () => {
     const form = useForm({
       defaultValues: { first: '', second: '' },
+    })
+    const valueEvents: string[][] = []
+    const unsubscribe = form.raw.subscribe((event) => {
+      if (event.type === 'values')
+        valueEvents.push(event.paths)
     })
 
     form.model.first = 'one'
     form.model.second = 'two'
+    await Promise.resolve()
 
     expect(form.dirty).toBe(true)
     expect(form.changedPaths).toEqual(['first', 'second'])
+    expect(valueEvents).toEqual([['first', 'second']])
+    unsubscribe()
   })
 
+  it('uses a caller-owned reactive model as the live state', async () => {
+    const model = reactive({ name: '' })
+    const form = useForm({
+      defaultValues: { name: '' },
+      model,
+    })
+
+    expect(form.model).toBe(model)
+    model.name = 'Ada'
+    await Promise.resolve()
+    expect(form.dirty).toBe(true)
+    expect(form.changedPaths).toEqual(['name'])
+
+    form.reset()
+    expect(model.name).toBe('')
+    expect(form.model).toBe(model)
+  })
+
+
+  it('updates exact paths without a deep model scan in explicit mode', () => {
+    interface Model {
+      active: string
+      unrelated: string
+    }
+    let unrelatedReads = 0
+    const model = reactive({
+      active: '',
+      get unrelated() {
+        unrelatedReads += 1
+        return ''
+      },
+    }) as Model
+    const form = useForm<Model>({
+      defaultValues: { active: '', unrelated: '' },
+      model,
+      modelTracking: 'explicit',
+    })
+    const active = form.field('active')
+
+    unrelatedReads = 0
+    expectTypeOf(active.value).toEqualTypeOf<string>()
+    expect(form.field('active')).toBe(active)
+    active.value = 'changed'
+
+    expect(form.model.active).toBe('changed')
+    expect(form.changedPaths).toEqual(['active'])
+    expect(unrelatedReads).toBe(0)
+  })
+
+  it('exposes one host binding and host-specific item props', () => {
+    const bind = vi.fn()
+    const form = useForm({
+      defaultValues: { email: '' },
+      adapter: {
+        bind,
+        validate: async () => ({ valid: true }),
+        getItemProps: (path, error) => ({ prop: path, error }),
+      },
+    })
+    const host = {}
+
+    form.host.ref(host)
+    form.setErrors({ email: ['already used'] })
+
+    expect(bind).toHaveBeenCalledWith(host)
+    expect(form.host.model).toBe(form.model)
+    expect(form.item('email')).toEqual({
+      prop: 'email',
+      error: 'already used',
+    })
+  })
 })

@@ -1,0 +1,115 @@
+{
+  "$schema": "./schemas/discovery-config.schema.json",
+  "schemaVersion": 1,
+  "product": {
+    "name": "vformjs",
+    "positioning": "Typed CRUD form lifecycle for Vue 2.7 and Vue 3 while the existing UI Form keeps rendering and field validation ownership.",
+    "boundaries": [
+      "Keep inputs, layout, accessibility, focus, scroll, and visual validation in the host UI library.",
+      "Own create/edit/detail modes, reset baselines, dirty state, changed paths, submit state, linkage, dynamic arrays, and API errors.",
+      "Do not become a second field-level form engine beside vee-validate, Vuelidate, or similar libraries.",
+      "Do not become a schema renderer, visual form builder, or low-code platform."
+    ],
+    "strategicThemes": [
+      "first-form and second-form adoption",
+      "reset and rebase semantics",
+      "typed submit failures and schema input/output",
+      "dynamic-array correctness and performance",
+      "cross-host Vue 2.7 and Vue 3 compatibility",
+      "Vue and host-library compatibility canaries",
+      "agent-readable APIs, CLI, and migration workflows"
+    ]
+  },
+  "collection": {
+    "lookbackDays": 120,
+    "maxItemsPerSource": 5,
+    "ownRepository": "daguanren21/vformjs",
+    "npmPackages": [
+      "@vformjs/core",
+      "@vformjs/vue",
+      "@vformjs/zod",
+      "@vformjs/element-plus",
+      "@vformjs/element-ui",
+      "@vformjs/naive-ui",
+      "@vformjs/ant-design-vue",
+      "vformjs"
+    ],
+    "upstreamRepositories": [
+      "vuejs/core",
+      "element-plus/element-plus",
+      "tusen-ai/naive-ui",
+      "vueComponent/ant-design-vue",
+      "colinhacks/zod",
+      "TanStack/form",
+      "logaretm/vee-validate"
+    ],
+    "githubIssueQueries": [
+      {
+        "id": "element-plus-form",
+        "query": "repo:element-plus/element-plus is:issue form",
+        "tags": ["host", "element-plus", "form"]
+      },
+      {
+        "id": "naive-ui-form",
+        "query": "repo:tusen-ai/naive-ui is:issue form",
+        "tags": ["host", "naive-ui", "form"]
+      },
+      {
+        "id": "ant-design-vue-form",
+        "query": "repo:vueComponent/ant-design-vue is:issue form",
+        "tags": ["host", "ant-design-vue", "form"]
+      },
+      {
+        "id": "tanstack-vue-form",
+        "query": "repo:TanStack/form is:issue vue",
+        "tags": ["competitor", "vue", "form"]
+      },
+      {
+        "id": "vee-validate",
+        "query": "repo:logaretm/vee-validate is:issue",
+        "tags": ["competitor", "vue", "validation"]
+      },
+      {
+        "id": "vue-vapor",
+        "query": "repo:vuejs/core is:issue vapor",
+        "tags": ["upstream", "vue", "vapor"]
+      }
+    ]
+  },
+  "scoring": {
+    "dimensions": [
+      "pain",
+      "reach",
+      "productFit",
+      "differentiation",
+      "timing",
+      "complexity",
+      "compatibilityRisk"
+    ],
+    "minimumConfidenceForExperiment": 0.4,
+    "minimumConfidenceForPromotion": 0.7,
+    "minimumProductFitForPromotion": 4
+  },
+  "automation": {
+    "maxOpportunitiesPerRun": 5,
+    "autoExperimentWhen": [
+      "The hypothesis stays within the documented product boundary.",
+      "At least two independent signals exist, or one signal includes a reproducible real-world scenario.",
+      "The experiment is isolated and does not change the public API or production package behavior.",
+      "Success and kill criteria are observable before the experiment starts."
+    ],
+    "humanAttentionWhen": [
+      "The opportunity changes product positioning or validation ownership.",
+      "The next step adds or changes public API, exported types, compatibility promises, dependencies, CI, security, or release behavior.",
+      "Evidence supports several incompatible product choices.",
+      "The recommendation is promote with risk R2 or R3."
+    ],
+    "rejectWhen": [
+      "The idea only copies a competitor feature without a vformjs lifecycle use case.",
+      "The idea requires vformjs to own input rendering or become a schema renderer.",
+      "The idea adds a second validation engine beside the host Form.",
+      "No observable user outcome or falsifiable experiment can be defined.",
+      "The only supporting evidence is an AI-generated hypothesis."
+    ]
+  }
+}

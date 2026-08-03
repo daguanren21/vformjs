@@ -13,7 +13,6 @@ export default defineConfig({
     dedupe: ['vue', 'vue-demi'],
     alias: {
       '@vformjs/core': path.join(repo, 'packages/core/src/index.ts'),
-      '@vformjs/shared': path.join(repo, 'packages/shared/src/index.ts'),
       '@vformjs/vue': path.join(repo, 'packages/vue/src/index.ts'),
       '@vformjs/zod': path.join(repo, 'packages/zod/src/index.ts'),
       '@vformjs/ant-design-vue/zod': path.join(repo, 'packages/ant-design-vue/src/use-zod-form.ts'),
@@ -24,7 +23,6 @@ export default defineConfig({
   optimizeDeps: {
     exclude: [
       '@vformjs/core',
-      '@vformjs/shared',
       '@vformjs/vue',
       '@vformjs/zod',
       '@vformjs/ant-design-vue',

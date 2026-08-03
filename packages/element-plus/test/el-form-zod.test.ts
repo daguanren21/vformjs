@@ -23,7 +23,7 @@ function createHarness(defaults: { username: string, email: string }) {
       })
       // Explicit host bind — reliable under @vue/test-utils
       const onFormRef = (inst: unknown) => {
-        form.bindHost(inst)
+        form.host.ref(inst)
       }
       return { form, onFormRef }
     },
@@ -123,12 +123,11 @@ describe('useZodForm + ElForm host integration', () => {
         const members = form.list('members', {
           defaultItem: () => ({ name: '' }),
         })
-        const onFormRef = (inst: unknown) => form.bindHost(inst)
-        return { form, members, onFormRef }
+        return { form, members }
       },
       template: `
-        <el-form :ref="onFormRef" :model="form.model" :rules="form.rules">
-          <el-form-item prop="members.0.name">
+        <el-form v-bind="form.host">
+          <el-form-item v-bind="form.item('members.0.name')">
             <el-input v-model="form.model.members[0].name" />
           </el-form-item>
         </el-form>

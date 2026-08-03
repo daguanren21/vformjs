@@ -33,7 +33,7 @@ pnpm add @vformjs/element-plus element-plus vue     # Vue 3
 ## 最小例子
 
 ```ts
-import { useElForm, r } from '@vformjs/element-plus'
+import { r, submitFail, useElForm } from '@vformjs/element-plus'
 
 const form = useElForm({
   defaults: { name: '', email: '' },
@@ -41,14 +41,18 @@ const form = useElForm({
     name: [r.required(), r.min(2)],
     email: [r.required(), r.email()],
   },
-  onSubmit: async (values) => api.save(values),
+  onSubmit: async (values) => {
+    const result = await api.save(values)
+    if (!result.ok)
+      return submitFail(result.error, { errors: result.fieldErrors })
+  },
 })
 ```
 
 ```vue
 <template>
-  <el-form v-bind="form.el" label-width="100px">
-    <el-form-item label="姓名" prop="name">
+  <el-form v-bind="form.host" label-width="100px">
+    <el-form-item label="姓名" v-bind="form.item('name')">
       <el-input v-model="form.model.name" />
     </el-form-item>
     <el-form-item label="邮箱" prop="email">
@@ -61,8 +65,10 @@ const form = useElForm({
 </template>
 ```
 
-`form.el` 是 `{ ref, model, rules }`，绑一次即可。  
+`form.host` 是 `{ ref, model, rules }`，`form.item(path)` 会补齐宿主字段属性与错误。
 `defaults` 会推 `form.model` 和 `onSubmit(values)` 的类型。
+`onSubmit` 可以返回 `submitFail(error, { errors })`：错误类型保留在
+`result.submitError`，字段错误同步进入响应式 `form.errors`。
 
 ## 装完之后常用这几下
 
@@ -81,6 +87,7 @@ form.scrollToFirstError()
 ```
 
 - **模式**：form 放弹窗或表单页里，列表页不要 `useForm`。详情用 Descriptions，别整表 `disabled`。
+- **提交失败**：用 `submitFail` 返回类型化 API 错误，并可附带字段错误。
 - **规则**：`r.required()` / `r.email()` / `r.min()`，或 `rules: (values) => …`。
 - **显隐**：`when`、`whenRules`；模板里 `v-if="!form.hidden('x').value"`。
 - **联动**：`linkage: [{ deps, run }]`。
@@ -102,12 +109,17 @@ form.scrollToFirstError()
 ```bash
 pnpm dlx vformjs init
 pnpm dlx vformjs add form profile
+pnpm dlx vformjs audit forms --json
 pnpm dlx vformjs doctor
 pnpm dlx vformjs migrate vue2-to-vue3 --dry-run --json
 pnpm dlx vformjs skill install
 ```
 
-CLI 从 `package.json` 检测宿主和 Zod。重复执行不会改写相同文件；已编辑的文件默认拒绝覆盖。Agent loop 可用 `--dry-run --json` 先拿变更清单。
+CLI 从 `package.json` 检测宿主和 Zod。生成模块直接使用 `form.host`、`form.item(path)`、类型安全路径、独立语言规则与类型化提交结果；Zod 只走 `/zod` 子入口。重复执行不会改写相同文件，已编辑文件默认拒绝覆盖。
+
+私有或公司 UI 包不会被自动识别。通过 `--adapter-package` 和
+`--form-factory` 显式配置生成代码的导入与工厂；运行时适配继续由业务侧
+基于 `defineAdapter` 封装。
 
 ## 本地
 

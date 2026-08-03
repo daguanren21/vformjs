@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useZodForm } from '@vformjs/element-plus'
+import { useZodForm } from '@vformjs/element-plus/zod'
 import { ref } from 'vue'
 import { z } from 'zod'
 
@@ -41,7 +41,7 @@ async function onSubmit() {
     <p class="hint">
       useZodForm（element-plus）：无需手写 adapter；refine 错误显示在字段红字
     </p>
-    <el-form v-bind="form.el" label-width="100px" style="max-width: 480px">
+    <el-form v-bind="form.host" label-width="100px" style="max-width: 480px">
       <el-form-item label="用户名" prop="username">
         <el-input v-model="form.model.username" placeholder="输入 admin 看 refine 红字" />
       </el-form-item>

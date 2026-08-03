@@ -1,5 +1,13 @@
 import { ruleBuilders } from './rule-builders'
-import type { FormRulesInput, FormRulesMap, RuleInput, RuleItem, RulesSource } from './types'
+import type {
+  FormRulesInput,
+  FormRulesMap,
+  RuleInput,
+  RuleItem,
+  RulePatternContext,
+  RulesSource,
+} from './types'
+import { getByPath, isObjectLike } from './vendor/shared'
 const STATIC_STRING_RULES: Record<string, () => RuleItem> = {
   required: () => ruleBuilders.required(),
   requiredIf: () => ruleBuilders.required(),
@@ -80,7 +88,123 @@ export function normalizeRulesMap(map: FormRulesInput | FormRulesMap | undefined
   return out
 }
 
-export function resolveRulesSource<T extends Record<string, unknown>>(
+/** Expand `members.*.name` against the current model. */
+export function expandPathPattern(values: unknown, pattern: string): string[] {
+  if (!pattern.includes('*'))
+    return [pattern]
+
+  const segments = pattern.split('.')
+  const paths: string[] = []
+
+  const visit = (
+    current: unknown,
+    segmentIndex: number,
+    concrete: string[],
+  ) => {
+    const segment = segments[segmentIndex]!
+    const last = segmentIndex === segments.length - 1
+
+    if (segment === '*') {
+      if (!isObjectLike(current))
+        return
+      if (Array.isArray(current)) {
+        for (let index = 0; index < current.length; index++) {
+          const key = String(index)
+          const nextPath = [...concrete, key]
+          if (last)
+            paths.push(nextPath.join('.'))
+          else
+            visit(current[index], segmentIndex + 1, nextPath)
+        }
+        return
+      }
+      for (const key of Object.keys(current)) {
+        const nextPath = [...concrete, key]
+        if (last)
+          paths.push(nextPath.join('.'))
+        else
+          visit(current[key], segmentIndex + 1, nextPath)
+      }
+      return
+    }
+
+    const nextPath = [...concrete, segment]
+    if (last) {
+      paths.push(nextPath.join('.'))
+      return
+    }
+    const next = isObjectLike(current)
+      ? current[segment]
+      : undefined
+    visit(next, segmentIndex + 1, nextPath)
+  }
+
+  visit(values, 0, [])
+  return paths
+}
+
+export function createRulePatternContext<T extends object>(
+  values: T,
+  pattern: string,
+  path: string,
+): RulePatternContext<T> {
+  const patternSegments = pattern.split('.')
+  const pathSegments = path.split('.')
+  const wildcardPositions: number[] = []
+  const wildcards: string[] = []
+  for (let index = 0; index < patternSegments.length; index++) {
+    if (patternSegments[index] !== '*')
+      continue
+    wildcardPositions.push(index)
+    wildcards.push(pathSegments[index] ?? '')
+  }
+
+  const lastWildcard = wildcardPositions.at(-1)
+  const lastMatch = wildcards.at(-1)
+  const numericIndex = lastMatch !== undefined && /^\d+$/.test(lastMatch)
+    ? Number(lastMatch)
+    : undefined
+  const itemPath = lastWildcard === undefined
+    ? undefined
+    : pathSegments.slice(0, lastWildcard + 1).join('.')
+
+  return {
+    values,
+    pattern,
+    path,
+    wildcards,
+    index: numericIndex,
+    item: itemPath === undefined ? undefined : getByPath(values, itemPath),
+    value: getByPath(values, path),
+  }
+}
+
+/** Materialize wildcard authoring rules into concrete host paths. */
+export function materializeRulesMap(
+  map: FormRulesMap,
+  values: unknown,
+): FormRulesMap {
+  const entries = Object.entries(map)
+    .map(([pattern, rules], order) => ({
+      pattern,
+      rules,
+      order,
+      wildcardCount: pattern.split('*').length - 1,
+    }))
+    // General patterns first; more specific rules overwrite them.
+    .sort((left, right) =>
+      right.wildcardCount - left.wildcardCount
+      || left.order - right.order,
+    )
+  const out: FormRulesMap = {}
+  for (const { pattern, rules } of entries) {
+    for (const path of expandPathPattern(values, pattern))
+      out[path] = rules
+  }
+  return out
+}
+
+export function resolveRulesSource<T extends object>(
   source: RulesSource<T> | undefined,
   values: T,
 ): FormRulesMap {
@@ -94,13 +218,19 @@ export function resolveRulesSource<T extends Record<string, unknown>>(
 export function mergeFieldRules(
   base: FormRulesMap,
   overrides: Map<string, RuleItem[] | null>,
+  values?: unknown,
 ): FormRulesMap {
   const out: FormRulesMap = { ...base }
-  for (const [path, rules] of overrides) {
-    if (rules == null)
-      delete out[path]
-    else
-      out[path] = rules
+  for (const [pattern, rules] of overrides) {
+    const paths = values === undefined
+      ? [pattern]
+      : expandPathPattern(values, pattern)
+    for (const path of paths) {
+      if (rules == null)
+        delete out[path]
+      else
+        out[path] = rules
+    }
   }
   return out
 }

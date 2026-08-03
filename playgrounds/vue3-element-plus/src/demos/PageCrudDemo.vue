@@ -189,7 +189,7 @@ watch(page, (p) => {
         </el-button>
         <el-tag>{{ form.mode }}</el-tag>
       </div>
-      <el-form v-bind="form.el" label-width="90px" style="max-width: 480px; margin-top: 12px">
+      <el-form v-bind="form.host" label-width="90px" style="max-width: 480px; margin-top: 12px">
         <el-form-item v-if="form.model.id" label="ID">
           <el-input :model-value="form.model.id" disabled />
         </el-form-item>

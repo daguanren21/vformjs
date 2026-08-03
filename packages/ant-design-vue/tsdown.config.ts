@@ -3,7 +3,7 @@ import { defineConfig } from 'tsdown'
 export default defineConfig({
   entry: ['src/index.ts', 'src/use-zod-form.ts'],
   format: ['esm', 'cjs'],
-  dts: true,
+  dts: { generator: 'oxc' },
   external: [
     'vue',
     'vue-demi',

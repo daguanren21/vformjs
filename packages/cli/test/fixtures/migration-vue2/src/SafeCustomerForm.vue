@@ -19,7 +19,7 @@ const form = useElForm({
         :value="form.model.id"
         @input="form.model.id = $event"
       />
-      <el-form v-bind="form.el">
+      <el-form v-bind="form.host">
         <el-form-item label="Name" prop="name">
           <el-input v-model="form.model.name" />
         </el-form-item>

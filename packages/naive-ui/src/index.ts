@@ -1,8 +1,56 @@
 export { createNaiveAdapter } from './create-adapter'
 export { useNaiveForm } from './use-naive-form'
 export type { UseNaiveFormOptions } from './use-naive-form'
-export { useZodForm } from './use-zod-form'
 
 /** Re-export for one-package install under pnpm strict node_modules. */
-export { r, ruleBuilders, fieldPath } from '@vformjs/vue'
-export type { UseFormReturn, FormErrors, FormMode } from '@vformjs/vue'
+export {
+  fieldPath,
+  createFieldPath,
+  createRulePatternContext,
+  expandPathPattern,
+  materializeRulesMap,
+  createRuleBuilders,
+  enUSRuleMessages,
+  r,
+  ruleBuilders,
+  submitFail,
+  submitOk,
+  zhCNRuleMessages,
+  useFormGroup,
+} from '@vformjs/vue'
+export type {
+  ConditionalRules,
+  FieldCondition,
+  FormValueContext,
+  FormValuePolicy,
+  ModelTracking,
+  FormErrors,
+  FormItemBinding,
+  FormResolver,
+  FormResolverContext,
+  FormValidationContext,
+  FormValidationResult,
+  FormMode,
+  SubmitAction,
+  SubmitFailureResult,
+  SubmitHandler,
+  SubmitHandlerResult,
+  SubmitPolicy,
+  SubmitOutcome,
+  RulePatternContext,
+  SubmitResult,
+  RuleMessages,
+  TypedFieldPath,
+  UseFormReturn,
+  FormGroupErrors,
+  FormGroupInput,
+  FormGroupMap,
+  FormGroupMember,
+  TypedFieldValue,
+  FormGroupOutput,
+  FormGroupSubmitHandler,
+  FormGroupSubmitResult,
+  FormGroupValidationResult,
+  UseFormGroupOptions,
+  UseFormGroupReturn,
+} from '@vformjs/vue'

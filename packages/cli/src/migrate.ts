@@ -4,31 +4,12 @@ import { parse as parseSfc } from '@vue/compiler-sfc'
 import {
   mkdirSync,
   readFileSync,
-  readdirSync,
-  statSync,
   writeFileSync,
 } from 'node:fs'
 import { dirname, extname, relative, resolve } from 'node:path'
 import MagicString from 'magic-string'
+import { collectSourceFiles } from './source-files'
 
-const SOURCE_EXTENSIONS: Record<string, true> = {
-  '.cjs': true,
-  '.js': true,
-  '.jsx': true,
-  '.mjs': true,
-  '.ts': true,
-  '.tsx': true,
-  '.vue': true,
-}
-
-const SKIP_DIRECTORIES: Record<string, true> = {
-  '.git': true,
-  '.turbo': true,
-  '.vitepress': true,
-  coverage: true,
-  dist: true,
-  node_modules: true,
-}
 
 const IMPORT_REPLACEMENTS: Record<string, string> = {
   '@vformjs/element-ui': '@vformjs/element-plus',
@@ -399,24 +380,10 @@ function transformPackage(file: string, source: string): { source: string, chang
   return { source: output, changes, issues }
 }
 
-function collectMigrationFiles(root: string, current = root, files: string[] = []): string[] {
-  for (const entry of readdirSync(current).sort()) {
-    const path = resolve(current, entry)
-    const stats = statSync(path)
-    if (stats.isDirectory()) {
-      if (!SKIP_DIRECTORIES[entry])
-        collectMigrationFiles(root, path, files)
-      continue
-    }
-    if (entry === 'package.json' || SOURCE_EXTENSIONS[extname(entry)])
-      files.push(path)
-  }
-  return files
-}
 
 export function migrateVue2ToVue3(root: string, options: MigrationOptions = {}): MigrationReport {
   const resolvedRoot = resolve(root)
-  const files = collectMigrationFiles(resolvedRoot)
+  const files = collectSourceFiles(resolvedRoot, { includePackageJson: true })
   const edits: MigrationEdit[] = []
   const issues: MigrationIssue[] = []
 

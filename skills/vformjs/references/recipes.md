@@ -67,7 +67,7 @@ const members = form.list('members', {
 ## Zod
 
 ```ts
-import { useZodForm } from '@vformjs/element-plus'
+import { useZodForm } from '@vformjs/element-plus/zod'
 import { z } from 'zod'
 
 const schema = z.object({
@@ -81,7 +81,7 @@ const form = useZodForm({
 })
 ```
 
-非 Element：`import { useZodForm } from '@vformjs/zod'` + **必传** `adapter`（否则无宿主校验/红字路径）。
+非 Element 宿主：使用对应 UI 包的 `/zod` 子入口；无 UI 时直接使用 `@vformjs/zod`，不传 adapter。
 
 ## 服务端错误
 

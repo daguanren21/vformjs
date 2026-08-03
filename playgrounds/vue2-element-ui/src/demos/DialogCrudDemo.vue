@@ -146,7 +146,7 @@ export default defineComponent({
 
     <el-dialog :visible.sync="visible" :title="dialogTitle" width="520px">
       <div v-loading="loadingDetail">
-        <el-form v-if="form.editable" v-bind="form.el" label-width="90px">
+        <el-form v-if="form.editable" v-bind="form.host" label-width="90px">
           <el-form-item v-if="form.model.id" label="ID">
             <el-input :value="form.model.id" disabled />
           </el-form-item>

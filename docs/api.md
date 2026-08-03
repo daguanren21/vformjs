@@ -8,21 +8,22 @@ Types and methods you touch after install. Prefer the official UI entry (`useElF
 // Element Plus (Vue 3)
 import {
   useElForm,
-  useZodForm,
   r,
   fieldPath,
   createElementPlusAdapter,
+  submitFail,
   type UseElFormOptions,
   type UseFormReturn,
   type FormMode,
   type FormErrors,
+  type SubmitResult,
 } from '@vformjs/element-plus'
 // Zod-only subpath:
 import { useZodForm } from '@vformjs/element-plus/zod'
 
 // element-ui (Vue 2.7) — same surface from '@vformjs/element-ui'
-// Naive UI (Vue 3): useNaiveForm / useZodForm from '@vformjs/naive-ui'
-// Ant Design Vue (Vue 3): useAntdForm / useZodForm from '@vformjs/ant-design-vue'
+// Naive UI (Vue 3): useNaiveForm from root; useZodForm from '@vformjs/naive-ui/zod'
+// Ant Design Vue: useAntdForm from root; useZodForm from '@vformjs/ant-design-vue/zod'
 
 // Headless / custom UI
 import {
@@ -33,6 +34,7 @@ import {
   normalizeHostErrors,
   r,
   createForm,
+  submitFail,
   type UseFormOptions,
   type UseFormReturn,
   type FormMode,
@@ -53,7 +55,7 @@ type UseElFormOptions<T> = Omit<UseFormOptions<T>, 'defaultValues' | 'adapter'> 
   defaults: T | (() => T)
 }
 
-function useElForm<T extends Record<string, unknown>>(
+function useElForm<T extends object>(
   options: UseElFormOptions<T>,
 ): UseFormReturn<T>
 ```
@@ -79,16 +81,22 @@ function useForm<T>(options: UseFormOptions<T>): UseFormReturn<T>
 | Option | Type | Default | Notes |
 |--------|------|---------|--------|
 | `defaultValues` / `defaults` | `T \| () => T` | **required** | `useElForm` uses `defaults` |
+| `model` | `T` | — | caller-owned mutable model; identity retained |
+| `valuePolicy` | `FormValuePolicy` | opaque objects use identity | custom clone/equality for File, URL, value objects |
 | `rules` | `FormRulesInput \| (values) => FormRulesInput` | — | async-validator style |
 | `when` | `Record<path, (values) => boolean>` | — | show/hide; hidden drops rules |
 | `whenRules` | `Record<path, (values) => RuleInput>` | — | conditional rules; `null` clears |
 | `linkage` | `LinkageRule[]` | — | side effects on deps change |
 | `adapter` | `FormHostAdapter` | — | host validate bridge |
+| `resolver` | `FormResolver<T, TOutput>` | — | primary validation and output transform; runs before host projection |
 | `mode` | `FormMode` | `'create'` | initial mode |
+| `modelTracking` | `'deep' \| 'explicit'` | `'deep'` | explicit mode tracks form methods and `field(path)` without full-model scans |
 | `throwOnInvalid` | `boolean` | `false` | throw instead of `{ ok: false }` |
+| `scrollToError` | `boolean` | `true` | submit scrolls to its first field error |
 | `hiddenValues` | `'keep' \| 'omit'` | `'keep'` | snapshot of hidden fields |
 | `trimOnSuccess` | `boolean` | `false` | trim top-level strings on ok |
-| `onSubmit` | `(values, ctx) => void \| Promise` | — | default submit handler |
+| `submitPolicy` | `'join' \| 'parallel'` | `'join'` | duplicate submit joins the active promise unless parallel is explicit |
+| `onSubmit` | `(values, ctx) => SubmitHandlerResult<E>` | — | typed API outcome; `void` means success |
 | `onInvalid` | `(errors, ctx) => void` | — | after failed validate/submit |
 | `createState` | `(initial) => T` | Vue `reactive` in `useForm` | advanced |
 
@@ -100,9 +108,9 @@ function useForm<T>(options: UseFormOptions<T>): UseFormReturn<T>
 |--------|------|-------------|
 | `model` | `T` | Live reactive model (same identity) |
 | `rules` | `FormRulesMap` | Current normalized rules |
-| `el` | `{ ref, model, rules }` | Bind with `v-bind="form.el"` |
-| `formProps` | `{ model, rules }` | Without ref binder |
-| `formRef` | `unknown` | Host instance if bound |
+| `host` | `{ ref, model, rules }` | Bind any supported host with `v-bind="form.host"` |
+| `item(path)` | `FormItemBinding` | Host-specific `prop` / `path` / `name` and field error |
+| `field(path)` | `WritableComputedRef<TypedFieldValue<T, Path>>` | Exact-path binding for large forms |
 | `submitting` | `boolean` | True during `submit` |
 | `errors` | `Readonly<FormErrors>` | Reactive core/server error snapshot |
 | `dirty` | `boolean` | Whether values differ from the current reset baseline |
@@ -110,7 +118,7 @@ function useForm<T>(options: UseFormOptions<T>): UseFormReturn<T>
 | `mode` | `FormMode` | create / edit / detail |
 | `editable` | `boolean` | create \| edit |
 | `readonly` | `boolean` | detail |
-| `raw` | `FormApi<T>` | Underlying headless API |
+| `raw` | `FormApi<T, E>` | Underlying headless API |
 
 #### Modes
 
@@ -127,6 +135,7 @@ function useForm<T>(options: UseFormOptions<T>): UseFormReturn<T>
 | `setValues` | `(partial, opts?: { merge?: boolean }) => void` | Patch model |
 | `setFieldValue` | `(path, value) => void` | Path write + notify |
 | `getFieldValue` | `(path) => V \| undefined` | Path read |
+| `field` | `(path) => WritableComputedRef` | Typed path read/write through `setFieldValue`; cached per path |
 | `reset` | `(paths?) => void` | Restore to current defaults |
 | `rebaseDefaults` | `(values?: T) => void` | Next reset baseline (edit load uses this) |
 | `notifyChange` | `(paths?) => void` | After direct v-model mutation for linkage |
@@ -135,9 +144,9 @@ function useForm<T>(options: UseFormOptions<T>): UseFormReturn<T>
 
 | Method | Signature | Description |
 |--------|-----------|-------------|
-| `validate` | `(paths?) => Promise<FormResult<T>>` | Full or partial |
-| `validateField` | `(paths?) => Promise<FormResult<T>>` | Alias of partial validate |
-| `submit` | `(handler?) => Promise<FormResult<T>>` | Validate → handler/`onSubmit` |
+| `validate` | `(paths?) => Promise<FormValidationResult<T, TOutput> \| FormResult<T>>` | Resolver, then host interaction |
+| `validateField` | `(paths?) => Promise<FormValidationResult<T, TOutput> \| FormResult<T>>` | Same pipeline scoped to paths |
+| `submit` | `(handler?) => Promise<SubmitResult<TOutput, E, T>>` | Validate → transformed output → typed API outcome |
 | `clearValidate` | `(paths?) => void` | Host + internal errors |
 
 #### Errors
@@ -152,12 +161,77 @@ function useForm<T>(options: UseFormOptions<T>): UseFormReturn<T>
 Changing a field clears stale core/server errors for that path. `clearValidate` clears both core errors and host validation UI.
 
 ```ts
+type FormValidationResult<TInput, TOutput = TInput> =
+  | { ok: true, values: TOutput }
+  | { ok: false, values: TInput, errors: FormErrors }
+
 type FormResult<T> =
   | { ok: true, values: T }
   | { ok: false, values: T, errors: FormErrors }
 
 type FormErrors = Record<string, string[]>
 ```
+
+A resolver is the validation source of truth and may transform successful values:
+
+```ts
+type FormResolver<TInput, TOutput = TInput> = (
+  values: TInput,
+  context: {
+    paths?: readonly FieldPath[]
+    signal: AbortSignal
+    validationId: number
+  },
+) => FormValidationResult<TInput, TOutput> | Promise<...>
+```
+
+#### Typed API submission failures
+
+Return `submitFail(error)` for an expected API failure. Its error type is inferred into
+`SubmitResult<T, E>`. Optional field errors are copied into reactive `form.errors`.
+
+```ts
+type SaveUserError =
+  | { kind: 'EmailTaken' }
+  | { kind: 'ServiceUnavailable', retryable: true }
+
+const form = useElForm({
+  defaults: { email: '' },
+  onSubmit: async (values) => {
+    const response = await api.save(values)
+    if (!response.ok) {
+      return submitFail<SaveUserError>(response.error, {
+        errors: response.fieldErrors,
+      })
+    }
+  },
+})
+
+const result = await form.submit()
+if (!result.ok && 'submitError' in result)
+  result.submitError // SaveUserError
+```
+
+```ts
+type SubmitOutcome<E> =
+  | { ok: true }
+  | { ok: false, error: E, errors?: FormErrors }
+
+type SubmitResult<T, E = never> =
+  | FormResult<T>
+  | { ok: false, values: T, submitError: E, errors?: FormErrors }
+```
+
+`submit()` scrolls to the first field error by default. Set `scrollToError: false`
+when a screen owns custom error navigation.
+
+Returning `void` or `submitOk()` means API success. A thrown or rejected handler still rejects
+`submit()`; convert expected failures to `submitFail` and leave unexpected defects as exceptions.
+When no typed API failure is configured (`E = never`), `submit()` remains
+`Promise<FormResult<T>>`.
+
+Concurrent calls join the active submission promise by default, so the handler runs once.
+Set `submitPolicy: 'parallel'` only when duplicate API writes are intentional.
 
 #### Meta / arrays
 
@@ -191,6 +265,46 @@ interface FieldArrayApi<TItem> {
 
 Options: `{ defaultItem?: () => TItem, keyName?: string }`.
 
+Rules and conditional rules accept wildcard row paths:
+
+```ts
+rules: {
+  'contacts.*.name': [r.required()],
+},
+whenRules: {
+  'contacts.*.phone': (_values, { item, index, path }) =>
+    (item as Contact).phoneRequired ? [r.required()] : null,
+}
+```
+
+Wildcard rules are materialized to host paths such as `contacts.0.name` whenever
+the array changes. Literal paths override wildcard rules.
+
+---
+
+## `useFormGroup(forms)`
+
+Compose independently hosted forms without implicit registration:
+
+```ts
+const group = useFormGroup({
+  base: baseForm,
+  details: detailsForm,
+})
+
+group.dirty
+group.changedPaths // ['base.name', 'details.items.0.amount']
+await group.validate()
+await group.submit(async ({ base, details }) => api.save({ ...base, details }))
+group.reset()
+```
+
+Validation errors are keyed by member name. `submit` receives each member's
+validated output, scrolls the first invalid member, and uses the same
+`join` / `parallel` submit policy.
+
+---
+
 ---
 
 ## `r` / `ruleBuilders`
@@ -209,14 +323,26 @@ r.numberMin(n, message?, trigger?)
 r.numberMax(n, message?, trigger?)
 r.numberRange(min, max, message?, trigger?)
 r.pattern(regex, message?, trigger?)
-r.mobile(message?, trigger?)
+r.phone(message?, trigger?)
 r.idCard(message?, trigger?)
-r.requiredTrue(message?, trigger?)
-r.custom(validator, message?, trigger?)
-```
+r.arrayRequired(message?, trigger?)
+r.equalTo(getOther, message?, trigger?)
+r.trimRequired(message?, trigger?)
+r.custom(validator, trigger?, message?)
 
 Default trigger is usually `'blur'` (numbers often `'change'`).  
-Messages default to Chinese; pass your own string for i18n.
+Messages default to Chinese; pass a string per rule or create a localized builder set.
+
+Create an SSR-safe localized builder set once per app:
+
+```ts
+import {
+  createRuleBuilders,
+  enUSRuleMessages,
+} from '@vformjs/element-plus'
+
+const r = createRuleBuilders(enUSRuleMessages)
+```
 
 `RuleInput` accepts `RuleItem | RuleItem[] | string | string[] | null`.
 
@@ -256,6 +382,7 @@ defineAdapter<THost>({
   clearValidate?(host, paths?)
   scrollToField?(host, path)
   afterModelReset?(host)
+  itemProps?(path, error): FormItemBinding
   mapErrors?(err): FormErrors   // default: normalizeHostErrors
   unboundMessage?: string
 })
@@ -273,6 +400,7 @@ interface FormHostAdapter {
   clearValidate?: (paths?: FieldPath[]) => void
   scrollToField?: (path: FieldPath) => void
   afterModelReset?: () => void
+  getItemProps?: (path: FieldPath, error?: string) => FormItemBinding
 }
 ```
 
@@ -281,20 +409,33 @@ interface FormHostAdapter {
 ## `useZodForm(options)`
 
 ```ts
-interface UseZodFormOptions<S extends ZodType> {
+interface UseZodFormOptions<S extends ZodType, E = never> {
   schema: S
   defaults: z.input<S> | (() => z.input<S>)
+  onSubmit?: (
+    values: z.output<S>,
+    ctx: { form: FormApi<z.input<S>, E> },
+  ) => SubmitHandlerResult<E>
   deep?: boolean      // dotted nested paths; auto when nested objects
   arrays?: boolean    // list.i.field rules; default true
-  // + UseFormOptions except rules / defaultValues
+  // + UseFormOptions except rules / defaultValues / onSubmit
 }
 
 // Success path uses z.output; failure keeps live input model
 validate(): Promise<FormResult<ZodOutput> | FormResult<ZodInput>>
-submit(handler?): Promise<FormResult<ZodOutput> | FormResult<ZodInput>>
+submit<E2 = never>(
+  handler?: (
+    values: ZodOutput,
+    ctx: { form: FormApi<ZodInput, E> },
+  ) => SubmitHandlerResult<E2>,
+): Promise<SubmitResult<ZodOutput, E | E2> | FormResult<ZodInput>>
 ```
 
 Element packages omit `adapter` for you.
+
+`useZodForm` installs `createZodResolver(schema)` into the core pipeline. Async
+refinements are awaited. Official UI adapters only bind/project/scroll; import
+their integration exclusively from the package's `/zod` subpath.
 
 Low-level: `zodToRules`, `zodToRulesDeep`, `zodIssuesToFormErrors`, `createSharedZodParser`.
 
@@ -305,8 +446,11 @@ Low-level: `zodToRules`, `zodToRulesDeep`, `zodIssuesToFormErrors`, `createShare
 Dotted strings: `'profile.email'`, `'contacts.0.phone'`.
 
 ```ts
-import { fieldPath } from '@vformjs/element-plus'
-fieldPath('contacts', index, 'phone') // 'contacts.3.phone'
+import { createFieldPath, fieldPath } from '@vformjs/element-plus'
+
+const path = createFieldPath<FormValues>()
+path('profile.email') // checked by TypeScript
+fieldPath('contacts', index, 'phone') // dynamic: 'contacts.3.phone'
 ```
 
 ---

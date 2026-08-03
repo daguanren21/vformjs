@@ -1,4 +1,5 @@
-import { describe, expect, it, vi } from 'vitest'
+import { submitFail } from '@vformjs/core'
+import { describe, expect, expectTypeOf, it, vi } from 'vitest'
 import { z } from 'zod'
 import {
   arrayLengthSignature,
@@ -38,7 +39,8 @@ function runValidator(
 const unboundAdapter = {
   validate: async () => ({
     valid: false as const,
-    errors: { _form: ['Form host is not bound. Use <el-form v-bind="form.el">.'] },
+    unbound: true,
+    errors: { _form: ['Form host is not bound. Bind it with v-bind="form.host".'] },
   }),
 }
 
@@ -142,7 +144,7 @@ describe('zodToRules full-schema field validators', () => {
       a: z.string().min(1),
       b: z.string().min(1),
     })
-    const spy = vi.spyOn(schema, 'safeParse')
+    const spy = vi.spyOn(schema, 'safeParseAsync')
     const parser = createSharedZodParser(schema, () => values)
     const rules = zodToRules(schema, {
       getValues: () => values,
@@ -269,6 +271,27 @@ describe('useZodForm', () => {
     expect(form.errors).toEqual({})
   })
 
+  it('awaits asynchronous schema refinements in the resolver', async () => {
+    const form = useZodForm({
+      schema: z.object({
+        code: z.string().refine(
+          async value => value === 'allowed',
+          'not allowed',
+        ),
+      }),
+      defaults: { code: 'blocked' },
+    })
+
+    const invalid = await form.validate()
+    expect(invalid.ok).toBe(false)
+    if (!invalid.ok)
+      expect(invalid.errors.code).toEqual(['not allowed'])
+
+    form.model.code = 'allowed'
+    const valid = await form.validate()
+    expect(valid.ok).toBe(true)
+  })
+
   it('headless validateField uses Zod and preserves unrelated server errors', async () => {
     const form = useZodForm({
       schema: z.object({
@@ -348,9 +371,48 @@ describe('useZodForm', () => {
       },
     })
     form.model.n = 3 as any
-    form.bindHost({})
+    form.host.ref({})
     const res = await form.submit()
     expect(res.ok).toBe(true)
     expect(submitted).toEqual({ n: 3 })
+  })
+
+  it('preserves typed API failures with parsed output values', async () => {
+    type QuotaExceeded = {
+      kind: 'QuotaExceeded'
+      parsedCount: number
+    }
+    const schema = z.object({
+      count: z.coerce.number(),
+    })
+    const form = useZodForm({
+      schema,
+      defaults: { count: '2' },
+      adapter: unboundAdapter,
+      onSubmit: async (values) =>
+        submitFail<QuotaExceeded>(
+          {
+            kind: 'QuotaExceeded',
+            parsedCount: values.count,
+          },
+          { errors: { count: ['Quota exceeded'] } },
+        ),
+    })
+
+    const result = await form.submit()
+
+    expect(result).toEqual({
+      ok: false,
+      values: { count: 2 },
+      submitError: {
+        kind: 'QuotaExceeded',
+        parsedCount: 2,
+      },
+      errors: { count: ['Quota exceeded'] },
+    })
+    expect(form.errors.count).toEqual(['Quota exceeded'])
+    expect(form.submitting).toBe(false)
+    if (!result.ok && 'submitError' in result)
+      expectTypeOf(result.submitError).toEqualTypeOf<QuotaExceeded>()
   })
 })

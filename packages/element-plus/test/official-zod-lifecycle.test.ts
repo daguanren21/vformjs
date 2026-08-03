@@ -51,8 +51,8 @@ describe('official adapter Zod array lifecycle', () => {
       schema,
       defaults: { members: [{ email: 'member@example.com' }] },
     })
-    form.bindHost(firstHost)
-    form.bindHost(null)
+    form.host.ref(firstHost)
+    form.host.ref(null)
 
     form.list('members', {
       defaultItem: () => ({ email: '' }),
@@ -67,7 +67,7 @@ describe('official adapter Zod array lifecycle', () => {
       expect(duplicate.errors['members.1.email']).toEqual(['duplicate email'])
 
     const secondHost = host()
-    form.bindHost(secondHost)
+    form.host.ref(secondHost)
     form.model.members[1]!.email = 'other@example.com'
     form.notifyChange('members.1.email')
 
@@ -75,7 +75,7 @@ describe('official adapter Zod array lifecycle', () => {
     if ('validate' in secondHost)
       expect(secondHost.validate).toHaveBeenCalled()
     else
-      expect(secondHost.validateFields).toHaveBeenCalledWith(['members.1.email'])
+      expect(secondHost.validateFields).toHaveBeenCalledWith([['members', 1, 'email']])
 
     form.list('members').remove(1)
     form.notifyChange('members')

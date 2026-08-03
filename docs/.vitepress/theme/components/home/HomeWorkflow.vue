@@ -17,8 +17,7 @@ defineProps<{
       />
       <ol class="steps ph-reveal">
         <li v-for="step in workflow.steps" :key="step.number" class="step">
-          <span class="tick" aria-hidden="true"></span>
-          <span class="number">{{ step.number }}</span>
+          <span class="badge" aria-hidden="true">{{ step.number }}</span>
           <h3 class="step-title">{{ step.title }}</h3>
           <p class="step-desc">{{ step.description }}</p>
           <code class="step-code">{{ step.code }}</code>
@@ -29,50 +28,47 @@ defineProps<{
 </template>
 
 <style scoped>
-/* a ruler track: one shared line, each step hangs off its own tick */
+/* three calm columns: number badge, plain words, one code chip each */
 .steps {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: clamp(28px, 4vw, 48px);
+  gap: clamp(24px, 4vw, 40px);
   margin: 0;
   padding: 0;
   list-style: none;
-  border-top: 1px solid var(--ph-line-strong);
 }
 
 .step {
-  position: relative;
-  padding-top: 28px;
+  min-width: 0;
 }
 
-.tick {
-  position: absolute;
-  top: -1px;
-  left: 0;
-  width: 2px;
-  height: 14px;
-  background: var(--ph-accent);
-}
-
-.number {
-  display: block;
-  font-family: var(--ph-font-mono);
-  font-size: 12px;
-  letter-spacing: 0.12em;
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: var(--ph-radius);
+  background: var(--ph-accent-wash);
   color: var(--ph-accent);
+  font-family: var(--ph-font-mono);
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .step-title {
-  margin: 14px 0 0;
+  margin: 18px 0 0;
   font-size: 1.125rem;
-  font-weight: 600;
-  line-height: 1.4;
+  font-weight: 650;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
 }
 
 .step-desc {
   margin: 8px 0 0;
   font-size: 0.9375rem;
-  line-height: 1.65;
+  line-height: 1.6;
   color: var(--ph-ink-soft);
 }
 
@@ -80,37 +76,22 @@ defineProps<{
   display: inline-block;
   max-width: 100%;
   margin-top: 16px;
-  padding: 7px 12px;
+  padding: 8px 12px;
   border: 1px solid var(--ph-line);
-  border-radius: var(--ph-radius);
+  border-radius: var(--ph-radius-sm);
   background: var(--ph-sunken);
   font-family: var(--ph-font-mono);
-  font-size: 11.5px;
+  font-size: 12px;
   line-height: 1.5;
   color: var(--ph-ink-soft);
   white-space: normal;
-  word-break: break-word;
-  box-shadow: 3px 3px 0 color-mix(in srgb, var(--ph-ink) 12%, transparent);
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 760px) {
   .steps {
     grid-template-columns: 1fr;
-    border-top: 0;
-    gap: 8px;
-  }
-
-  /* on narrow screens the track turns vertical */
-  .step {
-    padding: 4px 0 24px 24px;
-    border-left: 1px solid var(--ph-line-strong);
-  }
-
-  .tick {
-    top: 6px;
-    left: -1px;
-    width: 14px;
-    height: 2px;
+    gap: 28px;
   }
 }
 </style>

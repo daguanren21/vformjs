@@ -45,7 +45,7 @@ async function onSubmit() {
     <p class="hint">
       自定义 rules：pattern / phone / len / numberRange / url / max / trimRequired
     </p>
-    <el-form v-bind="form.el" label-width="100px" style="max-width: 520px">
+    <el-form v-bind="form.host" label-width="100px" style="max-width: 520px">
       <el-form-item label="用户名" prop="username">
         <el-input v-model="form.model.username" />
       </el-form-item>

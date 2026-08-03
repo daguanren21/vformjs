@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeRuleInput, r, ruleBuilders } from '../src'
+import { createRuleBuilders, enUSRuleMessages, normalizeRuleInput, r, ruleBuilders } from '../src'
 
 describe('rule builders', () => {
   it('normalizes static and sugar strings', () => {
@@ -42,5 +42,18 @@ describe('rule builders', () => {
     expect(r.arrayRequired()).toMatchObject({ type: 'array', min: 1 })
     expect(r.range(2, 5)).toMatchObject({ min: 2, max: 5 })
     expect(r.numberRange(1, 99)).toMatchObject({ type: 'number', min: 1, max: 99 })
+  })
+
+  it('creates isolated localized rule builders', () => {
+    const english = createRuleBuilders(enUSRuleMessages)
+    const custom = createRuleBuilders({
+      ...enUSRuleMessages,
+      required: 'This field is mandatory',
+    })
+
+    expect(english.required().message).toBe('Required')
+    expect(english.min(3).message).toBe('Enter at least 3 characters')
+    expect(custom.required().message).toBe('This field is mandatory')
+    expect(r.required().message).toBe('必填')
   })
 })

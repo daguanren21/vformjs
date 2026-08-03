@@ -34,9 +34,9 @@ export default defineComponent({
 <template>
   <div>
     <p style="color:#909399;margin:0 0 12px">
-      最简单：defaults + rules + form.el（Vue2.7 + element-ui）
+      最简单：defaults + rules + form.host（Vue2.7 + element-ui）
     </p>
-    <el-form v-bind="form.el" label-width="100px" style="max-width:480px">
+    <el-form v-bind="form.host" label-width="100px" style="max-width:480px">
       <el-form-item label="姓名" prop="name">
         <el-input v-model="form.model.name" />
       </el-form-item>

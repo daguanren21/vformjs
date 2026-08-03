@@ -52,9 +52,10 @@ defineProps<{
 <style scoped>
 .table-wrap {
   overflow-x: auto;
-  border: 1px solid var(--ph-line-strong);
-  border-radius: var(--ph-radius);
+  border: 1px solid var(--ph-line);
+  border-radius: var(--ph-radius-lg);
   background: var(--ph-raised);
+  box-shadow: var(--ph-shadow-sm);
 }
 
 .table {
@@ -75,10 +76,9 @@ defineProps<{
 
 .table thead th {
   padding-top: 16px;
-  font-family: var(--ph-font-mono);
-  font-size: 11px;
-  font-weight: 400;
-  letter-spacing: 0.18em;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ph-ink-faint);
   border-bottom: 1px solid var(--ph-line-strong);
@@ -120,9 +120,8 @@ defineProps<{
 .note {
   margin: 20px 0 0;
   padding-left: 14px;
-  border-left: 2px solid var(--ph-accent);
-  font-family: var(--ph-font-mono);
-  font-size: 12px;
+  border-left: 2px solid var(--ph-line);
+  font-size: 0.875rem;
   line-height: 1.65;
   color: var(--ph-ink-faint);
 }

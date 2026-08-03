@@ -1,15 +1,15 @@
 <script setup lang="ts">
 /**
- * 演示：不依赖 Element 宿主 API，自己实现 FormHostAdapter。
+ * 演示：不依赖 Element 宿主 API，用 defineAdapter 连接自定义宿主。
  * 真实 Naive UI 写法见 docs/guide.md（Custom UI adapter）与 playgrounds/vue3-naive-ui。
  */
-import type {
-  FieldPath,
-  FormErrors,
-  FormHostAdapter,
-  HostValidateResult,
-} from '@vformjs/core'
-import { r, useForm } from '@vformjs/vue'
+import {
+  adapterFail,
+  defineAdapter,
+  r,
+  useForm,
+  type FormErrors,
+} from '@vformjs/vue'
 import { computed, reactive, ref } from 'vue'
 
 const log = ref('')
@@ -21,39 +21,27 @@ interface MiniHost {
   fieldErrors: Record<string, string>
 }
 
-function createMiniAdapter(): FormHostAdapter {
-  let host: MiniHost | null = null
-
-  return {
-    bind(instance) {
-      host = (instance as MiniHost | null) ?? null
-    },
-    async validate(paths?: FieldPath[]): Promise<HostValidateResult> {
-      if (!host) {
-        return {
-          valid: false,
-          errors: { _form: ['宿主未绑定：请先 bindHost(miniHost)'] },
-        }
+const createMiniAdapter = defineAdapter<MiniHost>({
+  name: 'mini-host',
+  unboundMessage: '宿主未绑定：请先通过 form.host.ref 绑定 miniHost',
+  async validate(host, { paths }) {
+    try {
+      await host.validate(paths)
+    }
+    catch (error) {
+      const errors = (error as { errors?: FormErrors })?.errors ?? {
+        _form: [String(error)],
       }
-      try {
-        await host.validate(paths)
-        return { valid: true }
-      }
-      catch (err) {
-        const errors = (err as { errors?: FormErrors })?.errors ?? {
-          _form: [String(err)],
-        }
-        return { valid: false, errors }
-      }
-    },
-    clearValidate() {
-      host?.clear()
-    },
-    afterModelReset() {
-      host?.clear()
-    },
-  }
-}
+      return adapterFail(errors)
+    }
+  },
+  clearValidate(host) {
+    host.clear()
+  },
+  afterModelReset(host) {
+    host.clear()
+  },
+})
 
 const form = useForm({
   defaultValues: {
@@ -120,7 +108,7 @@ const miniHost = reactive<MiniHost>({
   },
 })
 
-form.bindHost(miniHost)
+form.host.ref(miniHost)
 
 const titleError = computed(() => miniHost.fieldErrors.title || '')
 const ownerError = computed(() => miniHost.fieldErrors.owner || '')
@@ -133,7 +121,6 @@ async function onSubmit() {
 
 function onReset() {
   form.reset()
-  miniHost.clear()
   log.value = ''
 }
 </script>
@@ -170,25 +157,20 @@ function onReset() {
 
     <details class="code">
       <summary>Adapter 核心（精简）</summary>
-      <pre>function createMiniAdapter(): FormHostAdapter {
-  let host = null
-  return {
-    bind(instance) { host = instance },
-    async validate(paths) {
-      if (!host) return { valid: false, errors: { _form: ['未绑定'] } }
-      try {
-        await host.validate(paths)
-        return { valid: true }
-      } catch (e) {
-        return { valid: false, errors: e.errors }
-      }
-    },
-    clearValidate() { host?.clear() },
-  }
-}
+      <pre>const createMiniAdapter = defineAdapter&lt;MiniHost&gt;({
+  name: 'mini-host',
+  async validate(host, { paths }) {
+    try {
+      await host.validate(paths)
+    } catch (error) {
+      return adapterFail(error.errors)
+    }
+  },
+  clearValidate(host) { host.clear() },
+})
 
-useForm({ defaults, rules, adapter: createMiniAdapter() })
-form.bindHost(miniHost)</pre>
+useForm({ defaultValues, rules, adapter: createMiniAdapter() })
+form.host.ref(miniHost)</pre>
     </details>
   </div>
 </template>

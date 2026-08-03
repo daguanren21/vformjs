@@ -4,11 +4,14 @@ import type { ZodObject, ZodType } from 'zod'
 
 type Trigger = string | string[]
 
+export type ZodParseResult = Awaited<ReturnType<ZodType['safeParseAsync']>>
+
 export interface ZodToRulesOptions {
   getValues: () => Record<string, unknown>
   trigger?: Trigger | ((path: string) => Trigger)
   deep?: boolean
   arrays?: boolean
+  parser?: SharedZodParser
 }
 
 function isZodObject(schema: ZodType): schema is ZodObject<Record<string, ZodType>> {
@@ -94,41 +97,63 @@ function isRootIssue(issuePath: PropertyKey[]): boolean {
   return !issuePath.length
 }
 
+export interface SharedZodParser {
+  parse: (values?: Record<string, unknown>) => Promise<ZodParseResult>
+  parseField: (
+    fieldPath: string,
+    value: unknown,
+  ) => Promise<ZodParseResult>
+  invalidate: () => void
+}
+
 export function createSharedZodParser(
   schema: ZodType,
   getValues: () => Record<string, unknown>,
-) {
+): SharedZodParser {
   let wave: {
     base: Record<string, unknown>
-    full: ReturnType<ZodType['safeParse']> | null
+    full: Promise<ZodParseResult> | null
   } | null = null
 
   const ensureWave = () => {
-    if (!wave)
-      wave = { base: deepClone(getValues()) as Record<string, unknown>, full: null }
+    if (!wave) {
+      wave = {
+        base: deepClone(getValues()) as Record<string, unknown>,
+        full: null,
+      }
+    }
     return wave
   }
 
   return {
-    parseField(fieldPath: string, value: unknown) {
-      const w = ensureWave()
-      const modelVal = getByPath(w.base, fieldPath)
-      if (Object.is(modelVal, value)) {
-        if (!w.full)
-          w.full = schema.safeParse(w.base)
-        return w.full
+    parse(values?: Record<string, unknown>): Promise<ZodParseResult> {
+      if (values) {
+        const base = deepClone(values) as Record<string, unknown>
+        const full = schema.safeParseAsync(base)
+        wave = { base, full }
+        return full
       }
-      const draft = deepClone(w.base) as Record<string, unknown>
-      setByPath(draft, fieldPath, value)
-      return schema.safeParse(draft)
+      const current = ensureWave()
+      current.full ??= schema.safeParseAsync(current.base)
+      return current.full
     },
-    invalidate() {
+    parseField(fieldPath: string, value: unknown): Promise<ZodParseResult> {
+      const current = ensureWave()
+      const modelValue = getByPath(current.base, fieldPath)
+      if (Object.is(modelValue, value)) {
+        current.full ??= schema.safeParseAsync(current.base)
+        return current.full
+      }
+      const draft = deepClone(current.base) as Record<string, unknown>
+      setByPath(draft, fieldPath, value)
+      return schema.safeParseAsync(draft)
+    },
+    invalidate(): void {
       wave = null
     },
   }
 }
 
-export type SharedZodParser = ReturnType<typeof createSharedZodParser>
 
 export function collectZodFieldPaths(
   schema: ZodType,
@@ -293,7 +318,7 @@ function fieldSchemaAtPath(
 
 export function zodToRules(
   schema: ZodType,
-  options: ZodToRulesOptions & { parser?: SharedZodParser },
+  options: ZodToRulesOptions,
 ): FormRulesMap {
   if (!isZodObject(schema)) {
     throw new Error('[vformjs/zod] zodToRules expects a ZodObject schema')
@@ -304,7 +329,6 @@ export function zodToRules(
   const live = arrays ? options.getValues() : undefined
   const fieldPaths = collectZodFieldPaths(schema, deep, '', arrays, live)
   const rules: FormRulesMap = {}
-  const parser = options.parser
   const firstFieldPath = fieldPaths[0]
 
   for (const fieldPath of fieldPaths) {
@@ -315,34 +339,32 @@ export function zodToRules(
     const item: RuleItem = {
       required: !optional,
       trigger,
-      validator: (_rule: RuleItem, value: unknown) => {
+      validator: async (_rule: RuleItem, value: unknown) => {
         try {
-          const parsed = parser
-            ? parser.parseField(fieldPath, value)
-            : (() => {
+          const parsed = options.parser
+            ? await options.parser.parseField(fieldPath, value)
+            : await (() => {
                 const base = deepClone(options.getValues()) as Record<string, unknown>
                 setByPath(base, fieldPath, value)
-                return schema.safeParse(base)
+                return schema.safeParseAsync(base)
               })()
 
           if (parsed.success)
-            return Promise.resolve()
+            return
 
           const issues = parsed.error.issues
           const match = issues.find(issue => issueMatchesField(issue.path, fieldPath))
           if (match)
-            return Promise.reject(new Error(match.message))
+            throw new Error(match.message)
 
           if (firstFieldPath === fieldPath) {
             const root = issues.find(issue => isRootIssue(issue.path))
             if (root)
-              return Promise.reject(new Error(root.message))
+              throw new Error(root.message)
           }
-
-          return Promise.resolve()
         }
-        catch (err) {
-          return Promise.reject(err instanceof Error ? err : new Error(String(err)))
+        catch (error) {
+          throw error instanceof Error ? error : new Error(String(error))
         }
       },
     }

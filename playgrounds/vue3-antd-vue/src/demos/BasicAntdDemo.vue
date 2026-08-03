@@ -21,7 +21,7 @@ const form = useAntdForm({
 })
 
 function setFormRef(inst: unknown) {
-  form.bindHost(inst)
+  form.host.ref(inst)
 }
 
 async function onSubmit() {

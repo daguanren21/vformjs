@@ -8,11 +8,20 @@ import {
   type FormApi,
   type FormEvent,
   type FormErrors,
+  type FormItemBinding,
   type FormResult,
   type FormRulesMap,
   type LinkageRule,
+  type SubmitAction,
+  type SubmitResult,
+  type TypedFieldPath,
+  type TypedFieldValue,
 } from '@vformjs/core'
-import type { ComputedRef, Ref } from 'vue-demi'
+import type {
+  ComputedRef,
+  Ref,
+  WritableComputedRef,
+} from 'vue-demi'
 import {
   computed,
   getCurrentScope,
@@ -28,25 +37,45 @@ export { diffChangedPaths }
 
 /** Unified form modes: create / edit / detail all share useForm. */
 export type FormMode = 'create' | 'edit' | 'detail'
+export type ModelTracking = 'deep' | 'explicit'
 
 /**
  * Runtime shape after `reactive()` unwrap. Docs/examples use:
  * `form.mode === 'edit'`, `form.submitting` as boolean.
  */
-export interface UseFormReturn<T extends Record<string, unknown>> {
+export interface UseFormReturn<
+  T extends object,
+  TSubmitError = never,
+  TOutput extends object = T,
+> {
+  /** @internal Type-only marker used by form composition inference. */
+  readonly __vformjsTypes?: {
+    input: T
+    output: TOutput
+  }
   model: T
   rules: FormRulesMap
-  formProps: { model: T, rules: FormRulesMap }
   /**
-   * Bind host form in one shot:
-   * `<el-form v-bind="form.el" />`
+   * Bind any supported host form in one shot:
+   * `<el-form v-bind="form.host" />`
    */
-  el: {
+  host: {
     ref: (instance: unknown) => void
     model: T
     rules: FormRulesMap
   }
-  formRef: unknown
+  /** Host-specific form-item props (`prop`, `path`, or `name`) plus errors. */
+  item: (path: FieldPath) => FormItemBinding
+  /**
+   * Path-aware writable computed. Use with modelTracking: 'explicit' to avoid
+   * full-model watch/clone work on large forms.
+   */
+  field: {
+    <Path extends TypedFieldPath<T>>(
+      path: Path,
+    ): WritableComputedRef<TypedFieldValue<T, Path>>
+    <TValue = unknown>(path: FieldPath): WritableComputedRef<TValue>
+  }
   submitting: boolean
   /** Reactive snapshot of core and server-side field errors. */
   errors: Readonly<FormErrors>
@@ -73,51 +102,66 @@ export interface UseFormReturn<T extends Record<string, unknown>> {
    */
   load: (mode: FormMode, values?: Partial<T>) => void
 
-  submit: FormApi<T>['submit']
-  validate: FormApi<T>['validate']
-  validateField: FormApi<T>['validateField']
-  reset: FormApi<T>['reset']
-  setFieldValue: FormApi<T>['setFieldValue']
-  getFieldValue: FormApi<T>['getFieldValue']
-  setValues: FormApi<T>['setValues']
-  getValues: FormApi<T>['getValues']
-  setErrors: FormApi<T>['setErrors']
-  setFieldError: FormApi<T>['setFieldError']
-  clearErrors: FormApi<T>['clearErrors']
-  scrollToFirstError: FormApi<T>['scrollToFirstError']
-  clearValidate: FormApi<T>['clearValidate']
-  notifyChange: FormApi<T>['notifyChange']
-  rebaseDefaults: FormApi<T>['rebaseDefaults']
-  bindHost: (instance?: unknown) => void
-  getMeta: FormApi<T>['getMeta']
-  fieldArray: FormApi<T>['fieldArray']
+  submit: FormApi<T, TSubmitError, TOutput>['submit']
+  validate: FormApi<T, TSubmitError, TOutput>['validate']
+  validateField: FormApi<T, TSubmitError, TOutput>['validateField']
+  reset: FormApi<T, TSubmitError, TOutput>['reset']
+  setFieldValue: FormApi<T, TSubmitError, TOutput>['setFieldValue']
+  getFieldValue: FormApi<T, TSubmitError, TOutput>['getFieldValue']
+  setValues: FormApi<T, TSubmitError, TOutput>['setValues']
+  getValues: FormApi<T, TSubmitError, TOutput>['getValues']
+  setErrors: FormApi<T, TSubmitError, TOutput>['setErrors']
+  setFieldError: FormApi<T, TSubmitError, TOutput>['setFieldError']
+  clearErrors: FormApi<T, TSubmitError, TOutput>['clearErrors']
+  scrollToFirstError: FormApi<T, TSubmitError, TOutput>['scrollToFirstError']
+  clearValidate: FormApi<T, TSubmitError, TOutput>['clearValidate']
+  notifyChange: FormApi<T, TSubmitError, TOutput>['notifyChange']
+  rebaseDefaults: FormApi<T, TSubmitError, TOutput>['rebaseDefaults']
+  getMeta: FormApi<T, TSubmitError, TOutput>['getMeta']
+  fieldArray: FormApi<T, TSubmitError, TOutput>['fieldArray']
   hidden: (path: FieldPath) => ComputedRef<boolean>
-  list: <TItem extends Record<string, unknown> = Record<string, unknown>>(
+  list: <TItem extends object = Record<string, unknown>>(
     path: FieldPath,
     opts?: { defaultItem?: () => TItem, keyName?: string },
-  ) => Omit<FieldArrayApi<TItem>, 'fields'> & {
-    fields: ComputedRef<ReadonlyArray<{ key: string, index: number }>>
-  }
-  raw: FormApi<T>
+  ) => FieldArrayApi<TItem>
+  raw: FormApi<T, TSubmitError, TOutput>
 }
 
 
-export type UseFormOptions<T extends Record<string, unknown>> = CreateFormOptions<T> & {
+export type UseFormOptions<
+  T extends object,
+  TSubmitError = never,
+  TOutput extends object = T,
+> = CreateFormOptions<T, TSubmitError, TOutput> & {
   /** Initial mode. Default create. */
   mode?: FormMode
+  /**
+   * deep tracks direct form.model mutations; explicit tracks form methods and
+   * field(path) only, avoiding whole-model clone/diff work. Default deep.
+   */
+  modelTracking?: ModelTracking
 }
 
-export function useForm<T extends Record<string, unknown>>(
-  options: UseFormOptions<T>,
-): UseFormReturn<T> {
-  const { mode: initialMode = 'create', ...formOptions } = options
+export function useForm<
+  T extends object,
+  TSubmitError = never,
+  TOutput extends object = T,
+>(
+  options: UseFormOptions<T, TSubmitError, TOutput>,
+): UseFormReturn<T, TSubmitError, TOutput> {
+  const {
+    mode: initialMode = 'create',
+    modelTracking = 'deep',
+    ...formOptions
+  } = options
 
-  const form = createForm({
+  const form = createForm<T, TSubmitError, TOutput>({
     ...formOptions,
-    createState: (initial: T) => reactive(initial) as T,
+    ...(formOptions.model === undefined && formOptions.createState === undefined
+      ? { createState: (initial: T) => reactive(initial) as T }
+      : {}),
   })
 
-  const formRef = shallowRef<unknown>()
   const rules = ref(form.getRules()) as Ref<FormRulesMap>
   const submitting = ref(false)
   const errors = shallowRef<FormErrors>(form.getErrors())
@@ -125,24 +169,19 @@ export function useForm<T extends Record<string, unknown>>(
   const changedPaths = shallowRef<ReadonlyArray<FieldPath>>(form.changedPaths)
   const mode = ref<FormMode>(initialMode)
   const metaVersion = ref(0)
-  const arrayVersion = ref(0)
-  let snapshot = deepClone(toRaw(form.model)) as T
+  let snapshot = modelTracking === 'deep'
+    ? deepClone(toRaw(form.model), formOptions.valuePolicy) as T
+    : form.model
 
   const readonly = computed(() => mode.value === 'detail')
   const editable = computed(() => mode.value !== 'detail')
 
-  const formProps = computed(() => ({
-    model: form.model,
-    rules: readonly.value ? {} : rules.value,
-  }))
 
   const setHost = (instance: unknown) => {
-    formRef.value = instance
-    // Always forward — null clears adapter when el-form unmounts (v-if detail)
     form.bindHost(instance ?? null)
   }
 
-  const el = computed(() => ({
+  const host = computed(() => ({
     ref: setHost,
     model: form.model,
     rules: readonly.value ? {} : rules.value,
@@ -153,7 +192,56 @@ export function useForm<T extends Record<string, unknown>>(
   }
 
   const refreshSnapshot = () => {
-    snapshot = deepClone(toRaw(form.model)) as T
+    if (modelTracking === 'deep')
+      snapshot = deepClone(toRaw(form.model), formOptions.valuePolicy) as T
+  }
+
+  let modelSyncQueued = false
+  let flushingModelSync = false
+  const observedCorePaths = new Set<FieldPath>()
+
+  const pathsOverlap = (left: FieldPath, right: FieldPath) =>
+    left === right
+    || left.startsWith(`${right}.`)
+    || right.startsWith(`${left}.`)
+
+  const flushModelSync = () => {
+    modelSyncQueued = false
+    const next = deepClone(toRaw(form.model), formOptions.valuePolicy) as T
+    const paths = diffChangedPaths(
+      snapshot,
+      next,
+      '',
+      [],
+      formOptions.valuePolicy,
+    )
+    snapshot = next
+
+    const externalPaths = paths.filter((path) => {
+      for (const observed of observedCorePaths) {
+        if (pathsOverlap(path, observed))
+          return false
+      }
+      return true
+    })
+    observedCorePaths.clear()
+    if (!externalPaths.length)
+      return
+
+    flushingModelSync = true
+    try {
+      form.notifyChange(externalPaths)
+    }
+    finally {
+      flushingModelSync = false
+    }
+  }
+
+  const scheduleModelSync = () => {
+    if (modelSyncQueued)
+      return
+    modelSyncQueued = true
+    queueMicrotask(flushModelSync)
   }
 
   const unsub = form.subscribe((event: FormEvent) => {
@@ -163,8 +251,15 @@ export function useForm<T extends Record<string, unknown>>(
       syncRules()
     if (event.type === 'meta' || event.type === 'reset')
       metaVersion.value += 1
-    if (event.type === 'values')
-      arrayVersion.value += 1
+    if (event.type === 'values') {
+      if (modelSyncQueued) {
+        for (const path of event.paths)
+          observedCorePaths.add(path)
+      }
+      else if (!flushingModelSync) {
+        refreshSnapshot()
+      }
+    }
     if (event.type === 'reset')
       refreshSnapshot()
     if (event.type === 'errors')
@@ -179,25 +274,14 @@ export function useForm<T extends Record<string, unknown>>(
       submitting.value = false
   })
 
-  const stopModelWatch = watch(
-    () => form.model,
-    () => {
-      const next = deepClone(toRaw(form.model)) as T
-      const paths = diffChangedPaths(snapshot, next)
-      snapshot = next
-      if (paths.length)
-        form.notifyChange(paths)
-    },
-    { deep: true, flush: 'sync' },
-  )
+  const stopModelWatch = modelTracking === 'deep'
+    ? watch(
+        () => form.model,
+        scheduleModelSync,
+        { deep: true, flush: 'sync' },
+      )
+    : () => {}
 
-  watch(
-    formRef,
-    (instance) => {
-      form.bindHost(instance ?? null)
-    },
-    { flush: 'post' },
-  )
 
   if (getCurrentScope()) {
     onScopeDispose(() => {
@@ -213,20 +297,28 @@ export function useForm<T extends Record<string, unknown>>(
     return form.getMeta(path).hidden
   })
 
-  const list = <TItem extends Record<string, unknown> = Record<string, unknown>>(
+  const item = (path: FieldPath): FormItemBinding => {
+    void errors.value
+    return form.getItemProps(path)
+  }
+
+  const fieldCache = new Map<FieldPath, WritableComputedRef<unknown>>()
+  const field = ((path: FieldPath) => {
+    const cached = fieldCache.get(path)
+    if (cached)
+      return cached
+    const binding = computed({
+      get: () => form.getFieldValue(path),
+      set: value => form.setFieldValue(path, value),
+    })
+    fieldCache.set(path, binding)
+    return binding
+  }) as UseFormReturn<T, TSubmitError, TOutput>['field']
+
+  const list = <TItem extends object = Record<string, unknown>>(
     path: FieldPath,
     opts?: { defaultItem?: () => TItem, keyName?: string },
-  ) => {
-    const arr = form.fieldArray<TItem>(path, opts)
-    const fields = computed(() => {
-      void arrayVersion.value
-      return arr.fields
-    })
-    return {
-      ...arr,
-      fields,
-    }
-  }
+  ): FieldArrayApi<TItem> => form.fieldArray<TItem>(path, opts)
 
   const setMode = (next: FormMode) => {
     mode.value = next
@@ -248,16 +340,18 @@ export function useForm<T extends Record<string, unknown>>(
       createDefaults,
       values ?? {},
     ) as T
-    form.setValues(nextValues as Partial<T> & Record<string, unknown>, { merge: false })
+    form.setValues(nextValues, { merge: false })
     form.clearValidate()
     // A loaded record is the clean baseline in both edit and detail modes.
     form.rebaseDefaults(nextValues)
     refreshSnapshot()
   }
 
-  const submit: FormApi<T>['submit'] = async (
-    handler?: (values: T) => void | Promise<void>,
-  ) => {
+  const submit: FormApi<T, TSubmitError, TOutput>['submit'] = async <
+    TActionError = never,
+  >(
+    handler?: SubmitAction<TOutput, TActionError, T, TSubmitError>,
+  ): Promise<SubmitResult<TOutput, TSubmitError | TActionError, T>> => {
     if (mode.value === 'detail') {
       return {
         ok: false,
@@ -271,9 +365,9 @@ export function useForm<T extends Record<string, unknown>>(
   return reactive({
     model: form.model,
     rules,
-    formProps,
-    el,
-    formRef,
+    host,
+    item,
+    field,
     submitting,
     errors,
     dirty,
@@ -298,13 +392,12 @@ export function useForm<T extends Record<string, unknown>>(
     clearValidate: form.clearValidate,
     notifyChange: form.notifyChange,
     rebaseDefaults: form.rebaseDefaults,
-    bindHost: (instance?: unknown) => form.bindHost(instance ?? formRef.value),
     getMeta: form.getMeta,
     fieldArray: form.fieldArray,
     hidden,
     list,
     raw: form,
-  }) as unknown as UseFormReturn<T>
+  }) as unknown as UseFormReturn<T, TSubmitError, TOutput>
 }
 
 export { createForm }

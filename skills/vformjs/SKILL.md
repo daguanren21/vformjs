@@ -132,8 +132,8 @@ const form = useElForm({
 ```
 
 ```vue
-<el-form v-bind="form.el" label-width="100px">
-  <el-form-item label="姓名" prop="name">
+<el-form v-bind="form.host" label-width="100px">
+  <el-form-item label="姓名" v-bind="form.item('name')">
     <el-input v-model="form.model.name" />
   </el-form-item>
   <el-button type="primary" :loading="form.submitting" @click="form.submit()">
@@ -145,7 +145,7 @@ const form = useElForm({
 要点：
 
 - **`defaults` 必填** → 推断 `form.model` / `onSubmit(values)`，勿写 `values: any`
-- 模板优先 `v-bind="form.el"`（含 ref→bindHost + model + rules）
+- 模板优先 `v-bind="form.host"`；字段优先 `v-bind="form.item(path)"`
 - 列表页 **永不** `useForm`；form 在 Dialog 或 create/edit 页
 
 ### 2. 弹窗 / 路由模式
@@ -179,11 +179,11 @@ whenRules: { extra: (m) => m.type === 'b' ? [r.required()] : [] }
 Zod：
 
 ```ts
-import { useZodForm } from '@vformjs/element-plus'
+import { useZodForm } from '@vformjs/element-plus/zod'
 const form = useZodForm({ schema, defaults, onSubmit })
 ```
 
-Naive UI / Ant Design Vue 使用各自官方包的 `/zod`；其它 UI 才从 `@vformjs/zod` 传入自定义 `adapter`。
+Naive UI / Ant Design Vue 使用各自官方包的 `/zod`；无 UI 直接用 `@vformjs/zod`，自定义 UI 才传入自定义 `adapter`。
 
 ### 4. 自定义 adapter（A/B 库）
 
@@ -214,10 +214,10 @@ const form = useForm({
 // useXxxForm({ defaults, rules, onSubmit }) → 内部 defaultValues + adapter
 ```
 
-bindHost：
+宿主绑定：
 
-- Element：`v-bind="form.el"`
-- 其它：`:ref="(inst) => form.bindHost(inst)"` 或 watch ref，卸载传 `null`
+- 官方适配器统一使用 `v-bind="form.host"`
+- 字段使用 `v-bind="form.item(path)"` 映射 prop / path / name 与错误
 
 ### 5. C 类库（Quasar / Vuetify…）
 
@@ -231,7 +231,7 @@ bindHost：
 [ ] defaults/defaultValues 正确；onSubmit 无 any
 [ ] 空提交有宿主红字（A/B）或控件红字（C）
 [ ] reset / load('create') 后红字消失
-[ ] 弹窗卸载 bindHost(null)，再开无脏校验
+[ ] 弹窗卸载后 `form.host.ref` 收到 `null`，再开无脏校验
 [ ] 列表页无 useForm
 [ ] detail 用 Descriptions 而非 disabled form
 [ ] D 引擎未创建 adapter
@@ -263,7 +263,7 @@ bindHost：
 1. **等级判定** A/B/C/D 一句
 2. **包名 + 入口 API**
 3. **可编译代码**（defaults 或 defaultValues / rules / adapter / template）
-4. **bindHost 方式**（`form.el` 或 ref 回调）
+4. **宿主绑定方式**（`form.host`）与字段绑定方式（`form.item(path)`）
 5. **未做项**（局部校验、scroll 等宿主没有的能力）
 
 更细：

@@ -4,11 +4,12 @@ import { resolve } from 'node:path'
 export type HostId = 'element-plus' | 'element-ui' | 'naive-ui' | 'ant-design-vue'
 
 export interface HostDefinition {
-  id: HostId
-  uiPackage: string
+  id: string
+  uiPackage?: string
   adapterPackage: string
-  formFactory: 'useElForm' | 'useNaiveForm' | 'useAntdForm'
-  vueMajor: 2 | 3
+  formFactory: string
+  vueMajor?: 2 | 3
+  zodEntry?: string
 }
 
 export const HOSTS: Record<HostId, HostDefinition> = {
@@ -42,11 +43,21 @@ export const HOSTS: Record<HostId, HostDefinition> = {
   },
 }
 
+export interface FormPreset {
+  adapterPackage: string
+  formFactory: string
+  zodEntry?: string
+  /** Optional checks used by doctor; no private package detection is performed. */
+  uiPackage?: string
+  vueMajor?: 2 | 3
+}
+
 export interface VformConfig {
   version: 1
-  host: HostId
+  host: string
   zod: boolean
   sourceDir: string
+  preset?: FormPreset
 }
 
 interface PackageJson {
@@ -72,6 +83,40 @@ export const CONFIG_FILE = '.vformjs.json'
 
 export function isHostId(value: string): value is HostId {
   return Object.hasOwn(HOSTS, value)
+}
+
+function isPackageSpecifier(value: unknown): value is string {
+  return typeof value === 'string'
+    && /^[@a-zA-Z0-9][@a-zA-Z0-9._/-]*$/.test(value)
+}
+
+function isIdentifier(value: unknown): value is string {
+  return typeof value === 'string'
+    && /^[A-Za-z_$][\w$]*$/.test(value)
+}
+
+export function assertFormPreset(value: unknown): asserts value is FormPreset {
+  if (!value || typeof value !== 'object' || Array.isArray(value))
+    throw new Error(`${CONFIG_FILE} preset must contain an object`)
+  const preset = value as Partial<FormPreset>
+  if (!isPackageSpecifier(preset.adapterPackage))
+    throw new Error(`${CONFIG_FILE} preset must define a valid adapterPackage`)
+  if (!isIdentifier(preset.formFactory))
+    throw new Error(`${CONFIG_FILE} preset must define an identifier formFactory`)
+  if (preset.zodEntry !== undefined && !isPackageSpecifier(preset.zodEntry))
+    throw new Error(`${CONFIG_FILE} preset zodEntry must be a package specifier`)
+  if (preset.uiPackage !== undefined && !isPackageSpecifier(preset.uiPackage))
+    throw new Error(`${CONFIG_FILE} preset uiPackage must be a package specifier`)
+  if (preset.vueMajor !== undefined && preset.vueMajor !== 2 && preset.vueMajor !== 3)
+    throw new Error(`${CONFIG_FILE} preset vueMajor must be 2 or 3`)
+}
+
+export function resolveHostDefinition(config: VformConfig): HostDefinition {
+  if (config.preset)
+    return { id: config.host, ...config.preset }
+  if (!isHostId(config.host))
+    throw new Error(`${CONFIG_FILE} custom host ${config.host} requires preset`)
+  return HOSTS[config.host]
 }
 
 export function loadProject(root: string): LoadedProject {
@@ -101,9 +146,12 @@ export function loadProject(root: string): LoadedProject {
 }
 
 export function detectEnvironment(project: LoadedProject): DetectedEnvironment {
-  const hosts = Object.values(HOSTS)
-    .filter(host => project.dependencies[host.uiPackage] != null)
-    .map(host => host.id)
+  const hosts = (Object.entries(HOSTS) as Array<[HostId, HostDefinition]>)
+    .filter(([, host]) =>
+      host.uiPackage !== undefined
+      && project.dependencies[host.uiPackage] != null,
+    )
+    .map(([id]) => id)
   const vueVersion = project.dependencies.vue
   const vueMajorMatch = vueVersion?.match(/(?:^|[^0-9])(\d+)(?:\.|$)/)
 
@@ -130,9 +178,16 @@ export function readVformConfig(project: LoadedProject): VformConfig | undefined
   if (!value || typeof value !== 'object')
     throw new Error(`${CONFIG_FILE} must contain an object`)
   const config = value as Partial<VformConfig>
-  if (config.version !== 1 || typeof config.host !== 'string' || !isHostId(config.host))
+  if (config.version !== 1 || typeof config.host !== 'string' || !config.host)
     throw new Error(`${CONFIG_FILE} has an unsupported version or host`)
   if (typeof config.zod !== 'boolean' || typeof config.sourceDir !== 'string' || !config.sourceDir)
     throw new Error(`${CONFIG_FILE} must define boolean zod and sourceDir`)
+  if (config.preset === undefined) {
+    if (!isHostId(config.host))
+      throw new Error(`${CONFIG_FILE} custom host ${config.host} requires preset`)
+  }
+  else {
+    assertFormPreset(config.preset)
+  }
   return config as VformConfig
 }

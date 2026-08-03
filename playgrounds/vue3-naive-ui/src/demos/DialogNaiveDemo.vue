@@ -61,7 +61,7 @@ const form = useNaiveForm({
 })
 
 function setFormRef(inst: unknown) {
-  form.bindHost(inst)
+  form.host.ref(inst)
 }
 
 const dialogTitle = computed(() => {

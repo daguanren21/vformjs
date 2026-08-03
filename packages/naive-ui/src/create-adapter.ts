@@ -1,4 +1,4 @@
-import { defineAdapter } from '@vformjs/core'
+import { defineAdapter, type DefineAdapterFactory } from '@vformjs/core'
 import type { FormInst, FormItemRule } from 'naive-ui'
 
 interface NaiveFormHost extends FormInst {
@@ -26,7 +26,7 @@ function findScrollTarget(host: NaiveFormHost, path: string): Element | undefine
  *
  * @see https://www.naiveui.com/
  */
-export const createNaiveAdapter = defineAdapter<NaiveFormHost>({
+export const createNaiveAdapter: DefineAdapterFactory<NaiveFormHost> = defineAdapter<NaiveFormHost>({
   name: 'naive-ui',
 
   async validate(host, { paths }) {
@@ -60,6 +60,15 @@ export const createNaiveAdapter = defineAdapter<NaiveFormHost>({
 
   scrollToField(host, path) {
     findScrollTarget(host, path)?.scrollIntoView({ block: 'center' })
+  },
+
+  itemProps(path, error) {
+    return {
+      path,
+      feedback: error,
+      validationStatus: error ? 'error' : undefined,
+      'data-vform-path': path,
+    }
   },
 
   afterModelReset(host) {

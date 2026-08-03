@@ -8,7 +8,7 @@ import { createElementPlusAdapter } from './create-adapter'
  *
  * ```ts
  * import { useZodForm } from '@vformjs/element-plus/zod'
- * // or from package root if re-exported
+ * // Explicit `/zod` subpath; the package root stays Zod-free.
  *
  * const form = useZodForm({
  *   schema,
@@ -17,12 +17,15 @@ import { createElementPlusAdapter } from './create-adapter'
  * })
  * ```
  * ```vue
- * <el-form v-bind="form.el">...</el-form>
+ * <el-form v-bind="form.host">...</el-form>
  * ```
  */
-export function useZodForm<S extends ZodType<Record<string, unknown>>>(
-  options: Omit<UseZodFormOptions<S>, 'adapter'>,
-): UseZodFormReturn<S> {
+export function useZodForm<
+  S extends ZodType<Record<string, unknown>>,
+  TSubmitError = never,
+>(
+  options: Omit<UseZodFormOptions<S, TSubmitError>, 'adapter'>,
+): UseZodFormReturn<S, TSubmitError> {
   return useZodFormBase({
     ...options,
     adapter: createElementPlusAdapter(),

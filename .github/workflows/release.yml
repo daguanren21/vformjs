@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   quality:
-    name: Lint · Vitest · Build
+    name: Full quality gate
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -33,11 +33,8 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
-      - run: pnpm lint
-      - name: Unit tests (Vitest)
-        run: pnpm test
-      - name: Build packages (turbo)
-        run: pnpm build
+      - name: Run canonical quality gate
+        run: pnpm verify
 
   release:
     name: Changesets

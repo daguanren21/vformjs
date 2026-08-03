@@ -37,7 +37,7 @@ async function onSubmit() {
     <p class="hint">
       跨字段：r.equalTo(() => form.model.password)
     </p>
-    <el-form v-bind="form.el" label-width="110px" style="max-width: 420px">
+    <el-form v-bind="form.host" label-width="110px" style="max-width: 420px">
       <el-form-item label="密码" prop="password">
         <el-input v-model="form.model.password" type="password" show-password />
       </el-form-item>

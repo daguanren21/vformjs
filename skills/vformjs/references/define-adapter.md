@@ -117,15 +117,14 @@ const form = useForm({
 ```
 
 ```vue
-<!-- 不要用 form.el 除非 model/rules 属性名与 Element 一致 -->
-<n-form
-  :ref="(inst) => form.bindHost(inst)"
-  :model="form.model"
-  :rules="form.rules"
-/>
+<n-form v-bind="form.host">
+  <n-form-item v-bind="form.item('name')">
+    <n-input v-model:value="form.model.name" />
+  </n-form-item>
+</n-form>
 ```
 
-卸载时 `form.bindHost(null)`。
+卸载时 `form.host.ref(null)` 会清理宿主引用。
 
 ## 验收
 

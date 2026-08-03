@@ -31,8 +31,18 @@ const props = defineProps<{
 
 const copy = computed(() => props.locale === 'zh'
   ? {
+      capability: '弹窗 CRUD',
       title: '弹窗 CRUD：一个实例贯穿新建、编辑、详情',
-      description: '列表页不持有表单。打开弹窗时调用 form.load()；新建和编辑继续使用 Element Plus Form，详情改用 Descriptions。',
+      goal: '列表页不持有表单。打开弹窗时调用 form.load()；新建和编辑继续使用 Element Plus Form，详情切换为只读 Descriptions。',
+      steps: [
+        '新增任务 → 空标题直接保存，查看宿主报错。',
+        '编辑一行并修改任意字段 — dirty 与 changedPaths 随之更新。',
+        '保存后在状态面板查看最近写入的记录。',
+        '打开详情 → 表单切换为只读 Descriptions。',
+      ],
+      expect: '详情模式没有保存按钮，submit 会被拒绝。',
+      apis: ['form.load(mode, values?)', 'form.editable', 'form.dirty', 'form.changedPaths'],
+      stateLabel: '运行时状态',
       create: '新增任务',
       edit: '编辑',
       detail: '详情',
@@ -44,10 +54,21 @@ const copy = computed(() => props.locale === 'zh'
       requiredTitle: '请填写标题',
       requiredOwner: '请填写负责人',
       result: '最近保存',
+      records: '条记录',
     }
   : {
+      capability: 'Dialog CRUD',
       title: 'Dialog CRUD: one instance across create, edit, and detail',
-      description: 'The list owns no form. Opening the dialog calls form.load(); create and edit keep Element Plus Form while detail switches to Descriptions.',
+      goal: 'The list owns no form. Opening the dialog calls form.load(); create and edit keep Element Plus Form while detail switches to read-only Descriptions.',
+      steps: [
+        'New task → save with an empty title and read the host errors.',
+        'Edit a row, change any field — dirty and changedPaths update.',
+        'Save and check the state panel for the last-saved record.',
+        'Open Details → the form becomes read-only Descriptions.',
+      ],
+      expect: 'Detail mode offers no save action and its submit is rejected.',
+      apis: ['form.load(mode, values?)', 'form.editable', 'form.dirty', 'form.changedPaths'],
+      stateLabel: 'Runtime state',
       create: 'New task',
       edit: 'Edit',
       detail: 'Details',
@@ -59,7 +80,10 @@ const copy = computed(() => props.locale === 'zh'
       requiredTitle: 'Enter a title',
       requiredOwner: 'Enter an owner',
       result: 'Last saved',
+      records: 'records',
     })
+
+const sourceHref = 'https://github.com/daguanren21/vformjs/blob/main/docs/.vitepress/theme/components/examples/LiveCrudDialogDemo.vue'
 
 const visible = ref(false)
 const lastSaved = ref<TaskRow | null>(null)
@@ -128,39 +152,41 @@ function openDetail(row: TaskRow) {
 }
 
 async function submit() {
-  const result = await form.submit()
-  if (!result.ok)
-    form.scrollToFirstError()
+  await form.submit()
 }
 </script>
 
 <template>
   <LiveExampleFrame
+    :locale="locale"
     anchor="dialog-crud"
     index="01"
+    :capability="copy.capability"
     :title="copy.title"
-    :description="copy.description"
-    code="form.load('create' | 'edit' | 'detail', values?)"
+    :goal="copy.goal"
+    :steps="copy.steps"
+    :expect="copy.expect"
+    :apis="copy.apis"
+    :source-href="sourceHref"
+    :state-label="copy.stateLabel"
   >
     <div class="crud-toolbar">
       <ElButton type="primary" @click="openCreate">
         {{ copy.create }}
       </ElButton>
-      <span class="crud-state">
-        {{ form.mode }} · dirty={{ form.dirty }} · changed={{ JSON.stringify(form.changedPaths) }}
-      </span>
+      <span class="crud-count">{{ rows.length }} {{ copy.records }}</span>
     </div>
 
     <div class="crud-table" tabindex="0" :aria-label="copy.title">
       <ElTable :data="rows" border>
-        <ElTableColumn prop="title" :label="copy.labels.title" min-width="200" />
-        <ElTableColumn prop="owner" :label="copy.labels.owner" width="130" />
-        <ElTableColumn :label="copy.labels.status" width="110">
+        <ElTableColumn prop="title" :label="copy.labels.title" min-width="180" />
+        <ElTableColumn prop="owner" :label="copy.labels.owner" width="104" />
+        <ElTableColumn :label="copy.labels.status" width="96">
           <template #default="{ row }">
             {{ copy.statuses[row.status as TaskRow['status']] }}
           </template>
         </ElTableColumn>
-        <ElTableColumn :label="copy.labels.actions" width="170" fixed="right">
+        <ElTableColumn :label="copy.labels.actions" width="148" fixed="right">
           <template #default="{ row }">
             <ElButton link type="primary" @click="openEdit(row)">
               {{ copy.edit }}
@@ -173,10 +199,14 @@ async function submit() {
       </ElTable>
     </div>
 
-    <p class="crud-result" aria-live="polite">
-      <strong>{{ copy.result }}:</strong>
-      <code>{{ lastSaved ? JSON.stringify(lastSaved) : '—' }}</code>
-    </p>
+    <template #state>
+      <p><span>mode</span><code>{{ form.mode }}</code></p>
+      <p><span>dirty</span><code>{{ form.dirty }}</code></p>
+      <p><span>changedPaths</span><code>{{ JSON.stringify(form.changedPaths) }}</code></p>
+      <p aria-live="polite">
+        <span>{{ copy.result }}</span><code>{{ lastSaved ? JSON.stringify(lastSaved) : '—' }}</code>
+      </p>
+    </template>
 
     <ElDialog
       v-model="visible"
@@ -188,7 +218,7 @@ async function submit() {
     >
       <ElForm
         v-if="form.editable"
-        v-bind="form.el"
+        v-bind="form.host"
         label-position="top"
         @submit.prevent
       >
@@ -245,36 +275,51 @@ async function submit() {
 .crud-toolbar {
   display: flex;
   flex-wrap: wrap;
-  gap: 14px;
+  gap: 10px 14px;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
 }
 
-.crud-state {
+.crud-count {
   color: var(--ph-ink-faint);
-  font: 600 0.72rem/1.5 var(--ph-font-mono);
+  font: 600 0.7rem/1.5 var(--ph-font-mono);
+  letter-spacing: 0.04em;
 }
 
 .crud-table {
+  --el-table-header-bg-color: var(--ph-sunken);
+  --el-table-header-text-color: var(--ph-ink-soft);
+  --el-table-text-color: var(--ph-ink-soft);
+  --el-table-row-hover-bg-color: var(--ph-accent-wash);
+
   max-width: 100%;
   overflow-x: auto;
+  border-radius: var(--ph-radius, 10px);
 }
 
-.crud-result {
-  display: flex;
-  gap: 8px;
-  margin: 18px 0 0;
-  color: var(--ph-ink-soft);
-  font-size: 0.82rem;
-  overflow-wrap: anywhere;
+.crud-table:focus-visible {
+  outline: 2px solid var(--ph-accent);
+  outline-offset: 3px;
 }
 
-.crud-result strong {
-  flex: 0 0 auto;
+/* VitePress forces .vp-doc table{display:block; margin:20px 0} — that pushed
+   ElTable's body rows a full margin below the header; restore the internals */
+.crud-table :deep(.el-table__header),
+.crud-table :deep(.el-table__body) {
+  display: table;
+  margin: 0;
+  border-collapse: separate;
 }
 
-.crud-result code {
-  color: var(--ph-accent);
+/* keep the doc-table zebra + full cell borders out of ElTable's grid lines */
+.crud-table :deep(.el-table tr) {
+  background: transparent;
+}
+
+.crud-table :deep(.el-table th),
+.crud-table :deep(.el-table td) {
+  border-top: 0;
+  border-left: 0;
 }
 </style>

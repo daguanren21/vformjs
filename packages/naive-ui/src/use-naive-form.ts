@@ -14,18 +14,23 @@ import { createNaiveAdapter } from './create-adapter'
  *   rules: { name: [r.required()] },
  *   onSubmit: async (values) => api.save(values),
  * })
- * // <n-form :ref="i => form.bindHost(i)" :model="form.model" :rules="form.rules">
+ * // <n-form v-bind="form.host">
  * ```
  */
-export type UseNaiveFormOptions<T extends Record<string, unknown>> =
-  Omit<UseFormOptions<T>, 'defaultValues' | 'adapter'> & {
+export type UseNaiveFormOptions<
+  T extends object,
+  TSubmitError = never,
+> = Omit<UseFormOptions<T, TSubmitError>, 'defaultValues' | 'adapter'> & {
     /** 初始值（必填），推断模型类型 */
     defaults: T | (() => T)
   }
 
-export function useNaiveForm<T extends Record<string, unknown>>(
-  options: UseNaiveFormOptions<T>,
-): UseFormReturn<T> {
+export function useNaiveForm<
+  T extends object,
+  TSubmitError = never,
+>(
+  options: UseNaiveFormOptions<T, TSubmitError>,
+): UseFormReturn<T, TSubmitError> {
   const { defaults, ...rest } = options
   return useForm({
     ...rest,

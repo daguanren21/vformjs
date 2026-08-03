@@ -29,6 +29,11 @@ describe('official host adapter contract', () => {
     expect(clearValidate).toHaveBeenNthCalledWith(1, ['email'])
     expect(clearValidate).toHaveBeenNthCalledWith(2)
     expect(scrollToField).toHaveBeenCalledWith('email')
+    expect(adapter.getItemProps?.('email', 'already used')).toEqual({
+      prop: 'email',
+      error: 'already used',
+      'data-vform-path': 'email',
+    })
   })
 
   it('element-ui supports partial validate, clear, reset, and field scrolling', async () => {
@@ -51,6 +56,11 @@ describe('official host adapter contract', () => {
     expect(clearValidate).toHaveBeenNthCalledWith(1, ['email'])
     expect(clearValidate).toHaveBeenNthCalledWith(2)
     expect(scrollIntoView).toHaveBeenCalledWith({ block: 'center' })
+    expect(adapter.getItemProps?.('email', 'already used')).toEqual({
+      prop: 'email',
+      error: 'already used',
+      'data-vform-path': 'email',
+    })
   })
 
   it('Naive UI supports partial validate, clear, reset, and path scrolling', async () => {
@@ -77,6 +87,12 @@ describe('official host adapter contract', () => {
 
     expect(restoreValidation).toHaveBeenCalledTimes(2)
     expect(scrollIntoView).toHaveBeenCalledWith({ block: 'center' })
+    expect(adapter.getItemProps?.('email', 'already used')).toEqual({
+      path: 'email',
+      feedback: 'already used',
+      validationStatus: 'error',
+      'data-vform-path': 'email',
+    })
   })
 
   it('Ant Design Vue supports partial validate, clear, reset, and scroll', async () => {
@@ -91,9 +107,15 @@ describe('official host adapter contract', () => {
     adapter.afterModelReset?.()
     adapter.scrollToField?.('email')
 
-    expect(validateFields).toHaveBeenCalledWith(['email'])
-    expect(clearValidate).toHaveBeenNthCalledWith(1, 'email')
+    expect(validateFields).toHaveBeenCalledWith([['email']])
+    expect(clearValidate).toHaveBeenNthCalledWith(1, ['email'])
     expect(clearValidate).toHaveBeenNthCalledWith(2)
-    expect(scrollToField).toHaveBeenCalledWith('email')
+    expect(scrollToField).toHaveBeenCalledWith(['email'])
+    expect(adapter.getItemProps?.('profile.email', 'already used')).toEqual({
+      name: ['profile', 'email'],
+      validateStatus: 'error',
+      help: 'already used',
+      'data-vform-path': 'profile.email',
+    })
   })
 })

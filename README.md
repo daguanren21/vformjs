@@ -33,7 +33,7 @@ pnpm add @vformjs/element-plus element-plus vue     # Vue 3
 ## Quick start
 
 ```ts
-import { useElForm, r } from '@vformjs/element-plus'
+import { r, submitFail, useElForm } from '@vformjs/element-plus'
 
 const form = useElForm({
   defaults: { name: '', email: '' },
@@ -41,14 +41,18 @@ const form = useElForm({
     name: [r.required(), r.min(2)],
     email: [r.required(), r.email()],
   },
-  onSubmit: async (values) => api.save(values),
+  onSubmit: async (values) => {
+    const result = await api.save(values)
+    if (!result.ok)
+      return submitFail(result.error, { errors: result.fieldErrors })
+  },
 })
 ```
 
 ```vue
 <template>
-  <el-form v-bind="form.el" label-width="100px">
-    <el-form-item label="Name" prop="name">
+  <el-form v-bind="form.host" label-width="100px">
+    <el-form-item label="Name" v-bind="form.item('name')">
       <el-input v-model="form.model.name" />
     </el-form-item>
     <el-form-item label="Email" prop="email">
@@ -61,12 +65,15 @@ const form = useElForm({
 </template>
 ```
 
-`form.el` is `{ ref, model, rules }`. `defaults` infers types for `model` / `onSubmit(values)`.
+`form.host` is `{ ref, model, rules }`. `form.item(path)` supplies host-specific field props and errors.
+`onSubmit` may return `submitFail(error, { errors })`; the error stays typed as
+`result.submitError`, and field errors become reactive `form.errors`.
 
 ## What you get
 
 - **Modes** — `form.load('create' | 'edit' | 'detail', values?)` in the dialog/page, not the list
 - **Trust state** — reactive `errors`, `dirty`, `changedPaths`, and server-error scrolling
+- **Submit failures** — typed `submitError` values with optional field errors
 - **Rules** — `r.required()`, email, min/max, pattern, custom; or a function of values
 - **when / whenRules** — show/hide and conditional rules
 - **linkage** — react when other fields change
@@ -89,12 +96,17 @@ const form = useElForm({
 ```bash
 pnpm dlx vformjs init
 pnpm dlx vformjs add form profile
+pnpm dlx vformjs audit forms --json
 pnpm dlx vformjs doctor
 pnpm dlx vformjs migrate vue2-to-vue3 --dry-run --json
 pnpm dlx vformjs skill install
 ```
 
-Host and Zod detection come from `package.json`. Generated form modules are idempotent; existing edited files are never replaced without `--force`. Use `--dry-run --json` in coding-agent loops.
+Host and Zod detection come from `package.json`. Generated modules use `form.host`, `form.item(path)`, typed paths, localized rules, and typed submit outcomes; Zod imports only the `/zod` subpath. Output is idempotent, and edited files are never replaced without `--force`. Use `--dry-run --json` in coding-agent loops.
+
+Private/company UI packages are never auto-detected. Configure their generated
+import and factory explicitly with `--adapter-package` and `--form-factory`;
+runtime integration remains a business-owned `defineAdapter` wrapper.
 
 ## Local
 

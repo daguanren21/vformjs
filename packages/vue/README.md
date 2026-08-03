@@ -18,7 +18,7 @@ pnpm add @vformjs/vue vue
 ## useForm
 
 ```ts
-import { useForm, r, defineAdapter } from '@vformjs/vue'
+import { defineAdapter, r, submitFail, useForm } from '@vformjs/vue'
 
 const form = useForm({
   defaultValues: { name: '' },
@@ -27,10 +27,15 @@ const form = useForm({
     /* host validate bridge */
   }),
   onSubmit: async (values) => {
-    await api.save(values)
+    const result = await api.save(values)
+    if (!result.ok)
+      return submitFail(result.error, { errors: result.fieldErrors })
   },
 })
 ```
+
+`submitFail` preserves the API error type as `result.submitError` and copies optional field errors
+into reactive `form.errors`.
 
 ## Modes
 
@@ -52,6 +57,28 @@ form.scrollToFirstError()
 form.dirty
 form.changedPaths
 ```
+
+## Large and composed forms
+
+Use exact-path writable computeds instead of a deep model watcher:
+
+```ts
+const form = useForm({
+  defaultValues,
+  modelTracking: 'explicit',
+})
+const email = form.field('profile.email')
+```
+
+Compose independently hosted sections explicitly:
+
+```ts
+const group = useFormGroup({ base: baseForm, details: detailsForm })
+await group.submit(async values => api.save(values))
+```
+
+`useFormGroup` aggregates validation, errors, dirty paths, submitting state,
+scrolling, and reset without provide/inject registration.
 
 Active `rules` require a bound adapter. Without one, validation returns a
 configuration error; use `useZodForm` for schema-only validation.

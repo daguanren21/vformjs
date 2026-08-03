@@ -1,50 +1,65 @@
 /* ─────────────────────────────────────────────────────────────
-   vformjs theme — "precision engineering / technical editorial"
-   Warm paper + graphite, one signal accent (vermilion),
-   monospaced technical detail, visible rule/grid logic.
+   vformjs theme — "calm minimal"
+   Cool white / slate / one signal blue. Clear hierarchy,
+   hairline borders, rounded corners, quiet shadows,
+   150–220ms state feedback.
    ───────────────────────────────────────────────────────────── */
 
 /* 1 · Tokens ─────────────────────────────────────────────── */
 
 :root {
-  /* type stacks — system fonts only */
-  --ph-font-display: "Iowan Old Style", "Palatino Linotype", Palatino,
-    "Source Han Serif SC", "Noto Serif CJK SC", "Songti SC", STSong,
-    ui-serif, Georgia, "Times New Roman", serif;
-  --ph-font-body: "Avenir Next", "Helvetica Neue", "Segoe UI",
-    -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB",
-    "Microsoft YaHei", ui-sans-serif, system-ui, sans-serif;
+  /* type stacks — system sans for display + body; mono for code/API only */
+  --ph-font-body: -apple-system, BlinkMacSystemFont, "Segoe UI",
+    "Avenir Next", "Helvetica Neue", Arial, "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", ui-sans-serif, system-ui,
+    sans-serif;
+  --ph-font-display: var(--ph-font-body);
   --ph-font-mono: ui-monospace, "SF Mono", "Cascadia Mono",
     "JetBrains Mono", Menlo, Consolas, "Liberation Mono", monospace;
 
-  /* light palette — warm paper + graphite */
-  --ph-paper: #f6f1e7;
-  --ph-raised: #fcf9f2;
-  --ph-sunken: #efe9db;
-  --ph-ink: #211d15;
-  --ph-ink-soft: #57503f;
-  --ph-ink-faint: #6f6650;
-  --ph-line: #d9cfba;
-  --ph-line-strong: #b3a98c;
+  /* light palette — cool white + slate */
+  --ph-paper: #f8fafc;
+  --ph-raised: #ffffff;
+  --ph-sunken: #f1f5f9;
+  --ph-ink: #0f172a;
+  --ph-ink-soft: #475569;
+  --ph-ink-faint: #64748b;
+  --ph-line: #e2e8f0;
+  --ph-line-strong: #cbd5e1;
 
-  /* signal accent — vermilion, text-safe on paper */
-  --ph-accent: #b6401a;
-  --ph-accent-strong: #93320f;
-  --ph-accent-fg: #fdf8ef; /* text sitting on accent fill */
-  --ph-accent-wash: rgba(182, 64, 26, 0.07);
-  --ph-accent-on-ink: #ff7a45; /* accent rendered on graphite */
+  /* signal accent — calm blue, text-safe on paper */
+  --ph-accent: #2563eb;
+  --ph-accent-strong: #1d4ed8;
+  --ph-accent-fg: #ffffff; /* text sitting on accent fill */
+  --ph-accent-wash: rgba(37, 99, 235, 0.08);
+  --ph-accent-on-ink: #93c5fd; /* accent rendered on deep navy */
 
-  /* contrast band (used by the final CTA plate) */
-  --ph-band-ink: #221e16;
-  --ph-band-fg: #f3ecdb;
-  --ph-band-line: rgba(243, 236, 219, 0.22);
+  /* contrast band — deep navy in both themes (code output, CTA plate) */
+  --ph-band-ink: #0f172a;
+  --ph-band-fg: #e2e8f0;
+  --ph-band-line: rgba(226, 232, 240, 0.16);
+
+  /* shape + depth */
+  --ph-radius-sm: 7px;
+  --ph-radius: 10px;
+  --ph-radius-lg: 14px;
+  --ph-shadow-sm:
+    0 1px 2px rgba(15, 23, 42, 0.05),
+    0 1px 3px rgba(15, 23, 42, 0.04);
+  --ph-shadow-md:
+    0 4px 12px rgba(15, 23, 42, 0.06),
+    0 12px 32px rgba(15, 23, 42, 0.08);
+  --ph-focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.35);
 
   /* structure */
-  --ph-radius: 3px;
   --ph-measure: 1140px;
   --ph-gutter: clamp(20px, 4vw, 48px);
   --ph-section-gap: clamp(72px, 11vw, 128px);
   --ph-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* examples workbench: values printed on the navy band */
+  --vx-band-muted: #94a3b8;
+  --vx-band-value: var(--ph-accent-on-ink);
 
   /* feed the default theme so docs + chrome share the identity */
   --vp-font-family-base: var(--ph-font-body);
@@ -59,65 +74,429 @@
   --vp-c-border: var(--ph-line-strong);
   --vp-c-divider: var(--ph-line);
   --vp-c-gutter: var(--ph-line);
-  --vp-c-gray-soft: rgba(94, 76, 44, 0.12); /* warm inline-code chip bg */
-  --vp-c-brand-1: #b6401a;
-  --vp-c-brand-2: #93320f;
-  --vp-c-brand-3: #cc5a30;
-  --vp-c-brand-soft: rgba(182, 64, 26, 0.12);
-  --vp-c-tip-1: var(--vp-c-brand-1);
-  --vp-c-tip-2: var(--vp-c-brand-2);
-  --vp-c-tip-3: var(--vp-c-brand-3);
+
+  --vp-c-gray-1: #cbd5e1;
+  --vp-c-gray-2: #e2e8f0;
+  --vp-c-gray-3: #edf2f7;
+  --vp-c-gray-soft: rgba(100, 116, 139, 0.12);
+
+  --vp-c-brand-1: var(--ph-accent);
+  --vp-c-brand-2: var(--ph-accent-strong);
+  --vp-c-brand-3: var(--ph-accent);
+  --vp-c-brand-soft: rgba(37, 99, 235, 0.12);
+
+  /* semantic scale, kept recognisable but de-browned */
+  --vp-c-green-1: #047857;
+  --vp-c-green-2: #059669;
+  --vp-c-green-3: #10b981;
+  --vp-c-green-soft: rgba(16, 185, 129, 0.14);
+  --vp-c-yellow-1: #a16207;
+  --vp-c-yellow-2: #ca8a04;
+  --vp-c-yellow-3: #eab308;
+  --vp-c-yellow-soft: rgba(234, 179, 8, 0.16);
+  --vp-c-red-1: #b91c1c;
+  --vp-c-red-2: #dc2626;
+  --vp-c-red-3: #ef4444;
+  --vp-c-red-soft: rgba(239, 68, 68, 0.14);
+  --vp-c-purple-1: #6d28d9;
+  --vp-c-purple-2: #7c3aed;
+  --vp-c-purple-3: #8b5cf6;
+  --vp-c-purple-soft: rgba(139, 92, 246, 0.14);
+
+  /* inline code chip: quiet accent tint */
+  --vp-code-color: var(--ph-accent-strong);
+  --vp-code-bg: var(--ph-accent-wash);
+
+  /* code blocks: light slate band (shiki light theme stays legible) */
+  --vp-code-block-divider-color: var(--ph-line);
+  --vp-code-lang-color: var(--ph-ink-faint);
+  --vp-code-line-highlight-color: rgba(37, 99, 235, 0.07);
+  --vp-code-line-number-color: var(--ph-ink-faint);
+  --vp-code-copy-code-border-color: var(--ph-line);
+  --vp-code-copy-code-bg: var(--ph-raised);
+  --vp-code-copy-code-hover-border-color: var(--ph-line-strong);
+  --vp-code-copy-code-hover-bg: var(--ph-sunken);
+  --vp-code-copy-code-active-text: var(--ph-ink-soft);
+
+  /* custom containers: tinted hairline + soft wash */
+  --vp-custom-block-tip-border: rgba(37, 99, 235, 0.28);
+  --vp-custom-block-tip-bg: rgba(37, 99, 235, 0.05);
+  --vp-custom-block-tip-code-bg: rgba(37, 99, 235, 0.1);
+  --vp-custom-block-warning-border: rgba(202, 138, 4, 0.3);
+  --vp-custom-block-danger-border: rgba(220, 38, 38, 0.3);
+  --vp-custom-block-important-border: rgba(124, 58, 237, 0.3);
+
+  /* local search */
+  --vp-local-search-bg: var(--ph-raised);
+  --vp-local-search-result-bg: var(--ph-raised);
+  --vp-local-search-result-border: var(--ph-line);
+  --vp-local-search-result-selected-bg: var(--ph-raised);
+  --vp-local-search-result-selected-border: var(--ph-accent);
+  --vp-local-search-highlight-bg: var(--ph-accent);
+  --vp-local-search-highlight-text: #ffffff;
+
+  --vp-backdrop-bg-color: rgba(15, 23, 42, 0.55);
 }
 
 .dark {
-  --ph-paper: #17140f;
-  --ph-raised: #1e1a13;
-  --ph-sunken: #12100b;
-  --ph-ink: #ece4d4;
-  --ph-ink-soft: #aba08a;
-  --ph-ink-faint: #948972;
-  --ph-line: #332d22;
-  --ph-line-strong: #554b3a;
+  /* dark palette — navy canvas, slate surfaces, not a mechanical invert */
+  --ph-paper: #0f172a;
+  --ph-raised: #151e33;
+  --ph-sunken: #0b1220;
+  --ph-ink: #f8fafc;
+  --ph-ink-soft: #cbd5e1;
+  --ph-ink-faint: #94a3b8;
+  --ph-line: #243247;
+  --ph-line-strong: #364a6b;
 
-  --ph-accent: #ff7a45;
-  --ph-accent-strong: #ff9a6f;
-  --ph-accent-fg: #241302;
-  --ph-accent-wash: rgba(255, 122, 69, 0.09);
-  --ph-accent-on-ink: var(--ph-accent);
+  --ph-accent: #60a5fa;
+  --ph-accent-strong: #93c5fd;
+  --ph-accent-fg: #0b1220;
+  --ph-accent-wash: rgba(96, 165, 250, 0.12);
 
-  --ph-band-ink: #232018;
-  --ph-band-fg: #f1e9d7;
-  --ph-band-line: rgba(241, 233, 215, 0.2);
+  /* band drops one step deeper than the canvas so it still reads */
+  --ph-band-ink: #0a1120;
 
-  --vp-c-brand-1: #ff7a45;
-  --vp-c-brand-2: #ff9a6f;
-  --vp-c-brand-3: #e8662f;
-  --vp-c-brand-soft: rgba(255, 122, 69, 0.14);
-  --vp-c-gray-soft: rgba(232, 216, 184, 0.1);
+  --ph-shadow-sm: 0 1px 2px rgba(2, 6, 23, 0.4);
+  --ph-shadow-md:
+    0 8px 24px rgba(2, 6, 23, 0.45),
+    0 2px 6px rgba(2, 6, 23, 0.35);
+  --ph-focus-ring: 0 0 0 3px rgba(96, 165, 250, 0.4);
+
+  --vp-c-gray-1: #45536e;
+  --vp-c-gray-2: #364260;
+  --vp-c-gray-3: #2a3550;
+  --vp-c-gray-soft: rgba(148, 163, 184, 0.14);
+
+  --vp-c-brand-soft: rgba(96, 165, 250, 0.16);
+
+  /* solid brand buttons keep white-text AA on navy */
+  --vp-c-brand-3: #2563eb;
+  --vp-button-brand-bg: #2563eb;
+  --vp-button-brand-hover-bg: #1d4ed8;
+  --vp-button-brand-active-bg: #1e40af;
+  --vp-button-brand-text: #ffffff;
+  --vp-button-brand-hover-text: #ffffff;
+  --vp-button-brand-active-text: #ffffff;
+
+  --vp-c-green-1: #34d399;
+  --vp-c-green-2: #10b981;
+  --vp-c-green-3: #059669;
+  --vp-c-green-soft: rgba(52, 211, 153, 0.16);
+  --vp-c-yellow-1: #fbbf24;
+  --vp-c-yellow-2: #f59e0b;
+  --vp-c-yellow-3: #d97706;
+  --vp-c-yellow-soft: rgba(251, 191, 36, 0.16);
+  --vp-c-red-1: #f87171;
+  --vp-c-red-2: #ef4444;
+  --vp-c-red-3: #dc2626;
+  --vp-c-red-soft: rgba(248, 113, 113, 0.16);
+  --vp-c-purple-1: #a78bfa;
+  --vp-c-purple-2: #8b5cf6;
+  --vp-c-purple-3: #7c3aed;
+  --vp-c-purple-soft: rgba(167, 139, 250, 0.16);
+
+  --vp-code-color: #93c5fd;
+  --vp-code-bg: rgba(96, 165, 250, 0.14);
+  --vp-code-line-highlight-color: rgba(147, 197, 253, 0.1);
+  --vp-code-copy-code-hover-bg: #1c2740;
+
+  --vp-custom-block-tip-border: rgba(96, 165, 250, 0.3);
+  --vp-custom-block-tip-bg: rgba(96, 165, 250, 0.08);
+  --vp-custom-block-tip-code-bg: rgba(96, 165, 250, 0.12);
+  --vp-custom-block-warning-border: rgba(251, 191, 36, 0.3);
+  --vp-custom-block-danger-border: rgba(248, 113, 113, 0.3);
+  --vp-custom-block-important-border: rgba(167, 139, 250, 0.3);
+
+  --vp-backdrop-bg-color: rgba(2, 6, 23, 0.65);
+}
+
+html {
+  color-scheme: light;
+  scroll-padding-top: calc(var(--vp-nav-height, 64px) + 16px);
+  scrollbar-width: thin;
+  scrollbar-color: var(--ph-line-strong) transparent;
 }
 
 html.dark {
   color-scheme: dark;
 }
 
+/* the default theme ships Inter for CJK pages — keep them on system sans too */
+[lang]:where(:lang(zh, ja)) {
+  --vp-font-family-base: var(--ph-font-body);
+}
+
 /* 2 · Global identity touches ────────────────────────────── */
 
 ::selection {
-  background: rgba(182, 64, 26, 0.16);
+  background: rgba(37, 99, 235, 0.16);
 }
 
 .dark ::selection {
-  background: rgba(255, 122, 69, 0.22);
+  background: rgba(96, 165, 250, 0.28);
 }
 
-/* editorial serif for doc headings; body stays sans */
-.vp-doc h1,
-.vp-doc h2 {
-  font-family: var(--ph-font-display);
+/* quiet slate scrollbars */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--ph-line-strong);
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--ph-ink-faint);
+}
+
+/* one clear focus ring for docs chrome + content; live demos ship
+   their own element-plus focus styles, so they opt out of the outline */
+:focus-visible {
+  outline: 2px solid var(--ph-accent);
+  outline-offset: 2px;
+}
+
+.example-frame :focus-visible,
+.vf-example-dialog :focus-visible {
+  outline: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* 3 · VitePress chrome ───────────────────────────────────── */
+
+/* nav: solid paper, hairline divider, calm active state */
+.VPNavBarTitle .title {
+  font-weight: 700;
   letter-spacing: -0.01em;
 }
 
-/* 3 · Landing foundation (.ph namespace only) ────────────── */
+.VPNavBarMenuLink {
+  position: relative;
+  transition: color 0.16s var(--ph-ease);
+}
+
+.VPNavBarMenuLink::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 15px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--ph-accent);
+  opacity: 0;
+  transform: scaleX(0.4);
+  transition:
+    opacity 0.18s var(--ph-ease),
+    transform 0.18s var(--ph-ease);
+}
+
+.VPNavBarMenuLink.active {
+  font-weight: 600;
+}
+
+.VPNavBarMenuLink.active::after {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+/* search trigger: a quiet bordered field, not a grey slab */
+.DocSearch-Button {
+  border: 1px solid var(--ph-line);
+  border-radius: var(--ph-radius-sm);
+  background-color: var(--ph-raised);
+  transition:
+    border-color 0.16s var(--ph-ease),
+    background-color 0.16s var(--ph-ease);
+}
+
+.DocSearch-Button:hover {
+  border-color: var(--ph-line-strong);
+  background-color: var(--ph-sunken);
+}
+
+.DocSearch-Button:focus-visible {
+  outline: none;
+  box-shadow: var(--ph-focus-ring);
+}
+
+/* local search modal */
+.VPLocalSearchBox .shell {
+  border: 1px solid var(--ph-line);
+  border-radius: var(--ph-radius-lg);
+  box-shadow: var(--ph-shadow-md);
+}
+
+.VPLocalSearchBox .result {
+  border-radius: var(--ph-radius-sm);
+}
+
+/* sidebar: sits on the canvas, separated by a hairline on desktop */
+@media (min-width: 960px) {
+  .VPSidebar {
+    border-right: 1px solid var(--ph-line);
+  }
+}
+
+/* sidebar items become soft pills; the pill grows left so the text
+   column keeps its original alignment */
+.VPSidebarItem .link > .text,
+.VPSidebarItem .item > .text {
+  margin-left: -10px;
+  padding: 4px 10px;
+  border-radius: var(--ph-radius-sm);
+  transition:
+    color 0.16s var(--ph-ease),
+    background-color 0.16s var(--ph-ease);
+}
+
+.VPSidebarItem.is-link > .item > .link:hover > .text,
+.VPSidebarItem.collapsible > .item > .text:hover {
+  background-color: var(--vp-c-default-soft);
+}
+
+.VPSidebarItem.is-active > .item .link > .text,
+.VPSidebarItem.is-active > .item .link:hover > .text {
+  background-color: var(--ph-accent-wash);
+  color: var(--ph-accent);
+  font-weight: 600;
+}
+
+/* outline: accent marks the current section */
+.VPDocAsideOutline .outline-link {
+  transition: color 0.16s var(--ph-ease);
+}
+
+.VPDocAsideOutline .outline-link.active {
+  color: var(--ph-accent);
+  font-weight: 600;
+}
+
+/* default-theme buttons (hero actions etc.) drop the pill shape */
+.VPButton {
+  border-radius: var(--ph-radius-sm);
+  transition:
+    color 0.16s var(--ph-ease),
+    border-color 0.16s var(--ph-ease),
+    background-color 0.16s var(--ph-ease);
+}
+
+/* 4 · Doc content (.vp-doc) ──────────────────────────────── */
+
+/* anchor targets clear the sticky nav */
+.vp-doc :is(h1, h2, h3, h4, h5, h6) {
+  scroll-margin-top: calc(var(--vp-nav-height, 64px) + 16px);
+}
+
+.vp-doc h1 {
+  margin: 4px 0 20px;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.025em;
+}
+
+.vp-doc h2 {
+  margin-top: 44px;
+  font-size: 23px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.vp-doc h3 {
+  font-size: 18px;
+  font-weight: 650;
+}
+
+.vp-doc h4 {
+  font-weight: 650;
+}
+
+@media (max-width: 640px) {
+  .vp-doc h1 {
+    font-size: 27px;
+  }
+}
+
+/* links: underline rests faint, fills in on hover */
+.vp-doc a {
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in srgb, var(--ph-accent) 45%, transparent);
+  transition:
+    color 0.16s var(--ph-ease),
+    text-decoration-color 0.16s var(--ph-ease);
+}
+
+.vp-doc a:hover {
+  text-decoration-color: var(--ph-accent);
+}
+
+/* inline code chip */
+.vp-doc :not(pre) > code {
+  border-radius: 6px;
+}
+
+/* code blocks: rounded card with a hairline once they are not full-bleed */
+@media (min-width: 640px) {
+  .vp-doc .vp-block {
+    border-radius: var(--ph-radius);
+  }
+
+  .vp-doc div[class*="language-"] {
+    border: 1px solid var(--ph-line);
+  }
+}
+
+.vp-doc [class*="language-"] > button.copy:focus-visible {
+  outline: none;
+  box-shadow: var(--ph-focus-ring);
+}
+
+/* blockquote: a steady slate rule */
+.vp-doc blockquote {
+  border-left: 3px solid var(--ph-line-strong);
+}
+
+/* custom containers match the site radius */
+.vp-doc .custom-block {
+  border-radius: var(--ph-radius);
+}
+
+.vp-doc .custom-block .custom-block-title {
+  font-weight: 650;
+}
+
+/* footer: edit link stays quiet; pagers become calm cards */
+.VPDocFooter .pager-link {
+  border-color: var(--ph-line);
+  border-radius: var(--ph-radius);
+  transition:
+    border-color 0.18s var(--ph-ease),
+    background-color 0.18s var(--ph-ease),
+    box-shadow 0.18s var(--ph-ease);
+}
+
+.VPDocFooter .pager-link:hover {
+  border-color: var(--ph-accent);
+  background-color: var(--ph-raised);
+  box-shadow: var(--ph-shadow-sm);
+}
+
+/* 5 · Landing foundation (.ph namespace only) ────────────── */
 
 .ph {
   --ph-hair: var(--ph-line);
@@ -142,29 +521,10 @@ html.dark {
   margin: 0 auto;
 }
 
-/* ruled join: hairline top border + registration ticks at both edges */
+/* hairline join between landing sections */
 .ph-ruled {
-  position: relative;
   border-top: 1px solid var(--ph-hair);
   padding-top: clamp(56px, 8vw, 84px);
-}
-
-.ph-ruled::before,
-.ph-ruled::after {
-  content: "";
-  position: absolute;
-  top: -5px;
-  width: 1px;
-  height: 9px;
-  background: var(--ph-line-strong);
-}
-
-.ph-ruled::before {
-  left: 0;
-}
-
-.ph-ruled::after {
-  right: 0;
 }
 
 /* visible keyboard focus everywhere on the landing */
@@ -173,27 +533,20 @@ html.dark {
 .ph [tabindex]:focus-visible {
   outline: 2px solid var(--ph-accent);
   outline-offset: 3px;
-  border-radius: 1px;
+  border-radius: var(--ph-radius-sm);
 }
 
 .ph-anchor {
   scroll-margin-top: calc(var(--vp-nav-height, 64px) + 24px);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  html {
-    scroll-behavior: smooth;
-  }
-
-}
-
-/* 4 · .ph-page: keep the VitePress page chrome out of the way ── */
+/* 6 · .ph-page: keep the VitePress page chrome out of the way ── */
 
 .ph-page .VPPage {
   padding-bottom: 0;
 }
 
-/* 5 · Live examples embedded in doc pages ────────────────── */
+/* 7 · Live examples embedded in doc pages ────────────────── */
 
 /* frame anchors clear the fixed nav, same offset as .ph-anchor */
 .vp-doc .example-frame {
@@ -203,4 +556,30 @@ html.dark {
 /* stacked demos keep the landing rhythm at doc scale */
 .vp-doc .example-frame + .example-frame {
   margin-top: clamp(40px, 6vw, 64px);
+}
+
+/* 8 · Examples workbench page ──────────────────────────────
+   aside is off (frontmatter), the left docs sidebar stays.
+   The freed outline column becomes room for the workbench. */
+
+/* widen the doc column, bounded by the site measure */
+.examples-page .VPDoc .content-container {
+  max-width: var(--ph-measure);
+}
+
+/* rhythm around the workbench blocks */
+.examples-page .vp-doc .vx-overview {
+  margin: clamp(24px, 4vw, 36px) 0 clamp(40px, 6vw, 72px);
+}
+
+.examples-page .vp-doc .vx-matrix {
+  margin: clamp(20px, 3vw, 32px) 0 0;
+}
+
+/* the CRUD dialog teleports to body — keep its corners + controls on-identity */
+.vf-example-dialog {
+  --el-color-primary: var(--ph-accent);
+  --el-border-radius-base: 8px;
+  --el-dialog-border-radius: var(--ph-radius-lg);
+  border-radius: var(--ph-radius-lg);
 }

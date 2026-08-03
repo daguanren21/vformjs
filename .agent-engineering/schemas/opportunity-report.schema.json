@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vformjs.dev/schemas/opportunity-report.schema.json",
+  "title": "vformjs opportunity report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "runId",
+    "summary",
+    "signalIdsReviewed",
+    "opportunities",
+    "horizonRisks",
+    "discardedSignals"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "runId": { "type": "string", "minLength": 1 },
+    "summary": { "type": "string", "minLength": 1 },
+    "signalIdsReviewed": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "opportunities": {
+      "type": "array",
+      "maxItems": 5,
+      "items": { "$ref": "#/$defs/opportunity" }
+    },
+    "horizonRisks": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/horizonRisk" }
+    },
+    "discardedSignals": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/discardedSignal" }
+    }
+  },
+  "$defs": {
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceId", "claim"],
+      "properties": {
+        "sourceId": { "type": "string", "minLength": 1 },
+        "claim": { "type": "string", "minLength": 1 }
+      }
+    },
+    "score": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pain", "reach", "productFit", "differentiation", "timing", "complexity", "compatibilityRisk"],
+      "properties": {
+        "pain": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "reach": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "productFit": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "differentiation": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "timing": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "complexity": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "compatibilityRisk": { "type": "integer", "minimum": 1, "maximum": 5 }
+      }
+    },
+    "experiment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "question", "procedure", "successCriteria", "killCriteria"],
+      "properties": {
+        "type": {
+          "enum": ["reproduction", "benchmark", "compatibility-canary", "docs-smoke", "api-sketch", "research-discussion"]
+        },
+        "question": { "type": "string", "minLength": 1 },
+        "procedure": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "successCriteria": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "killCriteria": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "opportunity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "hypothesis",
+        "productBoundary",
+        "evidence",
+        "alternativeExplanations",
+        "confidence",
+        "scores",
+        "risk",
+        "experiment",
+        "recommendation",
+        "humanAttention",
+        "rationale"
+      ],
+      "properties": {
+        "id": { "type": "string", "pattern": "^OPP-[0-9]{8}-[a-z0-9-]+$" },
+        "title": { "type": "string", "minLength": 1 },
+        "hypothesis": { "type": "string", "minLength": 1 },
+        "productBoundary": { "enum": ["inside", "adjacent", "outside"] },
+        "evidence": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/evidence" } },
+        "alternativeExplanations": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "scores": { "$ref": "#/$defs/score" },
+        "risk": { "enum": ["R0", "R1", "R2", "R3"] },
+        "experiment": { "$ref": "#/$defs/experiment" },
+        "recommendation": { "enum": ["experiment", "promote", "park", "reject"] },
+        "humanAttention": { "enum": ["none", "notify", "action_required"] },
+        "rationale": { "type": "string", "minLength": 1 }
+      }
+    },
+    "horizonRisk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "evidence", "recommendedAction"],
+      "properties": {
+        "title": { "type": "string", "minLength": 1 },
+        "evidence": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/evidence" } },
+        "recommendedAction": { "type": "string", "minLength": 1 }
+      }
+    },
+    "discardedSignal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceId", "reason"],
+      "properties": {
+        "sourceId": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

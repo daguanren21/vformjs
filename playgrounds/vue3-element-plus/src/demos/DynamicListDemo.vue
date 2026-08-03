@@ -21,7 +21,6 @@ const form = useElForm({
 const members = form.list('members', {
   defaultItem: () => ({ name: '', role: 'dev' }),
 })
-const memberFields = members.fields
 
 async function onSubmit() {
   const res = await form.submit()
@@ -35,13 +34,13 @@ async function onSubmit() {
     <p class="hint">
       form.list 动态数组；行 prop 用 fieldPath('members', i, 'name')
     </p>
-    <el-form v-bind="form.el" label-width="100px" style="max-width: 640px">
+    <el-form v-bind="form.host" label-width="100px" style="max-width: 640px">
       <el-form-item label="项目名" prop="project">
         <el-input v-model="form.model.project" />
       </el-form-item>
 
       <el-form-item
-        v-for="(row, index) in memberFields"
+        v-for="(row, index) in members.fields"
         :key="row.key"
         :label="`成员 ${index + 1}`"
         :prop="fieldPath('members', index, 'name')"

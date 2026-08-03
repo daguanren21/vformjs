@@ -69,9 +69,6 @@ importers:
       '@vformjs/naive-ui':
         specifier: workspace:*
         version: link:packages/naive-ui
-      '@vformjs/shared':
-        specifier: workspace:*
-        version: link:packages/shared
       '@vformjs/vue':
         specifier: workspace:*
         version: link:packages/vue
@@ -275,34 +272,6 @@ importers:
       zod:
         specifier: 'catalog:'
         version: 4.4.3
-
-  packages/schema:
-    dependencies:
-      '@vformjs/core':
-        specifier: workspace:^
-        version: link:../core
-      '@vformjs/shared':
-        specifier: workspace:^
-        version: link:../shared
-    devDependencies:
-      tsdown:
-        specifier: 'catalog:'
-        version: 0.22.14(@volar/typescript@2.4.15)(typescript@7.0.2)
-      typescript:
-        specifier: 'catalog:'
-        version: 7.0.2
-
-  packages/shared:
-    devDependencies:
-      tsdown:
-        specifier: 'catalog:'
-        version: 0.22.14(@volar/typescript@2.4.15)(typescript@7.0.2)
-      typescript:
-        specifier: 'catalog:'
-        version: 7.0.2
-      vitest:
-        specifier: 'catalog:'
-        version: 4.1.10(@types/node@26.1.2)(happy-dom@20.11.1)(vite@8.1.5(@types/node@26.1.2)(esbuild@0.28.1)(jiti@2.7.0))
 
   packages/vue:
     dependencies:

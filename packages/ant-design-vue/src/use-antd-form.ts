@@ -17,18 +17,23 @@ import { createAntdAdapter } from './create-adapter'
  *     await api.save(values)
  *   },
  * })
- * // <a-form :ref="i => form.bindHost(i)" :model="form.model" :rules="form.rules">
+ * // <a-form v-bind="form.host">
  * ```
  */
-export type UseAntdFormOptions<T extends Record<string, unknown>> =
-  Omit<UseFormOptions<T>, 'defaultValues' | 'adapter'> & {
+export type UseAntdFormOptions<
+  T extends object,
+  TSubmitError = never,
+> = Omit<UseFormOptions<T, TSubmitError>, 'defaultValues' | 'adapter'> & {
     /** 初始值（必填），推断模型类型 */
     defaults: T | (() => T)
   }
 
-export function useAntdForm<T extends Record<string, unknown>>(
-  options: UseAntdFormOptions<T>,
-): UseFormReturn<T> {
+export function useAntdForm<
+  T extends object,
+  TSubmitError = never,
+>(
+  options: UseAntdFormOptions<T, TSubmitError>,
+): UseFormReturn<T, TSubmitError> {
   const { defaults, ...rest } = options
   return useForm({
     ...rest,

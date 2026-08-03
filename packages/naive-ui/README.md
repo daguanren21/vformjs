@@ -11,7 +11,7 @@ pnpm add @vformjs/naive-ui naive-ui vue
 ## Quick start
 
 ```ts
-import { r, useNaiveForm } from '@vformjs/naive-ui'
+import { r, submitFail, useNaiveForm } from '@vformjs/naive-ui'
 
 const form = useNaiveForm({
   defaults: { name: '', email: '' },
@@ -19,13 +19,20 @@ const form = useNaiveForm({
     name: [r.required(), r.min(2)],
     email: [r.required(), r.email()],
   },
-  onSubmit: async values => api.save(values),
+  onSubmit: async (values) => {
+    const result = await api.save(values)
+    if (!result.ok)
+      return submitFail(result.error, { errors: result.fieldErrors })
+  },
 })
 ```
 
+`submitFail` keeps expected API errors typed as `result.submitError` and copies optional field
+errors into reactive `form.errors`.
+
 ```vue
-<n-form :ref="form.bindHost" :model="form.model" :rules="form.rules">
-  <n-form-item label="Name" path="name" data-vform-path="name">
+<n-form v-bind="form.host">
+  <n-form-item label="Name" v-bind="form.item('name')">
     <n-input v-model:value="form.model.name" />
   </n-form-item>
   <n-button type="primary" :loading="form.submitting" @click="form.submit()">
@@ -34,6 +41,6 @@ const form = useNaiveForm({
 </n-form>
 ```
 
-The package also exports `createNaiveAdapter` for direct `useForm` integration. For Zod, import `useZodForm` from `@vformjs/naive-ui/zod` or the package root.
+The package also exports `createNaiveAdapter` for direct `useForm` integration. For Zod, import `useZodForm` only from `@vformjs/naive-ui/zod`.
 
 MIT · [Docs](https://vformjs.vercel.app/guide) · [Repo](https://github.com/daguanren21/vformjs)

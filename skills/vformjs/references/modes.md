@@ -47,8 +47,8 @@ async function openDetail(id: string) {
 ```
 
 ```vue
-<el-form v-if="form.editable" v-bind="form.el">...</el-form>
+<el-form v-if="form.editable" v-bind="form.host">...</el-form>
 <el-descriptions v-else border>...</el-descriptions>
 ```
 
-卸载弹窗时 `form.el` 的 ref 会 `bindHost(null)`，避免下次脏校验。
+卸载弹窗时 `form.host` 的 ref 会绑定 `null`，避免下次脏校验。

@@ -1,0 +1,41 @@
+title: "[research] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Evidence-backed product research only. This Discussion explores a workflow problem and does not promise a roadmap item.
+  - type: textarea
+    id: scenario
+    attributes:
+      label: Concrete workflow
+      description: Describe the real create/edit/detail, reset, API-error, dynamic-array, schema, migration, or host-compatibility scenario.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence and reproduction
+      description: Link independent Issues, repositories, runnable examples, benchmarks, or adoption observations. AI hypotheses alone are not evidence.
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Current and desired behavior
+      description: State observable behavior without prescribing an API.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternative explanations
+      description: What could make this a documentation, host-library, project-specific, or non-problem instead?
+    validations:
+      required: true
+  - type: textarea
+    id: experiment
+    attributes:
+      label: Proposed experiment and kill criteria
+      description: Explain how the hypothesis can be disproved before product implementation starts.
+    validations:
+      required: true

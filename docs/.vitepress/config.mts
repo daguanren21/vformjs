@@ -13,8 +13,8 @@ export default defineConfig({
   head: [
     ['link', { rel: 'icon', href: '/logo.svg', type: 'image/svg+xml' }],
     ['link', { rel: 'apple-touch-icon', href: '/logo.svg' }],
-    ['meta', { name: 'theme-color', content: '#f3f0e8', media: '(prefers-color-scheme: light)' }],
-    ['meta', { name: 'theme-color', content: '#141714', media: '(prefers-color-scheme: dark)' }],
+    ['meta', { name: 'theme-color', content: '#f8fafc', media: '(prefers-color-scheme: light)' }],
+    ['meta', { name: 'theme-color', content: '#0f172a', media: '(prefers-color-scheme: dark)' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:site_name', content: 'vformjs' }],
   ],
@@ -114,6 +114,7 @@ export default defineConfig({
         '@vformjs/core': fileURLToPath(new URL('../../packages/core/src/index.ts', import.meta.url)),
         '@vformjs/vue': fileURLToPath(new URL('../../packages/vue/src/index.ts', import.meta.url)),
         '@vformjs/zod': fileURLToPath(new URL('../../packages/zod/src/index.ts', import.meta.url)),
+        '@vformjs/element-plus/zod': fileURLToPath(new URL('../../packages/element-plus/src/use-zod-form.ts', import.meta.url)),
         '@vformjs/element-plus': fileURLToPath(new URL('../../packages/element-plus/src/index.ts', import.meta.url)),
       },
     },

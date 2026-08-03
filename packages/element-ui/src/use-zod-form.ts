@@ -6,9 +6,12 @@ import { createElementUiAdapter } from './create-adapter'
 /**
  * Zod + element-ui (Vue 2.7) — one import, no manual adapter.
  */
-export function useZodForm<S extends ZodType<Record<string, unknown>>>(
-  options: Omit<UseZodFormOptions<S>, 'adapter'>,
-): UseZodFormReturn<S> {
+export function useZodForm<
+  S extends ZodType<Record<string, unknown>>,
+  TSubmitError = never,
+>(
+  options: Omit<UseZodFormOptions<S, TSubmitError>, 'adapter'>,
+): UseZodFormReturn<S, TSubmitError> {
   return useZodFormBase({
     ...options,
     adapter: createElementUiAdapter(),

@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vformjs.dev/schemas/discovery-config.schema.json",
+  "title": "vformjs product discovery configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "product", "collection", "scoring", "automation"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schemaVersion": { "const": 1 },
+    "product": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "positioning", "boundaries", "strategicThemes"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "positioning": { "type": "string", "minLength": 1 },
+        "boundaries": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "strategicThemes": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "collection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lookbackDays", "maxItemsPerSource", "ownRepository", "npmPackages", "upstreamRepositories", "githubIssueQueries"],
+      "properties": {
+        "lookbackDays": { "type": "integer", "minimum": 1, "maximum": 730 },
+        "maxItemsPerSource": { "type": "integer", "minimum": 1, "maximum": 50 },
+        "ownRepository": { "type": "string", "pattern": "^[^/]+/[^/]+$" },
+        "npmPackages": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+        "upstreamRepositories": { "type": "array", "items": { "type": "string", "pattern": "^[^/]+/[^/]+$" }, "uniqueItems": true },
+        "githubIssueQueries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "query", "tags"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+              "query": { "type": "string", "minLength": 1 },
+              "tags": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true }
+            }
+          }
+        }
+      }
+    },
+    "scoring": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dimensions", "minimumConfidenceForExperiment", "minimumConfidenceForPromotion", "minimumProductFitForPromotion"],
+      "properties": {
+        "dimensions": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+        "minimumConfidenceForExperiment": { "type": "number", "minimum": 0, "maximum": 1 },
+        "minimumConfidenceForPromotion": { "type": "number", "minimum": 0, "maximum": 1 },
+        "minimumProductFitForPromotion": { "type": "integer", "minimum": 1, "maximum": 5 }
+      }
+    },
+    "automation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxOpportunitiesPerRun", "autoExperimentWhen", "humanAttentionWhen", "rejectWhen"],
+      "properties": {
+        "maxOpportunitiesPerRun": { "type": "integer", "minimum": 1, "maximum": 20 },
+        "autoExperimentWhen": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "humanAttentionWhen": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "rejectWhen": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+      }
+    }
+  }
+}

@@ -93,7 +93,7 @@ export function createElementUiAdapter(): FormHostAdapter {
       if (!host) {
         return {
           valid: false,
-          errors: { _form: ['Form host is not bound. Use <el-form v-bind="form.el">.'] },
+          errors: { _form: ['Form host is not bound. Bind it with v-bind="form.host".'] },
         }
       }
 
@@ -127,6 +127,13 @@ export function createElementUiAdapter(): FormHostAdapter {
     scrollToField(path) {
       const field = host?.fields?.find(item => item.prop != null && String(item.prop) === path)
       field?.$el?.scrollIntoView({ block: 'center' })
+    },
+    getItemProps(path, error) {
+      return {
+        prop: path,
+        error,
+        'data-vform-path': path,
+      }
     },
     afterModelReset() {
       host?.clearValidate?.()

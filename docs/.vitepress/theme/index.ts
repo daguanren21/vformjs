@@ -3,9 +3,12 @@ import { ID_INJECTION_KEY, ZINDEX_INJECTION_KEY } from 'element-plus'
 import DefaultTheme from 'vitepress/theme'
 import 'element-plus/dist/index.css'
 import ProductHome from './components/ProductHome.vue'
+import ExamplesOverview from './components/examples/ExamplesOverview.vue'
+import LiveAutoScrollDemo from './components/examples/LiveAutoScrollDemo.vue'
 import LiveConditionalDemo from './components/examples/LiveConditionalDemo.vue'
 import LiveCrudDialogDemo from './components/examples/LiveCrudDialogDemo.vue'
 import LiveZodListDemo from './components/examples/LiveZodListDemo.vue'
+import PlaygroundMatrix from './components/examples/PlaygroundMatrix.vue'
 import './custom.css'
 
 export default {
@@ -14,6 +17,9 @@ export default {
     app.provide(ID_INJECTION_KEY, { prefix: 1024, current: 0 })
     app.provide(ZINDEX_INJECTION_KEY, { current: 0 })
     app.component('ProductHome', ProductHome)
+    app.component('ExamplesOverview', ExamplesOverview)
+    app.component('PlaygroundMatrix', PlaygroundMatrix)
+    app.component('LiveAutoScrollDemo', LiveAutoScrollDemo)
     app.component('LiveCrudDialogDemo', LiveCrudDialogDemo)
     app.component('LiveConditionalDemo', LiveConditionalDemo)
     app.component('LiveZodListDemo', LiveZodListDemo)

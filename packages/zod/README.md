@@ -18,8 +18,7 @@ import { useZodForm } from '@vformjs/element-plus/zod'
 
 ```ts
 import { z } from 'zod'
-import { useZodForm } from '@vformjs/zod'
-import { createElementPlusAdapter } from '@vformjs/element-plus'
+import { submitFail, useZodForm } from '@vformjs/zod'
 
 const schema = z.object({
   name: z.string().min(2),
@@ -29,13 +28,20 @@ const schema = z.object({
 const form = useZodForm({
   schema,
   defaults: { name: '', email: '' },
-  adapter: createElementPlusAdapter(),
   onSubmit: async (values) => {
     // values typed as Zod output
-    await api.save(values)
+    const result = await api.save(values)
+    if (!result.ok)
+      return submitFail(result.error, { errors: result.fieldErrors })
   },
 })
 ```
+
+Without a UI host, the same resolver validates headlessly. A UI package's
+`/zod` entry adds only its host binding, error projection, and scrolling.
+
+Typed submit failures preserve parsed Zod output in `values`, expose the API error as
+`result.submitError`, and copy optional field errors into the form state.
 
 ## Related
 

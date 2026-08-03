@@ -9,7 +9,6 @@ export default defineConfig({
   plugins: [vue()],
   resolve: {
     alias: {
-      '@vformjs/shared': path.join(root, 'packages/shared/src/index.ts'),
       '@vformjs/core': path.join(root, 'packages/core/src/index.ts'),
       '@vformjs/vue': path.join(root, 'packages/vue/src/index.ts'),
       '@vformjs/zod': path.join(root, 'packages/zod/src/index.ts'),

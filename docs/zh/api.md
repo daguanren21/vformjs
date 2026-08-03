@@ -6,14 +6,15 @@
 
 ```ts
 import {
+  createFieldPath,
   useElForm,
-  useZodForm,
   r,
   fieldPath,
   type FormErrors,
   type FormMode,
   type UseFormReturn,
 } from '@vformjs/element-plus'
+import { useZodForm } from '@vformjs/element-plus/zod'
 ```
 
 Naive UI 使用 `useNaiveForm`，Ant Design Vue 使用 `useAntdForm`；两个包都提供 `/zod` 子路径。
@@ -26,6 +27,7 @@ import {
   defineAdapter,
   adapterOk,
   adapterFail,
+  submitFail,
   r,
 } from '@vformjs/vue'
 ```
@@ -36,6 +38,9 @@ import {
 |---|---|
 | `model` | 响应式表单模型 |
 | `rules` | 当前归一化宿主规则 |
+| `host` | 统一绑定宿主的 `ref`、`model`、`rules` |
+| `item(path)` | 映射宿主字段属性与接口错误 |
+| `field(path)` | 精确路径的可写 computed；适合大型表单 |
 | `errors` | 响应式 core / 接口错误 |
 | `submitting` | submit 执行中 |
 | `dirty` | 当前值是否偏离重置基线 |
@@ -56,6 +61,30 @@ form.reset()
 form.reset('profile.email')
 form.rebaseDefaults(detail)
 ```
+
+类型安全的固定路径：
+
+```ts
+const path = createFieldPath<FormValues>()
+form.getFieldValue(path('profile.email'))
+```
+
+外部响应式模型和精确路径模式：
+
+```ts
+const form = useForm({
+  defaultValues,
+  model: externalReactiveModel,
+  modelTracking: 'explicit',
+  submitPolicy: 'join',
+  valuePolicy,
+})
+
+const email = form.field('profile.email') // WritableComputedRef<string>
+```
+
+`explicit` 模式不做整棵模型的 deep watch / clone / diff。字段必须通过
+`field(path)`、`setFieldValue`、`setValues` 或数组方法更新。
 
 ## 模式
 
@@ -87,6 +116,50 @@ type FormResult<T> =
   | { ok: false, values: T, errors: FormErrors }
 ```
 
+API 可预期失败由 `submitFail(error)` 返回。错误类型会推导到
+`SubmitResult<T, E>`；可选字段错误会同步写入响应式 `form.errors`。
+
+```ts
+type SaveUserError =
+  | { kind: 'EmailTaken' }
+  | { kind: 'ServiceUnavailable', retryable: true }
+
+const form = useForm({
+  defaultValues: { email: '' },
+  onSubmit: async (values) => {
+    const response = await api.save(values)
+    if (!response.ok) {
+      return submitFail<SaveUserError>(response.error, {
+        errors: response.fieldErrors,
+      })
+    }
+  },
+})
+
+const result = await form.submit()
+if (!result.ok && 'submitError' in result)
+  result.submitError // SaveUserError
+```
+
+```ts
+type SubmitOutcome<E> =
+  | { ok: true }
+  | { ok: false, error: E, errors?: FormErrors }
+
+type SubmitResult<T, E = never> =
+  | FormResult<T>
+  | { ok: false, values: T, submitError: E, errors?: FormErrors }
+```
+
+返回 `void` 或 `submitOk()` 表示 API 成功。handler 抛出或 reject 时，
+`submit()` 仍然 reject：可预期失败应转换成 `submitFail`，意外缺陷继续抛出。
+未配置提交错误类型时，`submit()` 仍是 `Promise<FormResult<T>>`。
+
+`submit()` 默认滚动到第一个字段错误；页面自行管理错误导航时可设置
+`scrollToError: false`。
+重复调用 `submit()` 默认复用正在执行的 Promise，handler 只运行一次；
+只有明确设置 `submitPolicy: 'parallel'` 才会并发提交。
+
 ## 接口错误
 
 ```ts
@@ -115,6 +188,37 @@ list.move(1, 0)
 list.update(0, { name: 'Lin' })
 list.clear()
 ```
+
+数组规则可使用通配路径，只声明一次：
+
+```ts
+rules: {
+  'contacts.*.name': [r.required()],
+},
+whenRules: {
+  'contacts.*.phone': (_values, { item, index, path }) =>
+    (item as Contact).phoneRequired ? [r.required()] : null,
+}
+```
+
+运行时会展开成 `contacts.0.name` 等宿主路径；固定路径优先于通配规则。
+
+## 组合表单
+
+```ts
+const group = useFormGroup({
+  base: baseForm,
+  details: detailsForm,
+})
+
+group.dirty
+group.changedPaths
+await group.validate()
+await group.submit(async values => api.save(values))
+group.reset()
+```
+
+每个成员保留自己的宿主和错误；group 聚合校验、滚动、提交、dirty 与 reset。
 
 ## 联动
 

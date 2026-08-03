@@ -17,7 +17,6 @@ export default defineConfig({
     dedupe: ['vue', 'vue-demi'],
     alias: {
       '@vformjs/core': path.join(repo, 'packages/core/src/index.ts'),
-      '@vformjs/shared': path.join(repo, 'packages/shared/src/index.ts'),
       '@vformjs/vue': path.join(repo, 'packages/vue/src/index.ts'),
       '@vformjs/element-ui': path.join(
         repo,
@@ -31,7 +30,6 @@ export default defineConfig({
   optimizeDeps: {
     exclude: [
       '@vformjs/core',
-      '@vformjs/shared',
       '@vformjs/vue',
       '@vformjs/element-ui',
     ],

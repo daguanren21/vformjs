@@ -1,5 +1,59 @@
 export type PathSegment = string | number
 
+type AtomicPathValue =
+  | string
+  | number
+  | boolean
+  | bigint
+  | symbol
+  | null
+  | undefined
+  | Date
+  | RegExp
+  | Function
+  | ReadonlyMap<unknown, unknown>
+  | ReadonlySet<unknown>
+
+type JoinPath<
+  Head extends string | number,
+  Tail,
+> = Tail extends string ? `${Head}.${Tail}` : never
+
+type NestedFieldPath<
+  T,
+  Depth extends readonly unknown[] = [],
+> = Depth['length'] extends 6
+  ? never
+  : T extends AtomicPathValue
+    ? never
+    : T extends readonly (infer Item)[]
+      ? `${number}` | JoinPath<number, NestedFieldPath<Item, [...Depth, unknown]>>
+      : T extends object
+        ? {
+            [Key in Extract<keyof T, string | number>]:
+              | `${Key}`
+              | JoinPath<Key, NestedFieldPath<T[Key], [...Depth, unknown]>>
+          }[Extract<keyof T, string | number>]
+        : never
+
+/** Type-checked dotted paths, bounded to six nested levels. */
+export type TypedFieldPath<T> = Extract<NestedFieldPath<T>, string>
+
+type FieldSegmentValue<T, Segment extends string> =
+  T extends null | undefined
+    ? undefined
+    : T extends readonly (infer Item)[]
+      ? Segment extends `${number}` ? Item : never
+      : Segment extends keyof T ? T[Segment] : never
+
+/** Value type resolved from a type-checked dotted path. */
+export type TypedFieldValue<
+  T,
+  Path extends string,
+> = Path extends `${infer Head}.${infer Tail}`
+  ? TypedFieldValue<FieldSegmentValue<T, Head>, Tail>
+  : FieldSegmentValue<T, Path>
+
 /** Split `a.b.0.c` into segments. Empty string → []. */
 export function toPath(path: string | PathSegment[]): PathSegment[] {
   if (Array.isArray(path))
@@ -16,6 +70,11 @@ export function toPath(path: string | PathSegment[]): PathSegment[] {
 /** Join segments into a dotted path. */
 export function fieldPath(...segments: PathSegment[]): string {
   return segments.map(String).join('.')
+}
+
+/** Create an identity helper that checks dotted paths against a model type. */
+export function createFieldPath<T extends object>() {
+  return <Path extends TypedFieldPath<T>>(path: Path): Path => path
 }
 
 export function isObjectLike(value: unknown): value is Record<string | number, unknown> {

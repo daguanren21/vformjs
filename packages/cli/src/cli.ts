@@ -2,6 +2,7 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { auditForms, type FormAuditReport } from './audit'
 import { doctorProject, type DoctorReport } from './doctor'
 import { migrateVue2ToVue3, type MigrationOptions, type MigrationReport } from './migrate'
 import { loadProject } from './project'
@@ -32,6 +33,9 @@ const VALUE_FLAGS: Record<string, true> = {
   agent: true,
   target: true,
   report: true,
+  'adapter-package': true,
+  'form-factory': true,
+  'zod-entry': true,
 }
 
 const BOOLEAN_FLAGS: Record<string, true> = {
@@ -48,7 +52,10 @@ const HELP = `vformjs — deterministic form scaffolding for coding agents
 
 Usage:
   vformjs init [--host <host>] [--name <form>] [--zod]
+    [--adapter-package <package> --form-factory <identifier>]
+    [--zod-entry <package>]
   vformjs add form <name>
+  vformjs audit forms [--report <file>]
   vformjs doctor
   vformjs migrate vue2-to-vue3 [--report <file>]
   vformjs skill install [--agent agents|claude] [--target <dir>]
@@ -101,8 +108,8 @@ function printOperations(io: CliIo, operations: FileOperation[]): void {
 }
 
 export async function runCli(
-  args = process.argv.slice(2),
-  baseCwd = process.cwd(),
+  args: string[] = process.argv.slice(2),
+  baseCwd: string = process.cwd(),
   io: CliIo = { out: console.log, error: console.error },
 ): Promise<number> {
   try {
@@ -123,7 +130,7 @@ export async function runCli(
       force: parsed.flags.has('force'),
     }
     const command = parsed.positionals[0]
-    let result: FileOperation[] | DoctorReport | MigrationReport
+    let result: FileOperation[] | DoctorReport | FormAuditReport | MigrationReport
 
     if (command === 'init' && parsed.positionals.length === 1) {
       const options: ScaffoldOptions = { ...writeOptions }
@@ -133,6 +140,12 @@ export async function runCli(
         options.name = parsed.values.name
       if (parsed.values['source-dir'])
         options.sourceDir = parsed.values['source-dir']
+      if (parsed.values['adapter-package'])
+        options.adapterPackage = parsed.values['adapter-package']
+      if (parsed.values['form-factory'])
+        options.formFactory = parsed.values['form-factory']
+      if (parsed.values['zod-entry'])
+        options.zodEntry = parsed.values['zod-entry']
       if (parsed.flags.has('zod'))
         options.zod = true
       else if (parsed.flags.has('no-zod'))
@@ -144,6 +157,14 @@ export async function runCli(
         ...writeOptions,
         name: parsed.positionals[2]!,
       })
+    }
+    else if (command === 'audit' && parsed.positionals[1] === 'forms' && parsed.positionals.length === 2) {
+      result = auditForms(
+        project.root,
+        parsed.values.report && !parsed.flags.has('dry-run')
+          ? { reportPath: parsed.values.report }
+          : {},
+      )
     }
     else if (command === 'doctor' && parsed.positionals.length === 1) {
       result = doctorProject(project)
@@ -183,6 +204,18 @@ export async function runCli(
       if (!result.ok)
         return 1
     }
+    else if ('forms' in result) {
+      io.out(
+        `Scanned ${result.filesScanned} files; found ${result.formsFound} form candidate(s) `
+        + `(${result.mechanical} mechanical, ${result.manual} manual).`,
+      )
+      for (const form of result.forms) {
+        io.out(
+          `[${form.migration.toUpperCase()}] ${form.file}:${form.line} `
+          + `${form.labels.join(', ') || 'unclassified'}`,
+        )
+      }
+    }
     else {
       io.out(`Scanned ${result.filesScanned} files; ${result.filesChanged} would change.`)
       for (const edit of result.edits)
@@ -208,6 +241,14 @@ const entry = process.argv[1]
 if (entry && pathToFileURL(resolve(entry)).href === import.meta.url)
   process.exitCode = await runCli()
 export {
+  auditForms,
+  type FormAuditLabel,
+  type FormAuditOptions,
+  type FormAuditRecord,
+  type FormAuditReport,
+  type FormMigrationDisposition,
+} from './audit'
+export {
   migrateVue2ToVue3,
   type MigrationEdit,
   type MigrationIssue,
@@ -221,11 +262,14 @@ export {
   detectEnvironment,
   loadProject,
   readVformConfig,
+  assertFormPreset,
+  resolveHostDefinition,
   type DetectedEnvironment,
   type HostDefinition,
   type HostId,
   type LoadedProject,
   type VformConfig,
+  type FormPreset,
 } from './project'
 export {
   addForm,

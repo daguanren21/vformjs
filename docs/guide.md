@@ -37,7 +37,7 @@ pnpm add @vformjs/zod zod
 ## First form (Element Plus)
 
 ```ts
-import { useElForm, r } from '@vformjs/element-plus'
+import { r, submitFail, useElForm } from '@vformjs/element-plus'
 
 const form = useElForm({
   defaults: { name: '', email: '' },
@@ -53,8 +53,8 @@ const form = useElForm({
 
 ```vue
 <template>
-  <el-form v-bind="form.el" label-width="100px">
-    <el-form-item label="Name" prop="name">
+  <el-form v-bind="form.host" label-width="100px">
+    <el-form-item label="Name" v-bind="form.item('name')">
       <el-input v-model="form.model.name" />
     </el-form-item>
     <el-form-item label="Email" prop="email">
@@ -77,7 +77,7 @@ async function onSubmit() {
 </script>
 ```
 
-`form.el` = `{ ref, model, rules }`. One `v-bind` wires the host form.
+`form.host` wires `{ ref, model, rules }`; `form.item(path)` maps field props and errors.
 
 `defaults` drives TypeScript inference for `form.model` and `onSubmit(values)`.
 
@@ -118,6 +118,30 @@ form.reset('email')
 form.rebaseDefaults(detail)            // next reset() returns to detail
 ```
 
+For caller-owned state, pass a reactive `model` alongside the reset baseline:
+
+```ts
+const model = reactive<FormValues>({ name: '', email: '' })
+const form = useElForm({ defaults: { name: '', email: '' }, model })
+```
+
+Large forms can avoid the deep model watcher and bind exact paths:
+
+```ts
+const form = useElForm({
+  defaults,
+  modelTracking: 'explicit',
+})
+const email = form.field('profile.email') // WritableComputedRef<string>
+```
+
+```vue
+<el-input v-model="email" />
+```
+
+In `explicit` mode, mutate through `field(path)`, `setFieldValue`, `setValues`,
+or field-array methods. Direct `form.model` writes are intentionally not tracked.
+
 ## Server errors and unsaved changes
 
 `errors` is reactive. Bind an API field error to the host item when the UI library
@@ -134,12 +158,24 @@ does not expose an imperative server-error API:
 ```
 
 ```ts
-const result = await api.save(form.getValues())
-if (!result.ok) {
-  form.setErrors(result.fieldErrors)
-  form.scrollToFirstError()
-}
+const result = await form.submit(async (values) => {
+  const response = await api.save(values)
+  if (!response.ok) {
+    return submitFail(response.error, {
+      errors: response.fieldErrors,
+    })
+  }
+})
+
+if (!result.ok && 'submitError' in result)
+  result.submitError // keeps the API error type
 ```
+
+`submitFail` copies optional field errors into reactive `form.errors`. Validation failures remain
+the existing `{ ok: false, values, errors }` branch. Thrown or rejected handlers remain exceptions;
+convert expected API failures explicitly.
+Failed submit scrolls to the first field error by default. Set `scrollToError: false`
+only when the screen provides its own error navigation.
 
 Changing a field clears its stale core/server error. `dirty` and `changedPaths`
 compare the live model with the current reset baseline. `load('edit', detail)`,
@@ -161,7 +197,7 @@ form.readonly  // detail → true
 ```
 
 ```vue
-<el-form v-if="form.editable" v-bind="form.el">...</el-form>
+<el-form v-if="form.editable" v-bind="form.host">...</el-form>
 
 <el-descriptions v-else-if="form.readonly" border>
   <el-descriptions-item label="Name">{{ form.model.name }}</el-descriptions-item>
@@ -183,25 +219,31 @@ ListPage          → no form
 ## Rules
 
 ```ts
-import { r } from '@vformjs/element-plus'
+import {
+  createRuleBuilders,
+  enUSRuleMessages,
+  r,
+} from '@vformjs/element-plus'
+
+const en = createRuleBuilders(enUSRuleMessages)
 
 rules: {
-  name: [r.required(), r.min(2), r.max(32)],
-  email: [r.required(), r.email()],
+  name: [en.required(), en.min(2), en.max(32)],
+  email: [en.required(), en.email()],
   age: [r.numberMin(0), r.numberMax(120)],
-  phone: [r.mobile()],
+  phone: [r.phone()],
   site: [r.url()],
   code: [r.pattern(/^[A-Z]+$/, 'uppercase only')],
-  agree: [r.requiredTrue('accept terms')],
 }
 ```
 
-Helpers (async-validator style):  
-`required` · `email` · `url` · `min` · `max` · `len` · `range` ·  
-`number` · `integer` · `numberMin` · `numberMax` · `numberRange` ·  
-`pattern` · `mobile` · `idCard` · `requiredTrue` · `custom(validator)`
+Helpers (async-validator style):
+`required` · `email` · `url` · `min` · `max` · `len` · `range` ·
+`number` · `integer` · `numberMin` · `numberMax` · `numberRange` ·
+`pattern` · `phone` · `idCard` · `arrayRequired` · `equalTo` ·
+`trimRequired` · `custom(validator)`.
 
-String sugar also works: `rules: { name: 'required' }`.
+String sugar also works with the default message set: `rules: { name: 'required' }`.
 
 Dynamic rules from values:
 
@@ -257,6 +299,19 @@ If you mutate `form.model` via `v-model` and linkage does not fire, call `form.n
 
 ## Field arrays
 
+Declare row rules once with `*`; vformjs materializes the concrete host paths:
+
+```ts
+rules: {
+  'contacts.*.name': [r.required()],
+  'contacts.*.phone': [r.phone()],
+},
+whenRules: {
+  'contacts.*.phone': (_values, { item }) =>
+    (item as Contact).phoneRequired ? [r.required(), r.phone()] : [r.phone()],
+}
+```
+
 ```ts
 const contacts = form.list<{ name: string, phone: string }>('contacts', {
   defaultItem: () => ({ name: '', phone: '' }),
@@ -264,8 +319,8 @@ const contacts = form.list<{ name: string, phone: string }>('contacts', {
 ```
 
 ```vue
-<div v-for="row in contacts.fields.value" :key="row.key">
-  <el-form-item :prop="`contacts.${row.index}.name`" :rules="[r.required()]">
+<div v-for="row in contacts.fields" :key="row.key">
+  <el-form-item :prop="`contacts.${row.index}.name`">
     <el-input v-model="form.model.contacts[row.index].name" />
   </el-form-item>
   <el-button @click="contacts.remove(row.index)">Remove</el-button>
@@ -275,12 +330,32 @@ const contacts = form.list<{ name: string, phone: string }>('contacts', {
 
 API: `append` · `prepend` · `insert` · `remove` · `move` · `replace` · `update` · `clear` · `fields`.
 
+## Composed forms
+
+Keep independently hosted sections independent, then compose their lifecycle:
+
+```ts
+const group = useFormGroup({
+  base: baseForm,
+  details: detailsForm,
+  fees: feesForm,
+})
+
+group.dirty
+group.changedPaths
+await group.validate()
+await group.submit(async (values) => api.save(values))
+group.reset()
+```
+
+Errors are grouped by section. The first invalid member owns scrolling. No
+provide/inject registration or UI-specific parent wrapper is required.
+
 ## Zod
 
 ```ts
 import { z } from 'zod'
 import { useZodForm } from '@vformjs/element-plus/zod'
-// also re-exported from '@vformjs/element-plus'
 
 const schema = z.object({
   name: z.string().min(2),
@@ -317,8 +392,8 @@ const form = useNaiveForm({
 ```
 
 ```vue
-<n-form :ref="form.bindHost" :model="form.model" :rules="form.rules">
-  <n-form-item path="name" data-vform-path="name">
+<n-form v-bind="form.host">
+  <n-form-item v-bind="form.item('name')">
     <n-input v-model:value="form.model.name" />
   </n-form-item>
 </n-form>
@@ -342,14 +417,33 @@ typed form module without generating a second UI abstraction:
 ```bash
 pnpm dlx vformjs init
 pnpm dlx vformjs add form profile
+pnpm dlx vformjs audit forms --json
 pnpm dlx vformjs doctor
 pnpm dlx vformjs migrate vue2-to-vue3 --dry-run --json
 pnpm dlx vformjs skill install --agent agents
 ```
 
+```bash
+# Explicit custom/company preset; vformjs does not detect private UI packages
+pnpm dlx vformjs init \
+  --host company \
+  --adapter-package @company/forms \
+  --form-factory useCompanyForm
+```
+
 `init` and `add` are idempotent. They refuse to overwrite edited output unless
 `--force` is explicit. `--dry-run --json` produces a deterministic plan for a
 coding agent or CI job.
+
+`audit forms` inventories single/multi-host forms, conditional fields, dynamic
+arrays, external models, custom hosts, and Options API surfaces. It reports
+conservative `mechanical` / `manual` dispositions and never edits source files.
+Custom presets are explicit import/factory contracts; private package detection
+stays outside vformjs.
+
+Generated modules expose a typed path helper and submit outcome contract, use
+localized rule builders, and document the single `form.host` / `form.item(path)`
+binding. Zod templates import only the adapter package's `/zod` subpath.
 
 ## Local playgrounds
 

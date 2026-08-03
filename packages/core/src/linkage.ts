@@ -8,7 +8,7 @@ import type {
   LinkageRule,
 } from './types'
 
-export interface LinkageEngineOptions<T extends Record<string, unknown>> {
+export interface LinkageEngineOptions<T extends object> {
   rules: LinkageRule<T>[]
   createCtx: () => LinkageCtx<T>
   onError?: (error: unknown, ruleIndex: number) => void
@@ -42,7 +42,7 @@ function depsMatch(deps: FieldPath[] | '*', changed: FieldPath[]): boolean {
  * pattern `deps: ['a']` repeatedly scheduling without generation guard — runtime
  * generation handles storms. Dev helper: throw when deps include empty string.
  */
-export function assertLinkageRules<T extends Record<string, unknown>>(
+export function assertLinkageRules<T extends object>(
   rules: LinkageRule<T>[],
 ): void {
   rules.forEach((rule, index) => {
@@ -63,7 +63,7 @@ export function assertLinkageRules<T extends Record<string, unknown>>(
   })
 }
 
-export function createLinkageEngine<T extends Record<string, unknown>>(
+export function createLinkageEngine<T extends object>(
   options: LinkageEngineOptions<T>,
 ): LinkageEngine {
   assertLinkageRules(options.rules)

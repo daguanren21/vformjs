@@ -151,7 +151,7 @@ async function openDetail(id: string) {
         <!-- create / edit：表单 -->
         <el-form
           v-if="form.editable"
-          v-bind="form.el"
+          v-bind="form.host"
           label-width="90px"
         >
           <el-form-item v-if="form.model.id" label="ID">

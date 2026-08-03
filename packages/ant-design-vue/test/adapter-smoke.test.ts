@@ -7,7 +7,7 @@ describe('createAntdAdapter (defineAdapter)', () => {
     const adapter = createAntdAdapter()
     const res = await adapter.validate()
     expect(res.valid).toBe(false)
-    expect(res.errors?._form?.[0]).toMatch(/ant-design-vue|not bound|bindHost/i)
+    expect(res.errors?._form?.[0]).toMatch(/ant-design-vue|not bound|form\.host/i)
   })
 
   it('maps errorFields entity from validateFields reject', async () => {
@@ -42,7 +42,7 @@ describe('createAntdAdapter (defineAdapter)', () => {
     })
     const res = await adapter.validate(['email', 'name'])
     expect(res.valid).toBe(true)
-    expect(validateFields).toHaveBeenCalledWith(['email', 'name'])
+    expect(validateFields).toHaveBeenCalledWith([['email'], ['name']])
   })
 
   it('clearValidate / afterModelReset / scrollToField', () => {
@@ -58,7 +58,7 @@ describe('createAntdAdapter (defineAdapter)', () => {
     adapter.afterModelReset?.()
     adapter.scrollToField?.('name')
     expect(clearValidate).toHaveBeenCalled()
-    expect(scrollToField).toHaveBeenCalledWith('name')
+    expect(scrollToField).toHaveBeenCalledWith(['name'])
   })
 })
 
