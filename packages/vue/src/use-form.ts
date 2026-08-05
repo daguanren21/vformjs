@@ -2,6 +2,7 @@ import {
   createForm,
   deepClone,
   diffChangedPaths,
+  DRAFT_SNAPSHOT_VERSION,
   type CreateFormOptions,
   type FieldArrayApi,
   type FieldPath,
@@ -33,7 +34,7 @@ import {
   watch,
 } from 'vue-demi'
 
-export { diffChangedPaths }
+export { diffChangedPaths, DRAFT_SNAPSHOT_VERSION }
 
 /** Unified form modes: create / edit / detail all share useForm. */
 export type FormMode = 'create' | 'edit' | 'detail'
@@ -117,6 +118,8 @@ export interface UseFormReturn<
   clearValidate: FormApi<T, TSubmitError, TOutput>['clearValidate']
   notifyChange: FormApi<T, TSubmitError, TOutput>['notifyChange']
   rebaseDefaults: FormApi<T, TSubmitError, TOutput>['rebaseDefaults']
+  snapshotDraft: FormApi<T, TSubmitError, TOutput>['snapshotDraft']
+  restoreDraft: FormApi<T, TSubmitError, TOutput>['restoreDraft']
   getMeta: FormApi<T, TSubmitError, TOutput>['getMeta']
   fieldArray: FormApi<T, TSubmitError, TOutput>['fieldArray']
   hidden: (path: FieldPath) => ComputedRef<boolean>
@@ -392,6 +395,8 @@ export function useForm<
     clearValidate: form.clearValidate,
     notifyChange: form.notifyChange,
     rebaseDefaults: form.rebaseDefaults,
+    snapshotDraft: form.snapshotDraft,
+    restoreDraft: form.restoreDraft,
     getMeta: form.getMeta,
     fieldArray: form.fieldArray,
     hidden,

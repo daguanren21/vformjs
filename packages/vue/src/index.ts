@@ -23,9 +23,13 @@ export type {
 } from './use-form-group'
 export type {
   ConditionalRules,
+  DraftRestoreReason,
+  DraftRestoreResult,
+  DraftRestoreStatus,
   FieldCondition,
   CreateFormOptions,
   FormApi,
+  FormDraftSnapshot,
   FormResult,
   FormErrors,
   FormItemBinding,

@@ -5,6 +5,35 @@ export type FieldPath = string
 
 export type FormErrors = Record<string, string[]>
 
+/** Version tag written into every draft snapshot. */
+export const DRAFT_SNAPSHOT_VERSION = 1
+
+/** A versioned, JSON-serializable capture of form values (for drafts). */
+export interface FormDraftSnapshot {
+  version: number
+  savedAt: string
+  values: Record<string, unknown>
+}
+
+/**
+ * 'restored' — draft matched the current baseline shape exactly.
+ * 'healed'   — draft applied after dropping unknown paths / filling missing ones.
+ * 'fresh'    — draft rejected; form keeps its current values untouched.
+ */
+export type DraftRestoreStatus = 'restored' | 'healed' | 'fresh'
+
+/** Structured reason a draft was rejected (decided at the source, never parsed from messages). */
+export type DraftRestoreReason = 'empty' | 'malformed' | 'unsupported-version'
+
+export interface DraftRestoreResult {
+  status: DraftRestoreStatus
+  reason?: DraftRestoreReason
+  /** Draft paths dropped because they do not exist in the current baseline shape. */
+  droppedPaths: FieldPath[]
+  /** Paths filled from baseline values because the draft lacked them (or structurally mismatched). */
+  filledPaths: FieldPath[]
+}
+
 /** Host-specific props for one field item (`prop`, `path`, `name`, error state). */
 export type FormItemBinding = Record<string, unknown>
 
@@ -280,6 +309,17 @@ export interface FormApi<
   getCreateDefaults: () => T
   /** Restore model + baseline to factory defaults (create mode). */
   resetToCreateDefaults: () => void
+
+  /** Capture current values as a versioned, JSON-serializable draft snapshot. */
+  snapshotDraft: () => FormDraftSnapshot
+  /**
+   * Restore a draft snapshot against the current baseline shape.
+   * Never throws on bad input: unknown paths are dropped, missing paths are
+   * filled from the baseline, and unusable snapshots leave values untouched
+   * ('fresh' + structured reason). Baseline is NOT rebased — a restored
+   * draft is unsaved user input, so `dirty`/`changedPaths` reflect it.
+   */
+  restoreDraft: (snapshot: unknown) => DraftRestoreResult
 
   getRules: () => FormRulesMap
   setRules: (rules: RulesSource<T>) => void

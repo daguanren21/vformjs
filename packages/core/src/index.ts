@@ -4,6 +4,7 @@ export {
   submitFail,
   submitOk,
 } from './create-form'
+export { DRAFT_SNAPSHOT_VERSION } from './types'
 export {
   defineAdapter,
   adapterOk,
@@ -43,6 +44,10 @@ export type {
 export type {
   CreateFormOptions,
   ConditionalRules,
+  DraftRestoreReason,
+  DraftRestoreResult,
+  DraftRestoreStatus,
+  FormDraftSnapshot,
   FieldCondition,
   FieldArrayApi,
   FieldMeta,

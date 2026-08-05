@@ -149,6 +149,31 @@ function useForm<T>(options: UseFormOptions<T>): UseFormReturn<T>
 | `submit` | `(handler?) => Promise<SubmitResult<TOutput, E, T>>` | Validate → transformed output → typed API outcome |
 | `clearValidate` | `(paths?) => void` | Host + internal errors |
 
+#### Drafts
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `snapshotDraft` | `() => FormDraftSnapshot` | Versioned, JSON-serializable capture of current values |
+| `restoreDraft` | `(snapshot: unknown) => DraftRestoreResult` | Heal-or-reject restore against the current baseline; never throws |
+
+`restoreDraft` returns a structured outcome instead of failing silently or throwing:
+
+- `'restored'` — draft matched the baseline shape exactly
+- `'healed'` — draft applied after dropping unknown paths (`droppedPaths`) and filling missing ones from the baseline (`filledPaths`)
+- `'fresh'` — draft rejected (`reason`: `empty` / `malformed` / `unsupported-version`); current values untouched
+
+Restore does **not** rebase: a restored draft is unsaved input, so `dirty` / `changedPaths` reflect it and `reset()` still returns to the baseline. Errors are cleared on restore.
+
+```ts
+// persist
+localStorage.setItem('draft', JSON.stringify(form.snapshotDraft()))
+
+// restore
+const result = form.restoreDraft(JSON.parse(localStorage.getItem('draft') ?? 'null'))
+if (result.status === 'healed')
+  console.info('draft adjusted to current schema', result.droppedPaths, result.filledPaths)
+```
+
 #### Errors
 
 | Method | Signature | Description |

@@ -86,6 +86,24 @@ const email = form.field('profile.email') // WritableComputedRef<string>
 `explicit` 模式不做整棵模型的 deep watch / clone / diff。字段必须通过
 `field(path)`、`setFieldValue`、`setValues` 或数组方法更新。
 
+## 草稿
+
+```ts
+// 保存:版本化、可 JSON 序列化
+localStorage.setItem('draft', JSON.stringify(form.snapshotDraft()))
+
+// 恢复:结构化结果,绝不抛异常
+const result = form.restoreDraft(JSON.parse(localStorage.getItem('draft') ?? 'null'))
+```
+
+`result.status` 三态:
+
+- `'restored'` — 草稿与当前基线结构完全一致
+- `'healed'` — 已应用,但丢弃了基线中不存在的路径(`droppedPaths`),并用基线值补齐缺失路径(`filledPaths`)
+- `'fresh'` — 草稿被拒绝(`reason`: `empty` / `malformed` / `unsupported-version`),当前值不变
+
+恢复**不会**重置基线:草稿是未保存的用户输入,`dirty` / `changedPaths` 会如实反映,`reset()` 仍回到基线。恢复时清空错误。
+
 ## 模式
 
 ```ts

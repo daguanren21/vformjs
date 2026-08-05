@@ -4,6 +4,7 @@ import {
   getByPath,
   isObjectLike,
   isAtomicValue,
+  isPlainRecord,
   restoreInPlace,
   setByPath,
   type DeepPartial,
@@ -19,8 +20,11 @@ import {
   normalizeRuleInput,
   resolveRulesSource,
 } from './rules'
+import { DRAFT_SNAPSHOT_VERSION } from './types'
 import type {
   CreateFormOptions,
+  DraftRestoreReason,
+  DraftRestoreResult,
   FieldMeta,
   FieldPath,
   FormApi,
@@ -163,6 +167,45 @@ function cloneErrors(source: FormErrors): FormErrors {
       cloned[path] = [...messages]
   }
   return cloned
+}
+
+/**
+ * Merge a draft into the baseline shape: unknown draft paths are dropped,
+ * missing or structurally mismatched paths fall back to the baseline value.
+ * Arrays and atomic values are leaves — taken from the draft verbatim.
+ */
+function healDraftValues(
+  draft: Record<string, unknown>,
+  shape: Record<string, unknown>,
+  path: string,
+  droppedPaths: FieldPath[],
+  filledPaths: FieldPath[],
+): Record<string, unknown> {
+  const healed: Record<string, unknown> = {}
+  for (const [key, shapeValue] of Object.entries(shape)) {
+    const childPath = path ? `${path}.${key}` : key
+    if (!(key in draft)) {
+      healed[key] = shapeValue
+      filledPaths.push(childPath)
+      continue
+    }
+    const draftValue = draft[key]
+    if (isPlainRecord(shapeValue) && isPlainRecord(draftValue)) {
+      healed[key] = healDraftValues(draftValue, shapeValue, childPath, droppedPaths, filledPaths)
+      continue
+    }
+    if (isPlainRecord(shapeValue) || Array.isArray(shapeValue) !== Array.isArray(draftValue)) {
+      healed[key] = shapeValue
+      filledPaths.push(childPath)
+      continue
+    }
+    healed[key] = draftValue
+  }
+  for (const key of Object.keys(draft)) {
+    if (!(key in shape))
+      droppedPaths.push(path ? `${path}.${key}` : key)
+  }
+  return healed
 }
 
 function pathsOverlap(left: FieldPath, right: FieldPath): boolean {
@@ -805,6 +848,56 @@ export function createForm<
 
     getCreateDefaults() {
       return deepClone(createDefaults, valuePolicy)
+    },
+
+    snapshotDraft() {
+      return {
+        version: DRAFT_SNAPSHOT_VERSION,
+        savedAt: new Date().toISOString(),
+        values: deepClone(values, valuePolicy) as Record<string, unknown>,
+      }
+    },
+
+    restoreDraft(snapshot): DraftRestoreResult {
+      const rejected = (reason: DraftRestoreReason): DraftRestoreResult => ({
+        status: 'fresh',
+        reason,
+        droppedPaths: [],
+        filledPaths: [],
+      })
+      if (snapshot == null)
+        return rejected('empty')
+      if (!isPlainRecord(snapshot))
+        return rejected('malformed')
+      if (snapshot.version !== DRAFT_SNAPSHOT_VERSION)
+        return rejected('unsupported-version')
+      if (!isPlainRecord(snapshot.values))
+        return rejected('malformed')
+
+      const droppedPaths: FieldPath[] = []
+      const filledPaths: FieldPath[] = []
+      const healed = healDraftValues(
+        snapshot.values,
+        baseline as Record<string, unknown>,
+        '',
+        droppedPaths,
+        filledPaths,
+      )
+      restoreInPlace(
+        values as Record<string, unknown>,
+        deepClone(healed, valuePolicy),
+        valuePolicy,
+      )
+      setErrorState({})
+      emit({ type: 'reset' })
+      notifyValues(['*'])
+      adapter?.afterModelReset?.()
+      adapter?.clearValidate?.()
+      return {
+        status: droppedPaths.length || filledPaths.length ? 'healed' : 'restored',
+        droppedPaths,
+        filledPaths,
+      }
     },
 
     /** Restore factory defaults + baseline (for load('create')). */
