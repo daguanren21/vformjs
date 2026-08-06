@@ -35,7 +35,8 @@
     "**/.vite/**",
     "**/coverage/**",
     "**/test/fixtures/**",
-    "**/*.d.ts"
+    "**/*.d.ts",
+    "**/playgrounds/ruoyi-vue3-vformjs/**"
   ],
   "env": {
     "builtin": true,

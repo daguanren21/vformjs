@@ -15,7 +15,7 @@ import { execSync } from 'node:child_process'
 function exec(cmd) {
   try {
     return execSync(cmd, { encoding: 'utf8', stdio: 'pipe' }).trim()
-  } catch (error) {
+  } catch {
     return null
   }
 }
