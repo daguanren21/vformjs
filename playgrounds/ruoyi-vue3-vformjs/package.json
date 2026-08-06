@@ -1,6 +1,6 @@
 {
   "name": "ruoyi-vue3-vformjs",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "private": true,
   "description": "RuoYi-Vue3 with vformjs integration - validation playground",
   "type": "module",
