@@ -1,5 +1,11 @@
 # @vformjs/core
 
+## 0.3.0
+
+### Minor Changes
+
+- 00274b7: Add draft persistence contracts: `snapshotDraft()` captures a versioned, JSON-serializable snapshot, and `restoreDraft()` heals or rejects drafts against the current baseline shape with a structured `DraftRestoreResult` (`restored` / `healed` / `fresh` + `droppedPaths` / `filledPaths`) instead of throwing or silently corrupting state. Restore never rebases, so `dirty` / `changedPaths` keep reflecting the restored draft as unsaved input.
+
 ## 0.2.0
 
 ### Minor Changes

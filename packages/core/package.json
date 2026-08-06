@@ -1,6 +1,6 @@
 {
   "name": "@vformjs/core",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Headless form state machine for vformjs",
   "keywords": [
     "vue",

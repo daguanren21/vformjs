@@ -1,5 +1,14 @@
 # @vformjs/ant-design-vue
 
+## 0.3.0
+
+### Patch Changes
+
+- Updated dependencies [00274b7]
+  - @vformjs/core@0.3.0
+  - @vformjs/vue@0.3.0
+  - @vformjs/zod@0.3.0
+
 ## 0.2.0
 
 ### Minor Changes

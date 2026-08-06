@@ -1,5 +1,12 @@
 # vformjs
 
+## 0.2.1
+
+### Patch Changes
+
+- d3f5c48: Parse Vue SFC templates when auditing forms so form-item tags, option loops, unrelated conditions, and unrelated props no longer inflate host or manual-review classifications.
+- d3f5c48: Fix migrate precision: deduplicate sfc-parse-failed to one issue per malformed SFC (Vue compiler cascades duplicate errors), and skip minified vendor bundles so they never appear in the manual review queue.
+
 ## 0.2.0
 
 ### Minor Changes
