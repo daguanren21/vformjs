@@ -80,6 +80,36 @@ async function onSubmit() {
 `form.host` wires `{ ref, model, rules }`; `form.item(path)` maps field props and errors.
 
 `defaults` drives TypeScript inference for `form.model` and `onSubmit(values)`.
+For create/edit dialogs, keep every field that must be cleared on
+`form.load('create')` in the baseline, even when its create value is
+`undefined`. Use an explicit model type when an empty value will later receive
+another type:
+
+```ts
+interface PostFormValues {
+  postId: number | undefined
+  postCode: string | undefined
+  postName: string | undefined
+  postSort: number
+  status: string
+  remark: string | undefined
+}
+
+const form = useElForm<PostFormValues>({
+  defaults: {
+    postId: undefined,
+    postCode: undefined,
+    postName: undefined,
+    postSort: 0,
+    status: '0',
+    remark: undefined,
+  },
+})
+```
+
+Writing `postId: undefined` is therefore intentional: after
+`form.load('edit', detail)`, a later `form.load('create')` restores that key
+to `undefined` instead of leaving the edited identifier in the model.
 
 element-ui: same API from `@vformjs/element-ui`.
 

@@ -170,8 +170,13 @@ const queryParams = reactive({
 })
 
 const postForm = useElForm({
+  // load('create') 会 resetToCreateDefaults：如果某个字段不在这里，
+  // 从 edit 切回 create 时该字段不会被清除。
+  // postId 必须在这里：edit 加载后 postId=1，下次 create 不清掉会走 update 分支。
+  // TypeScript 用户：undefined 字段加类型断言消掉 narrow，例如：
+  //   postId: undefined as number | undefined
   defaults: {
-    postId: undefined,
+    postId: undefined,     // 必须在此：控制 add vs update 分支
     postCode: undefined,
     postName: undefined,
     postSort: 0,

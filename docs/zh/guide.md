@@ -24,9 +24,36 @@ pnpm add @vformjs/naive-ui naive-ui vue
 对应入口是 `useNaiveForm`、`useAntdForm`；Zod 子路径分别是
 `@vformjs/naive-ui/zod`、`@vformjs/ant-design-vue/zod`。这两套包已经内置宿主 adapter。
 
-## 写表单实例
-
 `defaults` 会推导 `form.model` 和 `onSubmit(values)` 的类型。
+在新建/编辑弹窗中，凡是需要在 `form.load('create')` 时被清除的字段，
+都要保留在 defaults 基线里，即使它的新建初始值是 `undefined`。
+空值后续会接收其他类型时，建议显式声明表单模型：
+
+```ts
+interface PostFormValues {
+  postId: number | undefined
+  postCode: string | undefined
+  postName: string | undefined
+  postSort: number
+  status: string
+  remark: string | undefined
+}
+
+const form = useElForm<PostFormValues>({
+  defaults: {
+    postId: undefined,
+    postCode: undefined,
+    postName: undefined,
+    postSort: 0,
+    status: '0',
+    remark: undefined,
+  },
+})
+```
+
+因此，`postId: undefined` 是有意保留的：`form.load('edit', detail)`
+之后再次执行 `form.load('create')` 时，它会恢复为 `undefined`，不会把已编辑记录的
+标识符遗留在 model 中。
 
 ```ts
 import { createRuleBuilders, enUSRuleMessages, r, submitFail, useElForm } from '@vformjs/element-plus'
