@@ -435,9 +435,11 @@ pnpm dlx vformjs init \
 `--force` is explicit. `--dry-run --json` produces a deterministic plan for a
 coding agent or CI job.
 
-`audit forms` inventories single/multi-host forms, conditional fields, dynamic
-arrays, external models, custom hosts, and Options API surfaces. It reports
-conservative `mechanical` / `manual` dispositions and never edits source files.
+`audit forms` parses Vue SFC templates to inventory exact single/multi-host
+forms, custom hosts, and Options API surfaces. Conditional fields and dynamic
+arrays are reported only when they contain form items; external models are
+reported only when bound to the host Form. The command emits conservative
+`mechanical` / `manual` dispositions and never edits source files.
 Custom presets are explicit import/factory contracts; private package detection
 stays outside vformjs.
 

@@ -1,0 +1,65 @@
+name: Track CLI Adoption
+
+on:
+  schedule:
+    # Every Monday at 09:00 UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+jobs:
+  track:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: pnpm/action-setup@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      
+      - name: Run adoption tracker
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node packages/cli/scripts/track-adoption.mjs > adoption-report.txt
+          cat adoption-report.txt
+      
+      - name: Check for new milestones
+        id: check
+        run: |
+          if grep -q "🎉 MILESTONE REACHED" adoption-report.txt; then
+            echo "milestone_reached=true" >> $GITHUB_OUTPUT
+          else
+            echo "milestone_reached=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Create milestone issue
+        if: steps.check.outputs.milestone_reached == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('adoption-report.txt', 'utf8');
+            
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🎉 CLI Adoption Milestone Reached',
+              body: `Automated detection from weekly tracking:\n\n\`\`\`\n${report}\n\`\`\`\n\ncc @daguanren21`,
+              labels: ['adoption', 'milestone']
+            });
+      
+      - name: Update tracking log
+        run: |
+          mkdir -p .github/adoption-tracking
+          DATE=$(date +%Y-%m-%d)
+          cp adoption-report.txt ".github/adoption-tracking/${DATE}.txt"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .github/adoption-tracking/
+          git diff --staged --quiet || git commit -m "chore: adoption tracking ${DATE}" && git push || true

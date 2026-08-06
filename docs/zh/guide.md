@@ -217,8 +217,10 @@ pnpm dlx vformjs skill install
 
 CLI 根据 `package.json` 选择官方 adapter。生成模块包含类型安全路径、类型化提交结果、独立语言规则，以及唯一的 `form.host` / `form.item(path)` 绑定；Zod 只从 `/zod` 子入口导入。`init`、`add` 可重复执行，已编辑文件默认拒绝覆盖。
 
-`audit forms` 只读取源码，标记单/多宿主、条件字段、动态数组、外部模型、
-自定义宿主和 Options API，并给出保守的自动/人工分类。私有 UI 包不做
-自动检测；使用 `--adapter-package` 和 `--form-factory` 显式配置业务 preset。
+`audit forms` 会解析 Vue SFC 模板并识别精确的单/多宿主、自定义宿主和
+Options API。只有包含 FormItem 的条件与循环才会标为条件字段或动态数组；
+外部模型也必须实际绑定到宿主 Form。命令只读源码并给出保守的自动/人工
+分类。私有 UI 包不做自动检测；使用 `--adapter-package` 和
+`--form-factory` 显式配置业务 preset。
 
 完整类型和底层方法见 [API 速查](/zh/api)。英文完整指南保留在 [Guide](/guide)。

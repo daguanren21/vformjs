@@ -1,0 +1,28 @@
+=== CLI Adoption Tracking ===
+Date: 2026-08-06
+
+### 1. GitHub Code Search
+Total .vformjs.json found: 0
+External (non-repo): 0
+  No external adoption detected yet.
+
+### 2. Repos with vformjs Topic
+Total repos: 0
+External: 0
+
+### 3. npm Downloads (last week)
+CLI (vformjs):              129
+Adapter (@vformjs/element-plus): 373
+Ratio:                      34.6% (target: ≥10%)
+✅ CLI downloads meet the ≥10% threshold!
+
+### 4. Integration Feedback Issues
+Total integration-feedback issues: 0
+Success reports: 0 (target: ≥2)
+
+=== Milestone Status ===
+⏳ External .vformjs.json: 0
+✅ CLI downloads ≥10% of adapter: 34.6%
+⏳ Success reports ≥2: 0
+
+🎯 At least one adoption signal detected!

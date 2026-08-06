@@ -11,6 +11,20 @@
 
 [在线示例](https://vformjs.vercel.app/zh/examples) · [快速开始](https://vformjs.vercel.app/zh/guide) · [API](https://vformjs.vercel.app/zh/api) · [讨论区](https://github.com/daguanren21/vformjs/discussions)
 
+## 适合什么项目？
+
+vformjs 是为**有大量 CRUD 表单**的后台项目设计的。如果你的项目有：
+
+- **20+ 个表单**，多数是新建/编辑弹窗
+- **重复的 create/edit 模式切换**逻辑
+- **取消时需要 reset 到初始状态**
+- **服务端字段级错误**需要映射回输入框
+- **动态数组**或条件字段
+
+那么 vformjs 可以帮你减少约 20-25% 的表单生命周期样板代码。
+
+**如果你的项目只有少于 10 个表单**，或者表单都是单模式的（登录、设置），**一个 20 行的项目内 helper 可能更合适**。诚实的定位帮助你做出正确选择。
+
 ## 安装
 
 ```bash

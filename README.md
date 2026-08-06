@@ -11,6 +11,20 @@ Typed CRUD form lifecycle for Vue 2.7 and Vue 3. Keep the existing Element Plus,
 
 [Live examples](https://vformjs.vercel.app/examples) · [Guide](https://vformjs.vercel.app/guide) · [API](https://vformjs.vercel.app/api) · [Discussions](https://github.com/daguanren21/vformjs/discussions)
 
+## Is vformjs for your project?
+
+vformjs is designed for **admin projects with many CRUD forms**. It fits well if you have:
+
+- **20+ forms**, mostly create/edit dialogs
+- **Repeated create/edit mode switching** logic
+- **Cancel flows that reset to baseline state**
+- **Server-side field-level errors** mapped back to inputs
+- **Dynamic arrays** or conditional fields
+
+vformjs can reduce form lifecycle boilerplate by ~20-25% in such projects.
+
+**If your project has fewer than 10 forms** or they're mostly single-mode (login, settings), **a 20-line project-local helper is likely sufficient**. Honest positioning helps you choose correctly.
+
 ## Install
 
 ```bash
