@@ -20,6 +20,9 @@ const SKIP_DIRECTORIES: ReadonlySet<string> = new Set([
   'node_modules',
 ])
 
+/** Minified bundles are build artifacts, never hand-editable source. */
+const MINIFIED_FILE = /\.min\.[cm]?[jt]sx?$/
+
 export interface CollectSourceFileOptions {
   includePackageJson?: boolean
 }
@@ -40,8 +43,9 @@ export function collectSourceFiles(
       continue
     }
     if (
-      SOURCE_EXTENSIONS.has(extname(entry))
-      || (options.includePackageJson && entry === 'package.json')
+      (SOURCE_EXTENSIONS.has(extname(entry))
+        || (options.includePackageJson && entry === 'package.json'))
+      && !MINIFIED_FILE.test(entry)
     ) {
       files.push(path)
     }

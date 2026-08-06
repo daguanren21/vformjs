@@ -1,15 +1,16 @@
 import {
   cpSync,
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   rmSync,
+  writeFileSync,
 } from 'node:fs'
 import { resolve } from 'node:path'
 import { compileScript, compileTemplate, parse } from '@vue/compiler-sfc'
 import { afterEach, describe, expect, it } from 'vitest'
 import { runCli } from '../src/cli'
 import { migrateVue2ToVue3 } from '../src/migrate'
-
 const fixture = resolve(import.meta.dirname, 'fixtures/migration-vue2')
 const temporaryRoots: string[] = []
 
@@ -105,5 +106,39 @@ describe('Vue 2.7 to Vue 3 migration', () => {
     const result = JSON.parse(output.join('\n')) as { result: { dryRun: boolean, issues: unknown[] } }
     expect(result.result.dryRun).toBe(true)
     expect(result.result.issues.length).toBeGreaterThan(0)
+  })
+
+  it('emits exactly one sfc-parse-failed per malformed SFC, never duplicates', () => {
+    const root = mkdtempSync(resolve(import.meta.dirname, '.tmp-parsefail-'))
+    temporaryRoots.push(root)
+    mkdirSync(resolve(root, 'src'), { recursive: true })
+    writeFileSync(resolve(root, 'package.json'), JSON.stringify({
+      name: 'test',
+      dependencies: { vue: '~2.7.14', 'element-ui': '^2.15.14' },
+    }))
+    // Broken SFC: Vue parser cascades multiple errors from one malformed attribute
+    writeFileSync(resolve(root, 'src/Broken.vue'), '<template>\n  <div :x="[1, 2 :y="z">{{ )( }}</div>\n</template>')
+
+    const report = migrateVue2ToVue3(root, { dryRun: true })
+    const parseFailures = report.issues.filter(i => i.code === 'sfc-parse-failed')
+    expect(parseFailures).toHaveLength(1)
+  })
+
+  it('skips minified vendor bundles and emits no issues for them', () => {
+    const root = mkdtempSync(resolve(import.meta.dirname, '.tmp-minified-'))
+    temporaryRoots.push(root)
+    mkdirSync(resolve(root, 'lib'), { recursive: true })
+    writeFileSync(resolve(root, 'package.json'), JSON.stringify({
+      name: 'test',
+      dependencies: { vue: '~2.7.14' },
+    }))
+    writeFileSync(
+      resolve(root, 'lib/vendor.min.js'),
+      'Vue.use(Router);var x=function(){return this.$message("ok")}',
+    )
+
+    const report = migrateVue2ToVue3(root, { dryRun: true })
+    const minifiedIssues = report.issues.filter(i => i.file.includes('min.js'))
+    expect(minifiedIssues).toHaveLength(0)
   })
 })

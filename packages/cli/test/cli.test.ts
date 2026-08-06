@@ -215,8 +215,12 @@ export default {
 }
 </script>
 <template>
-  <CustomForm v-if="modelValue" ref="form">
-    <div v-for="(row, index) in rows" :key="index" />
+  <CustomForm :model="modelValue" ref="form">
+    <section v-if="modelValue.visible">
+      <div v-for="(row, index) in rows" :key="index">
+        <CustomFormItem :prop="\`rows.\${index}.name\`" />
+      </div>
+    </section>
   </CustomForm>
 </template>
 `)

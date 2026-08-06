@@ -293,15 +293,13 @@ function transformSource(file: string, source: string): { source: string, change
   if (extname(file) === '.vue') {
     const parsed = parseSfc(source, { filename: file })
     if (parsed.errors.length) {
-      for (const error of parsed.errors) {
-        issues.push({
-          file,
-          line: 1,
-          code: 'sfc-parse-failed',
-          message: 'Vue SFC parsing failed; no rewrite was attempted.',
-          evidence: errorMessage(error),
-        })
-      }
+      issues.push({
+        file,
+        line: 1,
+        code: 'sfc-parse-failed',
+        message: 'Vue SFC parsing failed; no rewrite was attempted.',
+        evidence: errorMessage(parsed.errors[0]!),
+      })
       scanManualIssues(file, source, issues)
       return { source, changes, issues }
     }
