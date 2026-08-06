@@ -25,6 +25,7 @@ allowBuilds:
   vue-demi: true
   esbuild: true
   core-js: true
+  '@parcel/watcher': false
 
 peerDependencyRules:
   allowedVersions:
