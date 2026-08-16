@@ -1,5 +1,76 @@
 # @vformjs/element-plus
 
+## 0.4.0
+
+### Minor Changes
+
+- e233a28: Replace tiered form factories and nested capability namespaces with one
+  application hook and one flat script API per UI package. `get` / `set`
+  overload whole-form and typed dotted-path operations; field arrays, remote
+  options, validation, server errors, drafts, and model tracking remain
+  available as direct methods.
+  
+  Flatten application configuration: `when`, conditional entries in `rules`,
+  `linkage`, `options`, `hiddenValues`, `submitPolicy`, and `throwOnInvalid` now
+  sit beside `defaults` and `onSubmit`. Native Vue templates and UI components
+  remain unchanged. Zod and composed forms use the same contract.
+- e233a28: Add `optionSources`: declarative remote field options.
+  
+  A source declares `load` plus optional `deps`, `key`, `select`, `resetValue`,
+  and `lazy`. The form owns what every dialog used to hand-write per select:
+  
+  - loads on create, reloads when `deps` change, and resets the dependent value to
+    its factory default so cascades (`country → city → district`) stay consistent;
+  - shares one in-flight request and one payload across every source resolving to
+    the same `key`, with `select` picking each field's slice — one endpoint
+    returning many lists feeds many selects in one request;
+  - aborts superseded loads via `AbortSignal` and drops their late results;
+  - exposes `{ items, loading, error, loaded }` through `form.options(path)`
+    (Vue `ComputedRef`) and `form.getOptionsState(path)` (core), mirroring resolved
+    items into `getMeta(path).options`;
+  - refreshes after `setValues` / `reset` / `load('edit', record)` without clearing
+    the incoming record.
+  
+  `form.reloadOptions(paths?)` drops cached payloads and refetches. Wildcard
+  patterns (`rows.*.city`) expand per array row with distinct cache keys.
+  Synchronous, already-in-memory options keep using `setOptions` from `linkage`.
+
+### Patch Changes
+
+- e233a28: Fix three defects found by running a dynamic table form on Vue 2.7 + element-ui.
+  
+  **A pristine form showed every required error on mount.** `useForm` publishes
+  rules after the first render, and element's `<el-form>` watches `rules` and calls
+  `validate()` when `validateOnRuleChange` is on (its default). A brand-new form
+  lit up every required field before the user touched anything, while
+  `form.errors` was still empty.
+  
+  `FormHostAdapter` gains optional `hostProps()`, merged into `form.host`. The
+  element-ui and element-plus adapters return `{ validateOnRuleChange: false }`, so
+  vformjs owns revalidation. Dynamic rules still re-bind their validate events, and
+  submit still validates everything.
+  
+  **`optionSources` never loaded for array rows added after creation.** A source
+  declared as `rows.*.country` only covered the rows that existed when the form was
+  built; appending a row left its select with no options (an element select then
+  renders the raw value instead of the label). Freshly materialized paths now get
+  their first load even when nothing they depend on changed — `lazy` still opts out.
+  
+  **A dep change in one row cleared its siblings.** The reset decision was made per
+  pattern, so editing `rows.0.country` cleared `rows.1.city` too. Reset is now
+  decided per materialized row against that row's own dep paths. A structural array
+  change still reloads options (indices shift) but no longer counts as an edit to
+  any row's dep, so appending or removing a row never clears sibling values.
+  Resetting a row beyond the factory defaults falls back to the first row's leaf
+  default instead of writing `undefined`.
+- Updated dependencies [e233a28]
+- Updated dependencies [e233a28]
+- Updated dependencies [e233a28]
+- Updated dependencies [e233a28]
+  - @vformjs/vue@0.4.0
+  - @vformjs/zod@0.4.0
+  - @vformjs/core@0.4.0
+
 ## 0.3.0
 
 ### Patch Changes
