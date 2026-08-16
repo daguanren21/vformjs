@@ -1,5 +1,29 @@
 # @vformjs/zod
 
+## 0.4.0
+
+### Minor Changes
+
+- e233a28: Replace tiered form factories and nested capability namespaces with one
+  application hook and one flat script API per UI package. `get` / `set`
+  overload whole-form and typed dotted-path operations; field arrays, remote
+  options, validation, server errors, drafts, and model tracking remain
+  available as direct methods.
+  
+  Flatten application configuration: `when`, conditional entries in `rules`,
+  `linkage`, `options`, `hiddenValues`, `submitPolicy`, and `throwOnInvalid` now
+  sit beside `defaults` and `onSubmit`. Native Vue templates and UI components
+  remain unchanged. Zod and composed forms use the same contract.
+
+### Patch Changes
+
+- Updated dependencies [e233a28]
+- Updated dependencies [e233a28]
+- Updated dependencies [e233a28]
+- Updated dependencies [e233a28]
+  - @vformjs/vue@0.4.0
+  - @vformjs/core@0.4.0
+
 ## 0.3.0
 
 ### Patch Changes
