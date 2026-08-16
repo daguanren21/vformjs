@@ -57,7 +57,7 @@ export const demos: DemoMeta[] = [
   {
     id: 'conditional',
     title: '条件显隐联动',
-    desc: 'when / whenRules / 省市',
+    desc: 'when / conditional rules / 省市联动',
     component: ConditionalDemo,
   },
   {

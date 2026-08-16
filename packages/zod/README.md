@@ -37,8 +37,9 @@ const form = useZodForm({
 })
 ```
 
-Without a UI host, the same resolver validates headlessly. A UI package's
-`/zod` entry adds only its host binding, error projection, and scrolling.
+All entries return the same flat application-form API as the official UI hooks.
+Without a UI host, the resolver validates headlessly; a UI package's `/zod`
+entry adds only host binding, error projection, and scrolling.
 
 Typed submit failures preserve parsed Zod output in `values`, expose the API error as
 `result.submitError`, and copy optional field errors into the form state.

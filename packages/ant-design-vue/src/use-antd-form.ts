@@ -1,41 +1,29 @@
-import type { UseFormOptions, UseFormReturn } from '@vformjs/vue'
-import { useForm } from '@vformjs/vue'
+import type {
+  UseApplicationFormOptions,
+  UseApplicationFormReturn,
+} from '@vformjs/vue'
+import { useApplicationForm } from '@vformjs/vue'
 import { createAntdAdapter } from './create-adapter'
 
-/**
- * Vue3 + Ant Design Vue 入口。
- *
- * `defaults` 必填，用于推断 `onSubmit(values)` / `form.model` 类型。
- *
- * @example
- * ```ts
- * const form = useAntdForm({
- *   defaults: { name: '', email: '' },
- *   rules: { name: [r.required()] },
- *   onSubmit: async (values) => {
- *     // values: { name: string, email: string }
- *     await api.save(values)
- *   },
- * })
- * // <a-form v-bind="form.host">
- * ```
- */
 export type UseAntdFormOptions<
   T extends object,
   TSubmitError = never,
-> = Omit<UseFormOptions<T, TSubmitError>, 'defaultValues' | 'adapter'> & {
-    /** 初始值（必填），推断模型类型 */
-    defaults: T | (() => T)
-  }
+> = Omit<
+  UseApplicationFormOptions<T, TSubmitError>,
+  'defaultValues' | 'adapter'
+> & {
+  defaults: T | (() => T)
+}
 
+/** Ant Design Vue form with one flat lifecycle and capability API. */
 export function useAntdForm<
   T extends object,
   TSubmitError = never,
 >(
   options: UseAntdFormOptions<T, TSubmitError>,
-): UseFormReturn<T, TSubmitError> {
+): UseApplicationFormReturn<T, TSubmitError> {
   const { defaults, ...rest } = options
-  return useForm({
+  return useApplicationForm({
     ...rest,
     defaultValues: defaults,
     adapter: createAntdAdapter(),

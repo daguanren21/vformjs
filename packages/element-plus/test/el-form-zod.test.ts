@@ -69,9 +69,9 @@ describe('useZodForm + ElForm host integration', () => {
     expect(res.errors.email?.[0]).toContain('邮箱')
 
     // Field rules themselves reject with the same messages (what ElForm uses for red text)
-    const userRule = form.rules.username[0]
+    const userRule = form.host.rules.username[0]
     await expect(userRule.validator({}, 'admin')).rejects.toThrow(/admin/)
-    const emailRule = form.rules.email[0]
+    const emailRule = form.host.rules.email[0]
     await expect(emailRule.validator({}, 'bad')).rejects.toThrow(/邮箱/)
 
     wrapper.unmount()
@@ -100,8 +100,8 @@ describe('useZodForm + ElForm host integration', () => {
     }
 
     // rules resolve when valid
-    await expect(form.rules.username[0].validator({}, 'alice')).resolves.toBeUndefined()
-    await expect(form.rules.email[0].validator({}, 'a@b.com')).resolves.toBeUndefined()
+    await expect(form.host.rules.username[0].validator({}, 'alice')).resolves.toBeUndefined()
+    await expect(form.host.rules.email[0].validator({}, 'a@b.com')).resolves.toBeUndefined()
 
     wrapper.unmount()
   })
@@ -140,16 +140,16 @@ describe('useZodForm + ElForm host integration', () => {
 
     const form = (wrapper.vm as any).form
     const members = (wrapper.vm as any).members
-    expect(form.rules['members.0.name']).toBeTruthy()
+    expect(form.host.rules['members.0.name']).toBeTruthy()
 
     members.append({ name: '' })
-    form.notifyChange('members')
+    form.notify('members')
     await Promise.resolve()
     await Promise.resolve()
     await flushPromises()
 
-    expect(form.rules['members.1.name']).toBeTruthy()
-    await expect(form.rules['members.1.name'][0].validator({}, '')).rejects.toThrow(/姓名/)
+    expect(form.host.rules['members.1.name']).toBeTruthy()
+    await expect(form.host.rules['members.1.name'][0].validator({}, '')).rejects.toThrow(/姓名/)
 
     wrapper.unmount()
   })

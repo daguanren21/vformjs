@@ -5,35 +5,71 @@ import type {
   SubmitPolicy,
 } from '@vformjs/core'
 import { computed, reactive, ref } from 'vue-demi'
+import type { FormMode } from './use-form'
 
-/** Minimal reactive form surface required by useFormGroup. */
-export interface FormGroupMember<
-  TInput extends object = object,
-  TOutput extends object = TInput,
-> {
+/** Reactive state and lifecycle shared by low-level and application forms. */
+export interface FormGroupMemberState<TInput extends object = object> {
   readonly model: TInput
   readonly errors: Readonly<FormErrors>
   readonly dirty: boolean
   readonly changedPaths: ReadonlyArray<string>
   readonly submitting: boolean
+  reset: () => void
+  /**
+   * Present on Vue form members. The group forwards mode switches and record
+   * payloads when available, so every section switches together.
+   */
+  load?: (mode: FormMode, values?: Partial<TInput>) => void
+  readonly mode?: FormMode
+}
+
+/** Low-level `useForm` controls. */
+export interface LowLevelFormGroupControls<
+  TInput extends object = object,
+  TOutput extends object = TInput,
+> {
   getValues: () => TInput
   setErrors: (errors: FormErrors) => void
-  reset: () => void
   scrollToFirstError: () => string | undefined
   validate: () => Promise<
     FormValidationResult<TInput, TOutput> | FormResult<TInput>
   >
 }
 
+/** Official application-form controls. */
+export interface ApplicationFormGroupControls<
+  TInput extends object = object,
+  TOutput extends object = TInput,
+> {
+  get: () => TInput
+  setErrors: (errors: FormErrors) => void
+  scrollToFirstError: () => string | undefined
+  validate: () => Promise<
+    FormValidationResult<TInput, TOutput> | FormResult<TInput>
+  >
+}
+
+export type FormGroupMember<
+  TInput extends object = object,
+  TOutput extends object = TInput,
+> = FormGroupMemberState<TInput> & (
+  | LowLevelFormGroupControls<TInput, TOutput>
+  | ApplicationFormGroupControls<TInput, TOutput>
+)
+
 export type FormGroupMap = Record<string, FormGroupMember>
 
-type MemberInput<TMember> = TMember extends {
-  getValues: () => infer TInput extends object
-} ? TInput : never
+type MemberInput<TMember> =
+  TMember extends { get: () => infer TInput extends object }
+    ? TInput
+    : TMember extends { getValues: () => infer TInput extends object }
+      ? TInput
+      : never
 
-type MemberValidation<TMember> = TMember extends {
-  validate: () => Promise<infer TResult>
-} ? TResult : never
+type MemberValidation<TMember> =
+  TMember extends { validate: () => Promise<infer TResult> }
+    ? TResult
+    : never
 type MemberOutput<TMember> = TMember extends {
   readonly __vformjsTypes?: { output: infer TOutput extends object }
 }
@@ -125,6 +161,17 @@ export interface UseFormGroupReturn<TForms extends FormGroupMap> {
   readonly dirty: boolean
   readonly changedPaths: ReadonlyArray<string>
   readonly submitting: boolean
+  /** Mode of the first member that reports one. `group.load` keeps them aligned. */
+  readonly mode: FormMode
+  /**
+   * Switch every member's mode and hand each one its slice of the record:
+   * `group.load('edit', { base: detail.base, fees: detail.fees })`.
+   * Members without `load` are skipped.
+   */
+  load: (
+    mode: FormMode,
+    values?: Partial<FormGroupInput<TForms>>,
+  ) => void
   validate: () => Promise<FormGroupValidationResult<TForms>>
   submit: <TError = never>(
     handler: FormGroupSubmitHandler<TForms, TError>,
@@ -143,6 +190,22 @@ function cloneErrors(errors: Readonly<FormErrors>): FormErrors {
   return cloned
 }
 
+function getMemberValues(form: FormGroupMember): object {
+  return 'get' in form ? form.get() : form.getValues()
+}
+
+function setMemberErrors(form: FormGroupMember, errors: FormErrors): void {
+  form.setErrors(errors)
+}
+
+function scrollMemberToFirstError(form: FormGroupMember): string | undefined {
+  return form.scrollToFirstError()
+}
+
+function validateMember(form: FormGroupMember) {
+  return form.validate()
+}
+
 /** Compose multiple independently hosted forms into one reactive lifecycle. */
 export function useFormGroup<const TForms extends FormGroupMap>(
   forms: TForms,
@@ -158,7 +221,7 @@ export function useFormGroup<const TForms extends FormGroupMap>(
   const collectInputs = (): FormGroupInput<TForms> => {
     const values: Record<string, object> = {}
     for (const [name, form] of entries)
-      values[name] = form.getValues()
+      values[name] = getMemberValues(form)
     return values as FormGroupInput<TForms>
   }
 
@@ -192,14 +255,36 @@ export function useFormGroup<const TForms extends FormGroupMap>(
     return paths
   })
 
+  const mode = computed<FormMode>(() => {
+    for (const [, form] of entries) {
+      if (form.mode)
+        return form.mode
+    }
+    return 'create'
+  })
+
+  const load = (
+    next: FormMode,
+    values?: Partial<FormGroupInput<TForms>>,
+  ) => {
+    for (const [name, form] of entries) {
+      form.load?.(
+        next,
+        values?.[name as keyof FormGroupInput<TForms>] as
+          | Partial<object>
+          | undefined,
+      )
+    }
+  }
+
   const setErrors = (next: FormGroupErrors<TForms>) => {
     for (const [name, form] of entries)
-      form.setErrors(next[name as keyof TForms] ?? {})
+      setMemberErrors(form, next[name as keyof TForms] ?? {})
   }
 
   const scrollToFirstError = (): string | undefined => {
     for (const [name, form] of entries) {
-      const path = form.scrollToFirstError()
+      const path = scrollMemberToFirstError(form)
       if (path)
         return `${name}.${path}`
     }
@@ -207,7 +292,7 @@ export function useFormGroup<const TForms extends FormGroupMap>(
   }
 
   const validate = async (): Promise<FormGroupValidationResult<TForms>> => {
-    const results = await Promise.all(entries.map(([, form]) => form.validate()))
+    const results = await Promise.all(entries.map(([, form]) => validateMember(form)))
     const output: Record<string, object> = {}
     const groupedErrors: Record<string, FormErrors> = {}
     let valid = true
@@ -306,6 +391,8 @@ export function useFormGroup<const TForms extends FormGroupMap>(
     dirty,
     changedPaths,
     submitting,
+    mode,
+    load,
     validate,
     submit,
     reset,

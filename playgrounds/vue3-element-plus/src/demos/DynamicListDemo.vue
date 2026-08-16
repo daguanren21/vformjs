@@ -32,7 +32,7 @@ async function onSubmit() {
 <template>
   <div class="demo">
     <p class="hint">
-      form.list 动态数组；行 prop 用 fieldPath('members', i, 'name')
+      form.list 管理动态数组；行 prop 用 fieldPath('members', i, 'name')
     </p>
     <el-form v-bind="form.host" label-width="100px" style="max-width: 640px">
       <el-form-item label="项目名" prop="project">

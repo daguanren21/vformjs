@@ -1,5 +1,5 @@
 {
-  "$schema": "https://unpkg.com/@changesets/config@3.1.1/schema.json",
+  "$schema": "https://unpkg.com/@changesets/config@4.0.0/schema.json",
   "changelog": "@changesets/cli/changelog",
   "commit": false,
   "fixed": [
@@ -17,10 +17,5 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": [
-    "@vformjs/playground-vue3-element-plus",
-    "@vformjs/playground-vue2-element-ui",
-    "@vformjs/playground-vue3-naive-ui",
-    "@vformjs/playground-vue3-antd-vue"
-  ]
+  "privatePackages": false
 }

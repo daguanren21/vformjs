@@ -20,9 +20,6 @@ const form = useAntdForm({
   },
 })
 
-function setFormRef(inst: unknown) {
-  form.host.ref(inst)
-}
 
 async function onSubmit() {
   const res = await form.submit()
@@ -44,9 +41,7 @@ function onReset() {
     </p>
 
     <a-form
-      :ref="setFormRef"
-      :model="form.model"
-      :rules="form.rules"
+      v-bind="form.host"
       :label-col="{ style: { width: '90px' } }"
       style="max-width: 480px"
     >

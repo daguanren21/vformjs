@@ -2,6 +2,8 @@
 
 vformjs keeps the form lifecycle stable while the host UI moves from element-ui to Element Plus. The migration command changes only syntax with a deterministic one-to-one replacement. Anything that depends on application semantics remains in the report.
 
+See how regular CRUD, dynamic fields, large models, and multi-section forms adopt vformjs in [Migrate existing forms](/form-migration-diffs).
+
 ## Paired reference
 
 The repository runs the same task CRUD dialog on both stacks:
@@ -19,9 +21,9 @@ Both versions own the same defaults and `Row` type, call `form.load('create' | '
 |---|---|
 | `defaults` and inferred `form.model` | unchanged |
 | `load`, `mode`, `editable`, `readonly` | unchanged |
-| `reset`, `rebaseDefaults`, `dirty`, `changedPaths` | unchanged |
+| `reset`, `rebase`, `dirty`, `changedPaths` | unchanged |
 | `submit`, `validateField`, API `errors` | unchanged |
-| `when`, `whenRules`, `linkage`, `list` | unchanged |
+| `when`, conditional `rules`, `linkage`, `form.list` | unchanged |
 | Zod schema and parsed submit output | unchanged; switch the adapter import only |
 
 ## Run the codemod

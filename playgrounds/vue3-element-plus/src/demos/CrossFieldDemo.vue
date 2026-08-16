@@ -12,18 +12,16 @@ const form = useElForm({
   },
   rules: {
     password: [r.required(), r.min(6)],
-    confirmPassword: [r.required()],
+    confirmPassword: ({ values }) => [
+      r.required(),
+      r.equalTo(() => values.password, '两次密码不一致'),
+    ],
   },
   onSubmit: async (values) => {
     log.value = JSON.stringify(values, null, 2)
   },
 })
 
-// 跨字段：依赖当前 model
-form.raw.setFieldRules('confirmPassword', [
-  r.required(),
-  r.equalTo(() => form.model.password, '两次密码不一致'),
-])
 
 async function onSubmit() {
   const res = await form.submit()

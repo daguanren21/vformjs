@@ -6,6 +6,9 @@ savePrefix: ''
 
 minimumReleaseAge: 1440
 
+update:
+  changeset: true
+
 catalog:
   typescript: 7.0.2
   tsdown: 0.22.14

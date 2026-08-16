@@ -176,9 +176,60 @@ export function deepMerge<T extends Record<string, unknown>>(
 }
 
 /**
+ * Restore an array element-wise, reusing the existing element objects at each
+ * surviving position. Keeps row identity stable across `reset` / `setValues`,
+ * which is what dynamic-array row keys and Vue's `v-for` patching depend on.
+ *
+ * Only `splice`/`push` are used: Vue 2 patches those, but cannot observe
+ * `arr.length = n` or `arr[i] = v`, so index assignment would silently fail to
+ * re-render a Vue 2.7 host.
+ */
+function restoreArrayInPlace(
+  target: unknown[],
+  baseline: ReadonlyArray<unknown>,
+  policy: FormValuePolicy | undefined,
+  basePath: string,
+): void {
+  if (target.length > baseline.length)
+    target.splice(baseline.length)
+
+  for (let index = 0; index < baseline.length; index++) {
+    const b = baseline[index]
+    const path = childPath(basePath, index)
+    const bAtomic = isAtomicValue(b, policy, path)
+
+    if (index >= target.length) {
+      target.push(deepClone(b, policy, path))
+      continue
+    }
+
+    const t = target[index]
+    const tAtomic = isAtomicValue(t, policy, path)
+    if (
+      isObjectLike(b) && !Array.isArray(b) && !bAtomic
+      && isObjectLike(t) && !Array.isArray(t) && !tAtomic
+    ) {
+      restoreInPlace(
+        t as Record<string, unknown>,
+        b as Record<string, unknown>,
+        policy,
+        path,
+      )
+      continue
+    }
+    if (Array.isArray(b) && Array.isArray(t) && !bAtomic && !tAtomic) {
+      restoreArrayInPlace(t, b, policy, path)
+      continue
+    }
+    target.splice(index, 1, deepClone(b, policy, path))
+  }
+}
+
+/**
  * Restore `target` to the shape/value of `baseline` in place:
  * - nested records merged recursively
- * - arrays and atomic values replaced
+ * - arrays restored element-wise, reusing surviving element objects
+ * - atomic values replaced
  * - extra keys on target deleted
  */
 export function restoreInPlace<T extends Record<string, unknown>>(
@@ -210,6 +261,14 @@ export function restoreInPlace<T extends Record<string, unknown>>(
         policy,
         path,
       )
+    }
+    else if (
+      Array.isArray(b)
+      && Array.isArray(t)
+      && !isAtomicValue(b, policy, path)
+      && !isAtomicValue(t, policy, path)
+    ) {
+      restoreArrayInPlace(t, b, policy, path)
     }
     else {
       target[key as keyof T] = deepClone(b, policy, path) as T[keyof T]

@@ -60,9 +60,6 @@ const form = useNaiveForm({
   },
 })
 
-function setFormRef(inst: unknown) {
-  form.host.ref(inst)
-}
 
 const dialogTitle = computed(() => {
   if (form.mode === 'create')
@@ -149,9 +146,7 @@ const statusOptions = [
     >
       <n-form
         v-if="form.editable"
-        :ref="setFormRef"
-        :model="form.model"
-        :rules="form.rules"
+        v-bind="form.host"
         label-placement="left"
         label-width="80"
       >

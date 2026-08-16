@@ -24,6 +24,16 @@ pnpm add @vformjs/naive-ui naive-ui vue
 对应入口是 `useNaiveForm`、`useAntdForm`；Zod 子路径分别是
 `@vformjs/naive-ui/zod`、`@vformjs/ant-design-vue/zod`。这两套包已经内置宿主 adapter。
 
+## 每套 UI 只用一个入口
+
+Element Plus 和 element-ui 使用 `useElForm`，Naive UI 使用
+`useNaiveForm`，Ant Design Vue 使用 `useAntdForm`。三者的参数和返回
+结构一致，不再区分基础、CRUD、动态表单。
+
+生命周期与高级能力都直接放在同一个 `form` 上；页面按需调用方法或增加
+顶层配置，不再经过 `values`、`fields`、`validation`、`draft` 二级入口，
+也不用先给表单或开发者分类。
+
 `defaults` 会推导 `form.model` 和 `onSubmit(values)` 的类型。
 在新建/编辑弹窗中，凡是需要在 `form.load('create')` 时被清除的字段，
 都要保留在 defaults 基线里，即使它的新建初始值是 `undefined`。
@@ -56,7 +66,7 @@ const form = useElForm<PostFormValues>({
 标识符遗留在 model 中。
 
 ```ts
-import { createRuleBuilders, enUSRuleMessages, r, submitFail, useElForm } from '@vformjs/element-plus'
+import { r, useElForm } from '@vformjs/element-plus'
 
 const form = useElForm({
   defaults: {
@@ -76,22 +86,25 @@ const form = useElForm({
 需要英文规则消息时创建独立实例，不修改全局状态：
 
 ```ts
+import { createRuleBuilders, enUSRuleMessages } from '@vformjs/element-plus'
 const en = createRuleBuilders(enUSRuleMessages)
 en.required() // Required
 ```
 
 ## 绑定现有 Form
 
-`form.host` 包含宿主需要的 `ref`、`model`、`rules`；`form.item(path)` 负责字段属性与错误。
+`form.host` 包含宿主需要的 `ref`、`model`、`rules`。宿主原生 `prop`
+能满足 UI 自身校验；core 或 API 字段错误需要投影到 FormItem 时，使用
+`form.item(path)`。
 
 ```vue
 <template>
   <el-form v-bind="form.host" label-width="96px">
-    <el-form-item label="姓名" v-bind="form.item('name')">
+    <el-form-item label="姓名" prop="name">
       <el-input v-model="form.model.name" />
     </el-form-item>
 
-    <el-form-item label="邮箱" v-bind="form.item('email')">
+    <el-form-item label="邮箱" prop="email">
       <el-input v-model="form.model.email" />
     </el-form-item>
 
@@ -133,6 +146,7 @@ form.load('detail', detail)
 ## 接口错误和未保存状态
 
 ```ts
+import { submitFail } from '@vformjs/element-plus'
 const result = await form.submit(async (values) => {
   const response = await api.save(values)
   if (!response.ok) {
@@ -157,22 +171,24 @@ form.dirty        // 是否偏离当前重置基线
 form.changedPaths // 例如 ['email']
 ```
 
-字段值变化后，对应的旧接口错误会自动清掉。`load('edit')`、`load('detail')`、`rebaseDefaults()`、`reset()` 都会更新基线。
+字段值变化后，对应的旧接口错误会自动清掉。`load('edit')`、
+`load('detail')`、`form.rebase()`、`reset()` 都会更新基线。
 
-大型表单可设置 `modelTracking: 'explicit'`，并用
-`form.field('profile.email')` 获得类型安全的可写 computed。此模式不会
-全量 deep watch / clone 模型；更新必须经过 field 或 form 方法。
+大型表单可设置 `tracking: 'explicit'`，并用
+`form.field('profile.email')` 获得类型安全的可写 computed。此模式不会全量
+deep watch / clone 模型；更新必须经过 `form.field`、`form.set` 或字段数组方法。
 
 ## 条件字段
 
 ```ts
 const form = useElForm({
   defaults: { type: 'normal', extra: '' },
+  rules: {
+    extra: ({ values }) =>
+      values.type === 'other' ? r.required() : null,
+  },
   when: {
     extra: values => values.type === 'other',
-  },
-  whenRules: {
-    extra: values => values.type === 'other' ? [r.required()] : null,
   },
 })
 ```
@@ -201,8 +217,8 @@ contacts.move(1, 0)
 
 `contacts.fields` 提供稳定 key 和当前 index，key 不会写入业务数据。
 
-行规则可写成 `'contacts.*.name': [r.required()]`。`whenRules` 的第二个
-参数提供当前 `item`、`index` 和展开后的 `path`。
+行规则可写成 `'contacts.*.name': r.required()`。条件规则回调接收
+`{ values, item, index, path }`，可读取当前行和展开后的宿主路径。
 
 多个独立宿主表单使用 `useFormGroup({ base, details, fees })` 显式组合；
 group 聚合 `validate`、`submit`、`dirty`、`changedPaths`、错误滚动和 `reset`。

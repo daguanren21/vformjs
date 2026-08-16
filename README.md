@@ -46,8 +46,11 @@ pnpm add @vformjs/element-plus element-plus vue     # Vue 3
 
 ## Quick start
 
+Every Element Plus form uses the same `useElForm` hook. Template bindings stay
+native; lifecycle and advanced script operations share one flat `form` object.
+
 ```ts
-import { r, submitFail, useElForm } from '@vformjs/element-plus'
+import { r, useElForm } from '@vformjs/element-plus'
 
 const form = useElForm({
   defaults: { name: '', email: '' },
@@ -55,18 +58,14 @@ const form = useElForm({
     name: [r.required(), r.min(2)],
     email: [r.required(), r.email()],
   },
-  onSubmit: async (values) => {
-    const result = await api.save(values)
-    if (!result.ok)
-      return submitFail(result.error, { errors: result.fieldErrors })
-  },
+  onSubmit: values => api.save(values),
 })
 ```
 
 ```vue
 <template>
   <el-form v-bind="form.host" label-width="100px">
-    <el-form-item label="Name" v-bind="form.item('name')">
+    <el-form-item label="Name" prop="name">
       <el-input v-model="form.model.name" />
     </el-form-item>
     <el-form-item label="Email" prop="email">
@@ -79,19 +78,20 @@ const form = useElForm({
 </template>
 ```
 
-`form.host` is `{ ref, model, rules }`. `form.item(path)` supplies host-specific field props and errors.
-`onSubmit` may return `submitFail(error, { errors })`; the error stays typed as
-`result.submitError`, and field errors become reactive `form.errors`.
+`form.host` is `{ ref, model, rules }`; host-native `prop` is enough when the
+host owns validation. `defaults` infers `form.model` and `onSubmit(values)`.
+Less common capabilities stay on the same object: `form.get()`, `form.list()`,
+`form.validate()`, and `form.snapshotDraft()`.
 
 ## What you get
 
 - **Modes** — `form.load('create' | 'edit' | 'detail', values?)` in the dialog/page, not the list
 - **Trust state** — reactive `errors`, `dirty`, `changedPaths`, and server-error scrolling
 - **Submit failures** — typed `submitError` values with optional field errors
-- **Rules** — `r.required()`, email, min/max, pattern, custom; or a function of values
-- **when / whenRules** — show/hide and conditional rules
-- **linkage** — react when other fields change
-- **list / fieldArray** — dynamic rows with stable keys
+- **Rules** — static and conditional rules share one `rules` map
+- **Conditional fields** — top-level `when`; render with `form.hidden(path)`
+- **Linkage and options** — top-level `linkage` and `options`
+- **Dynamic rows** — `form.list()` with stable keys
 - **Zod** — `useZodForm({ schema, defaults })` from `@vformjs/element-plus/zod`
 - **Adapters** — swap UI without rewriting form logic
 
@@ -101,6 +101,7 @@ const form = useElForm({
 |------|---------|
 | **[Live examples](https://vformjs.vercel.app/examples)** | Real Element Plus CRUD, conditional linkage, and dynamic array + Zod flows |
 | **[Guide](https://vformjs.vercel.app/guide)** | Install, bind the host Form, modes, rules, arrays, Zod, adapters |
+| **[Migrate existing forms](https://vformjs.vercel.app/form-migration-diffs)** | See how regular CRUD, dynamic fields, large models, and multi-section forms adopt one typed lifecycle |
 | **[Vue 2.7 → Vue 3](https://vformjs.vercel.app/migration)** | Stable form contracts, safe codemod scope, dry-run, and manual review report |
 | **[API](https://vformjs.vercel.app/api)** | Options, return types, `r.*`, linkage, and adapter contracts |
 | **[Integration feedback](https://github.com/daguanren21/vformjs/issues/new/choose)** | Report a completed or blocked real-project adoption |

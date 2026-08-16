@@ -1,5 +1,6 @@
 export { createElementUiAdapter } from './create-adapter'
 export { useElForm } from './use-el-form'
+export type { UseElFormOptions } from './use-el-form'
 
 /** Re-export for one-package install under pnpm strict node_modules. */
 export {
@@ -18,6 +19,10 @@ export {
   useFormGroup,
 } from '@vformjs/vue'
 export type {
+  ApplicationConditionalRule,
+  ApplicationFormGet,
+  ApplicationFormSet,
+  ApplicationRules,
   ConditionalRules,
   FieldCondition,
   FormValueContext,
@@ -25,6 +30,9 @@ export type {
   ModelTracking,
   FormErrors,
   FormItemBinding,
+  FieldOptionsState,
+  OptionsLoadContext,
+  OptionsSource,
   FormResolver,
   FormResolverContext,
   FormValidationContext,
@@ -40,7 +48,7 @@ export type {
   SubmitResult,
   RuleMessages,
   TypedFieldPath,
-  UseFormReturn,
+  UseApplicationFormReturn,
   FormGroupErrors,
   FormGroupInput,
   FormGroupMap,

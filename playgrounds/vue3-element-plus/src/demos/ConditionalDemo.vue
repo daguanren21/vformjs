@@ -21,11 +21,14 @@ const form = useElForm({
     alipayAccount: m => m.payType === 'alipay',
     city: m => Boolean(m.province),
   },
-  whenRules: {
-    invoiceTitle: m => (m.needInvoice ? [r.required()] : null),
-    bankAccount: m => (m.payType === 'bank' ? [r.required(), r.min(8)] : null),
-    alipayAccount: m => (m.payType === 'alipay' ? [r.required(), r.email()] : null),
-    city: m => (m.province ? [r.required('请选择城市', 'change')] : null),
+  rules: {
+    invoiceTitle: ({ values }) => values.needInvoice ? r.required() : null,
+    bankAccount: ({ values }) =>
+      values.payType === 'bank' ? [r.required(), r.min(8)] : null,
+    alipayAccount: ({ values }) =>
+      values.payType === 'alipay' ? [r.required(), r.email()] : null,
+    city: ({ values }) =>
+      values.province ? r.required('请选择城市', 'change') : null,
   },
   linkage: [
     {
@@ -68,7 +71,7 @@ async function onSubmit() {
 <template>
   <div class="demo">
     <p class="hint">
-      when / whenRules 条件显隐；省变更清空市（linkage deps 精确触发）
+      when / conditional rules 管条件显隐与校验；linkage 在省份变化时清空城市
     </p>
     <el-form v-bind="form.host" label-width="110px" style="max-width: 520px">
       <el-form-item label="需要发票" prop="needInvoice">

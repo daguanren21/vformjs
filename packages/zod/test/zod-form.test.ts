@@ -201,9 +201,9 @@ describe('useZodForm', () => {
     })
 
     expect(form.model.username).toBe('admin')
-    expect(form.rules.username?.length).toBe(1)
+    expect(form.host.rules.username?.length).toBe(1)
 
-    const err = await runValidator(form.rules.username![0]!, 'admin')
+    const err = await runValidator(form.host.rules.username![0]!, 'admin')
     expect(err?.message).toBe('no admin')
   })
 
@@ -218,18 +218,18 @@ describe('useZodForm', () => {
       defaults: { members: [{ name: 'a' }] },
     })
 
-    expect(form.rules['members.0.name']).toBeTruthy()
-    expect(form.rules['members.1.name']).toBeFalsy()
+    expect(form.host.rules['members.0.name']).toBeTruthy()
+    expect(form.host.rules['members.1.name']).toBeFalsy()
 
     form.list('members', { defaultItem: () => ({ name: '' }) }).append({ name: '' })
     // resync runs on values event (async microtask path via notify)
-    form.notifyChange('members')
+    form.notify('members')
     await Promise.resolve()
     await Promise.resolve()
 
-    expect(form.rules['members.1.name']).toBeTruthy()
+    expect(form.host.rules['members.1.name']).toBeTruthy()
 
-    const err = await runValidator(form.rules['members.1.name']![0]!, '')
+    const err = await runValidator(form.host.rules['members.1.name']![0]!, '')
     expect(err?.message).toBe('required')
   })
 

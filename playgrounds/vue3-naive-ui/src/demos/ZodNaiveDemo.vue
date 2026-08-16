@@ -35,9 +35,6 @@ const form = useZodForm({
   },
 })
 
-function setFormRef(inst: unknown) {
-  form.host.ref(inst)
-}
 
 async function onSubmit() {
   const res = await form.submit()
@@ -54,9 +51,7 @@ async function onSubmit() {
     </p>
 
     <n-form
-      :ref="setFormRef"
-      :model="form.model"
-      :rules="form.rules"
+      v-bind="form.host"
       label-placement="left"
       label-width="90"
       style="max-width: 480px"

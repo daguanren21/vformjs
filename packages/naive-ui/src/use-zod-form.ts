@@ -3,7 +3,7 @@ import { useZodForm as useZodFormBase } from '@vformjs/zod'
 import type { ZodType } from 'zod'
 import { createNaiveAdapter } from './create-adapter'
 
-/** Zod form with the Naive UI host adapter already configured. */
+/** Zod + Naive UI with the same flat application-form API. */
 export function useZodForm<
   S extends ZodType<Record<string, unknown>>,
   TSubmitError = never,

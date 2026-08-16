@@ -10,8 +10,16 @@ import {
   type DeepPartial,
   type FormValuePolicy,
 } from './vendor/shared'
-import { createFieldArray } from './field-array'
+import {
+  createFieldArray,
+  shiftRowIndex,
+  type FieldArrayOp,
+} from './field-array'
 import { createLinkageEngine, type LinkageEngine } from './linkage'
+import {
+  createOptionsEngine,
+  type OptionsEngine,
+} from './options-source'
 import {
   createRulePatternContext,
   expandPathPattern,
@@ -414,6 +422,7 @@ export function createForm<
   }
 
   let linkageEngine: LinkageEngine | undefined
+  let optionsEngine: OptionsEngine | undefined
 
   const setErrorState = (next: FormErrors) => {
     errors = cloneErrors(next)
@@ -509,6 +518,47 @@ export function createForm<
     refreshChangedState(paths)
     emit({ type: 'values', paths })
     linkageEngine?.schedule(paths)
+    optionsEngine?.refresh(paths)
+  }
+
+  /**
+   * Structural array change. Row-scoped errors follow their row instead of the
+   * whole array being wiped: removing row 2 must not clear row 0's message.
+   */
+  const notifyArray = (path: FieldPath, op: FieldArrayOp) => {
+    const prefix = `${path}.`
+    const survivors: FormErrors = {}
+    let lowestTouched = Number.POSITIVE_INFINITY
+
+    if (op.type !== 'clear') {
+      for (const key of Object.keys(errors)) {
+        if (!key.startsWith(prefix))
+          continue
+        const rest = key.slice(prefix.length)
+        const dot = rest.indexOf('.')
+        const index = Number(dot === -1 ? rest : rest.slice(0, dot))
+        if (!Number.isInteger(index))
+          continue
+        const tail = dot === -1 ? '' : rest.slice(dot)
+        const next = shiftRowIndex(index, op)
+        if (next === undefined)
+          continue
+        lowestTouched = Math.min(lowestTouched, index, next)
+        survivors[`${prefix}${next}${tail}`] = [...errors[key]!]
+      }
+    }
+
+    notifyValues([path])
+
+    if (Object.keys(survivors).length) {
+      Object.assign(errors, survivors)
+      emit({ type: 'errors' })
+    }
+    // Only rows at or after the first shifted index can be showing stale host
+    // messages; earlier rows keep theirs.
+    adapter?.clearValidate?.(
+      Number.isFinite(lowestTouched) ? [`${prefix}${lowestTouched}`, path] : [path],
+    )
   }
 
   const clearErrorsInternal = (paths?: FieldPath | FieldPath[]) => {
@@ -765,6 +815,36 @@ export function createForm<
     })
   }
 
+  const optionSources = options.optionSources
+  if (optionSources && Object.keys(optionSources).length) {
+    optionsEngine = createOptionsEngine<T>(optionSources, {
+      values: () => values as Readonly<T>,
+      get: path => getByPath(values, path),
+      expand: pattern => expandPathPattern(values, pattern),
+      commit: (path, state) => {
+        getMeta(path).options = state.items
+        emit({ type: 'meta', path })
+      },
+      resetValue: (path) => {
+        let next = getByPath(createDefaults, path)
+        if (next === undefined) {
+          // Rows beyond the factory defaults have no default of their own; use
+          // the first row's leaf default so a cleared cell matches its siblings
+          // (`''`) instead of becoming `undefined`.
+          const firstRow = path.replace(/\.\d+\./g, '.0.')
+          if (firstRow !== path)
+            next = getByPath(createDefaults, firstRow)
+        }
+        setByPath(values, path, next)
+        notifyValues([path])
+      },
+      onError: (error, path) => {
+        if (typeof console !== 'undefined')
+          console.error(`[vformjs] optionSources["${path}"] failed`, error)
+      },
+    })
+  }
+
   form = {
     get values() {
       return values
@@ -949,6 +1029,21 @@ export function createForm<
       getMeta(path).options = opts
       emit({ type: 'meta', path })
     },
+    getOptionsState(path) {
+      return optionsEngine?.state(path) ?? {
+        items: getMeta(path).options,
+        loading: false,
+        error: undefined,
+        loaded: false,
+      }
+    },
+    reloadOptions(paths) {
+      if (paths == null) {
+        optionsEngine?.reload()
+        return
+      }
+      optionsEngine?.reload(Array.isArray(paths) ? paths : [paths])
+    },
 
     getErrors() {
       return cloneErrors(errors)
@@ -1076,8 +1171,8 @@ export function createForm<
       return createFieldArray(
         {
           values,
+          notifyArray,
           notifyValues,
-          clearValidate: paths => form.clearValidate(paths),
           cloneValue: (value, valuePath) =>
             deepClone(value, valuePolicy, valuePath),
         },
@@ -1119,6 +1214,7 @@ export function createForm<
   }
 
   void linkageEngine?.runInit()
+  optionsEngine?.refreshAll()
 
   return form
 }

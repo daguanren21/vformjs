@@ -94,17 +94,14 @@ export default defineComponent({
         'lines.*.city': [r.required('必选')],
         'lines.*.sku': [r.required('必填'), r.min(3, 'SKU 至少 3 位')],
         'lines.*.qty': [r.numberMin(1, '至少 1')],
+        // Conditional row rules read the materialized row through `item`.
+        'lines.*.trackingNo': ({ item }) =>
+          (item as Line).express ? r.required('加急必须填运单号') : null,
       },
 
-      // Conditional row rules read the current row through `item`.
-      whenRules: {
-        'lines.*.trackingNo': (_values, { item }) =>
-          (item as Line).express ? [r.required('加急必须填运单号')] : null,
-      },
-
-      // Remote options, per row. `deps` uses the same `*` pattern, so each row
-      // reloads from its own country and gets its own cache entry.
-      optionSources: {
+      // Remote options, per row. `deps` uses the same `*` pattern, so each
+      // row reloads from its own country and gets its own cache entry.
+      options: {
         channel: { key: () => 'dict:channel', load: fetchChannels },
         'lines.*.country': { key: () => 'dict:country', load: fetchCountries },
         'lines.*.city': {
@@ -209,12 +206,12 @@ export default defineComponent({
           <el-form-item label="渠道" v-bind="form.item('channel')">
             <el-select
               v-model="form.model.channel"
-              :loading="form.options('channel').value.loading"
+              :loading="form.options('channel').loading"
               :disabled="form.readonly"
               clearable
             >
               <el-option
-                v-for="opt in form.options('channel').value.items"
+                v-for="opt in form.options('channel').items"
                 :key="opt.value"
                 :label="opt.label"
                 :value="opt.value"
@@ -238,12 +235,12 @@ export default defineComponent({
             >
               <el-select
                 v-model="form.model.lines[$index].country"
-                :loading="countryState($index).value.loading"
+                :loading="countryState($index).loading"
                 :disabled="form.readonly"
                 clearable
               >
                 <el-option
-                  v-for="opt in countryState($index).value.items"
+                  v-for="opt in countryState($index).items"
                   :key="opt.value"
                   :label="opt.label"
                   :value="opt.value"
@@ -262,13 +259,13 @@ export default defineComponent({
             >
               <el-select
                 v-model="form.model.lines[$index].city"
-                :loading="cityState($index).value.loading"
+                :loading="cityState($index).loading"
                 :disabled="form.readonly || !form.model.lines[$index].country"
-                :placeholder="cityState($index).value.loading ? '加载中' : '请选择'"
+                :placeholder="cityState($index).loading ? '加载中' : '请选择'"
                 clearable
               >
                 <el-option
-                  v-for="opt in cityState($index).value.items"
+                  v-for="opt in cityState($index).items"
                   :key="opt.value"
                   :label="opt.label"
                   :value="opt.value"

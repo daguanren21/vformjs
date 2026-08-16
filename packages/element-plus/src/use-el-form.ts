@@ -1,48 +1,30 @@
-import type { UseFormOptions, UseFormReturn } from '@vformjs/vue'
-import { useForm } from '@vformjs/vue'
+import type {
+  UseApplicationFormOptions,
+  UseApplicationFormReturn,
+} from '@vformjs/vue'
+import { useApplicationForm } from '@vformjs/vue'
 import { createElementPlusAdapter } from './create-adapter'
 
-/**
- * Vue3 + element-plus 入口。
- *
- * `defaults` 必填，TypeScript 会从它推断 `form.model` / `onSubmit(values)` 的类型，
- * 无需手写泛型或 `values: any`。
- *
- * @example
- * ```ts
- * const form = useElForm({
- *   defaults: { name: '', age: 0 },
- *   rules: { name: [r.required()] },
- *   onSubmit: async (values) => {
- *     // values: { name: string, age: number }
- *     await api.save(values)
- *   },
- * })
- * ```
- * ```vue
- * <el-form v-bind="form.host">...</el-form>
- * <el-button @click="form.submit()">提交</el-button>
- * ```
- */
 export type UseElFormOptions<
   T extends object,
   TSubmitError = never,
-> = Omit<UseFormOptions<T, TSubmitError>, 'defaultValues' | 'adapter'> & {
-    /**
-     * 初始值（必填）。推断表单模型类型 `T` 的主要来源。
-     * 也可用 `() => T` 惰性创建。
-     */
-    defaults: T | (() => T)
-  }
+> = Omit<
+  UseApplicationFormOptions<T, TSubmitError>,
+  'defaultValues' | 'adapter'
+> & {
+  /** Initial values and the primary source for model inference. */
+  defaults: T | (() => T)
+}
 
+/** Element Plus application form with one flat lifecycle and capability API. */
 export function useElForm<
   T extends object,
   TSubmitError = never,
 >(
   options: UseElFormOptions<T, TSubmitError>,
-): UseFormReturn<T, TSubmitError> {
+): UseApplicationFormReturn<T, TSubmitError> {
   const { defaults, ...rest } = options
-  return useForm({
+  return useApplicationForm({
     ...rest,
     defaultValues: defaults,
     adapter: createElementPlusAdapter(),

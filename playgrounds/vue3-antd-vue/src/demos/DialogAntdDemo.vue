@@ -61,9 +61,6 @@ const form = useAntdForm({
   },
 })
 
-function setFormRef(inst: unknown) {
-  form.host.ref(inst)
-}
 
 const dialogTitle = computed(() => {
   if (form.mode === 'create')
@@ -146,9 +143,7 @@ const columns = [
     >
       <a-form
         v-if="form.editable"
-        :ref="setFormRef"
-        :model="form.model"
-        :rules="form.rules"
+        v-bind="form.host"
         :label-col="{ style: { width: '80px' } }"
       >
         <a-form-item v-if="form.model.id" label="ID">

@@ -57,10 +57,10 @@ describe('official adapter Zod array lifecycle', () => {
     form.list('members', {
       defaultItem: () => ({ email: '' }),
     }).append({ email: 'member@example.com' })
-    form.notifyChange('members')
+    form.notify('members')
     await flushRules()
 
-    expect(form.rules['members.1.email']).toBeTruthy()
+    expect(form.host.rules['members.1.email']).toBeTruthy()
     const duplicate = await form.validateField('members.1.email')
     expect(duplicate.ok).toBe(false)
     if (!duplicate.ok)
@@ -69,7 +69,7 @@ describe('official adapter Zod array lifecycle', () => {
     const secondHost = host()
     form.host.ref(secondHost)
     form.model.members[1]!.email = 'other@example.com'
-    form.notifyChange('members.1.email')
+    form.notify('members.1.email')
 
     expect((await form.validateField('members.1.email')).ok).toBe(true)
     if ('validate' in secondHost)
@@ -78,8 +78,8 @@ describe('official adapter Zod array lifecycle', () => {
       expect(secondHost.validateFields).toHaveBeenCalledWith([['members', 1, 'email']])
 
     form.list('members').remove(1)
-    form.notifyChange('members')
+    form.notify('members')
     await flushRules()
-    expect(form.rules['members.1.email']).toBeUndefined()
+    expect(form.host.rules['members.1.email']).toBeUndefined()
   })
 })

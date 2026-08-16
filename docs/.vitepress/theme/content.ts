@@ -138,7 +138,7 @@ export const homeCopy: Record<HomeLocale, HomeCopy> = {
       beforeLabel: 'Repeated in each screen',
       afterLabel: 'Owned by the form instance',
       before: ['dialog mode branches', 'reset timing and stale errors', 'array row keys', 'submit loading flags', 'conditional rule cleanup'],
-      after: ["load('create' | 'edit' | 'detail')", 'dirty + changedPaths', "list('contacts')", 'submit() + submitting', 'when + whenRules'],
+      after: ["load('create' | 'edit' | 'detail')", 'dirty + changedPaths', "form.list('contacts')", 'submit() + submitting', 'when + conditional rules'],
     },
     demo: {
       eyebrow: 'Live product state',
@@ -157,9 +157,9 @@ export const homeCopy: Record<HomeLocale, HomeCopy> = {
       items: [
         { marker: '01', title: 'Three modes, one owner', description: 'Create, edit, and detail share one form instance inside the dialog or page.', detail: "load('edit', detail) rebases reset and dirty state." },
         { marker: '02', title: 'Host-native validation', description: 'Element, Naive UI, and Antd keep their own rules, red text, and focus behavior.', detail: 'Adapters bridge validate, clear, and scroll.' },
-        { marker: '03', title: 'Typed server errors', description: 'API field errors stay reactive and clear when their field changes.', detail: 'setErrors() → errors → scrollToFirstError().' },
-        { marker: '04', title: 'Linkage without a renderer', description: 'Keep native templates while centralizing conditional state and dependent options.', detail: 'when, whenRules, and linkage remain plain TypeScript.' },
-        { marker: '05', title: 'Stable dynamic rows', description: 'Append, move, replace, and remove nested rows without using array indexes as keys.', detail: "list('items') exposes stable fields." },
+        { marker: '03', title: 'Typed server errors', description: 'API field errors stay reactive and clear when their field changes.', detail: 'form.setErrors() → errors → scrollToFirstError().' },
+        { marker: '04', title: 'Linkage without a renderer', description: 'Keep native templates while centralizing conditional state and dependent options.', detail: 'when, conditional rules, and linkage remain plain TypeScript.' },
+        { marker: '05', title: 'Stable dynamic rows', description: 'Append, move, replace, and remove nested rows without using array indexes as keys.', detail: "form.list('items') exposes stable rows." },
         { marker: '06', title: 'Schema when you need it', description: 'Use Zod for schema-only validation and parsed submit output.', detail: 'The UI adapter remains optional for headless validation.' },
       ],
     },
@@ -216,7 +216,7 @@ export const homeCopy: Record<HomeLocale, HomeCopy> = {
       beforeLabel: '每个页面重新写',
       afterLabel: '交给 form 实例',
       before: ['弹窗模式分支', '重置时机和旧错误', '动态行 key', '提交 loading', '条件规则清理'],
-      after: ["load('create' | 'edit' | 'detail')", 'dirty + changedPaths', "list('contacts')", 'submit() + submitting', 'when + whenRules'],
+      after: ["load('create' | 'edit' | 'detail')", 'dirty + changedPaths', "form.list('contacts')", 'submit() + submitting', 'when + 条件 rules'],
     },
     demo: {
       eyebrow: '现场状态',
@@ -235,9 +235,9 @@ export const homeCopy: Record<HomeLocale, HomeCopy> = {
       items: [
         { marker: '01', title: '三个模式，一个实例', description: '新建、编辑、详情都由弹窗或表单页里的同一个 form 管。', detail: "load('edit', detail) 会同步重置基线和 dirty。" },
         { marker: '02', title: '沿用宿主校验', description: 'Element、Naive UI、Antd 继续管理 rules、红字和滚动。', detail: 'adapter 只桥接 validate、clear 和 scroll。' },
-        { marker: '03', title: '接口错误回到字段', description: '服务端字段错误保持响应式，字段一改，旧错误就清掉。', detail: 'setErrors() → errors → scrollToFirstError()。' },
-        { marker: '04', title: '联动留在业务代码里', description: '模板照常写，显隐、动态规则和下拉选项集中到 TypeScript。', detail: 'when、whenRules、linkage 各管一件事。' },
-        { marker: '05', title: '动态行有稳定 key', description: '新增、移动、替换、删除嵌套行，不再拿数组下标充当 key。', detail: "list('items') 提供稳定 fields。" },
+        { marker: '03', title: '接口错误回到字段', description: '服务端字段错误保持响应式，字段一改，旧错误就清掉。', detail: 'form.setErrors() → errors → scrollToFirstError()。' },
+        { marker: '04', title: '联动留在业务代码里', description: '模板照常写，显隐、动态规则和下拉选项集中到 TypeScript。', detail: 'when、条件 rules、linkage 各管一件事。' },
+        { marker: '05', title: '动态行有稳定 key', description: '新增、移动、替换、删除嵌套行，不再拿数组下标充当 key。', detail: "form.list('items') 提供稳定 rows。" },
         { marker: '06', title: 'Schema 按需接入', description: '需要 schema-only 校验和转换后的提交值时，再用 Zod。', detail: '无 UI 宿主也能完成 schema 校验。' },
       ],
     },

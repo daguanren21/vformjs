@@ -152,6 +152,12 @@ export function createElementPlusAdapter(): FormHostAdapter {
         'data-vform-path': path,
       }
     },
+    hostProps() {
+      // Element Plus shares element-ui's `rules` watcher: with
+      // `validateOnRuleChange` on, publishing rules after the first render
+      // lights up every required field on a pristine form.
+      return { validateOnRuleChange: false }
+    },
     afterModelReset() {
       host?.clearValidate?.()
     },

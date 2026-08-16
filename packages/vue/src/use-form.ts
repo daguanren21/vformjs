@@ -3,7 +3,9 @@ import {
   deepClone,
   diffChangedPaths,
   DRAFT_SNAPSHOT_VERSION,
+  type ConditionalRules,
   type CreateFormOptions,
+  type FieldOptionsState,
   type FieldArrayApi,
   type FieldPath,
   type FormApi,
@@ -11,8 +13,14 @@ import {
   type FormErrors,
   type FormItemBinding,
   type FormResult,
+  type FormRulesInput,
   type FormRulesMap,
+  type GetValuesMode,
   type LinkageRule,
+  type OptionsSource,
+  type RuleInput,
+  type RulePatternContext,
+  type RulesSource,
   type SubmitAction,
   type SubmitResult,
   type TypedFieldPath,
@@ -59,12 +67,15 @@ export interface UseFormReturn<
   /**
    * Bind any supported host form in one shot:
    * `<el-form v-bind="form.host" />`
+   *
+   * Also carries any adapter-supplied host props, so quirks like element's
+   * `validate-on-rule-change` are neutralized without caller boilerplate.
    */
   host: {
     ref: (instance: unknown) => void
     model: T
     rules: FormRulesMap
-  }
+  } & FormItemBinding
   /** Host-specific form-item props (`prop`, `path`, or `name`) plus errors. */
   item: (path: FieldPath) => FormItemBinding
   /**
@@ -123,6 +134,9 @@ export interface UseFormReturn<
   getMeta: FormApi<T, TSubmitError, TOutput>['getMeta']
   fieldArray: FormApi<T, TSubmitError, TOutput>['fieldArray']
   hidden: (path: FieldPath) => ComputedRef<boolean>
+  /** Reactive load state for an `optionSources` entry. */
+  options: (path: FieldPath) => ComputedRef<FieldOptionsState>
+  reloadOptions: FormApi<T, TSubmitError, TOutput>['reloadOptions']
   list: <TItem extends object = Record<string, unknown>>(
     path: FieldPath,
     opts?: { defaultItem?: () => TItem, keyName?: string },
@@ -130,6 +144,97 @@ export interface UseFormReturn<
   raw: FormApi<T, TSubmitError, TOutput>
 }
 
+/** One field's conditional rule, evaluated with its materialized path context. */
+export type ApplicationConditionalRule<T extends object> = (
+  context: RulePatternContext<T>,
+) => RuleInput
+
+/**
+ * One flat rule map accepts both ordinary rule inputs and conditional fields.
+ * A top-level function remains the whole-form dynamic-rules form.
+ */
+export type ApplicationRules<T extends object> =
+  | Record<string, RuleInput | ApplicationConditionalRule<T>>
+  | ((values: T) => FormRulesInput)
+
+/** Type-safe whole-form and dotted-field reads behind one method name. */
+export interface ApplicationFormGet<T extends object> {
+  (options?: { hidden?: GetValuesMode }): T
+  <Path extends TypedFieldPath<T>>(path: Path): TypedFieldValue<T, Path>
+}
+
+/** Type-safe whole-form and dotted-field writes behind one method name. */
+export interface ApplicationFormSet<T extends object> {
+  (
+    values: Parameters<FormApi<T>['setValues']>[0],
+    options?: Parameters<FormApi<T>['setValues']>[1],
+  ): void
+  <Path extends TypedFieldPath<T>>(
+    path: Path,
+    value: TypedFieldValue<T, Path>,
+  ): void
+}
+
+/**
+ * Internal runtime access for packages that extend the application facade.
+ * Deliberately symbol-keyed so it never pollutes normal form autocomplete.
+ *
+ * @internal
+ */
+export const applicationFormRuntime: unique symbol = Symbol(
+  'vformjs.application-form-runtime',
+)
+
+/**
+ * Application form used by official UI packages.
+ *
+ * Lifecycle and advanced operations share one flat surface. `get` / `set`
+ * overload whole-form and dotted-field operations; no secondary facade or
+ * namespace is involved.
+ */
+export type UseApplicationFormReturn<
+  T extends object,
+  TSubmitError = never,
+  TOutput extends object = T,
+> = Pick<
+  UseFormReturn<T, TSubmitError, TOutput>,
+  | '__vformjsTypes'
+  | 'model'
+  | 'host'
+  | 'item'
+  | 'field'
+  | 'submitting'
+  | 'errors'
+  | 'dirty'
+  | 'changedPaths'
+  | 'mode'
+  | 'readonly'
+  | 'editable'
+  | 'load'
+  | 'submit'
+  | 'reset'
+  | 'hidden'
+  | 'reloadOptions'
+  | 'list'
+  | 'validate'
+  | 'validateField'
+  | 'clearValidate'
+  | 'setErrors'
+  | 'setFieldError'
+  | 'clearErrors'
+  | 'scrollToFirstError'
+  | 'snapshotDraft'
+  | 'restoreDraft'
+> & {
+  get: ApplicationFormGet<T>
+  set: ApplicationFormSet<T>
+  rebase: UseFormReturn<T, TSubmitError, TOutput>['rebaseDefaults']
+  notify: UseFormReturn<T, TSubmitError, TOutput>['notifyChange']
+  /** Stable, getter-backed option state; no `.value` required. */
+  options: (path: FieldPath) => Readonly<FieldOptionsState>
+  /** @internal */
+  readonly [applicationFormRuntime]: FormApi<T, TSubmitError, TOutput>
+}
 
 export type UseFormOptions<
   T extends object,
@@ -143,6 +248,37 @@ export type UseFormOptions<
    * field(path) only, avoiding whole-model clone/diff work. Default deep.
    */
   modelTracking?: ModelTracking
+}
+
+/**
+ * Flat application options shared by `useElForm`, `useNaiveForm`, and
+ * `useAntdForm`.
+ */
+export type UseApplicationFormOptions<
+  T extends object,
+  TSubmitError = never,
+  TOutput extends object = T,
+> = Pick<
+  UseFormOptions<T, TSubmitError, TOutput>,
+  | 'defaultValues'
+  | 'model'
+  | 'valuePolicy'
+  | 'adapter'
+  | 'resolver'
+  | 'mode'
+  | 'scrollToError'
+  | 'trimOnSuccess'
+  | 'onSubmit'
+  | 'onInvalid'
+> & {
+  tracking?: ModelTracking
+  rules?: ApplicationRules<T>
+  when?: UseFormOptions<T, TSubmitError, TOutput>['when']
+  linkage?: UseFormOptions<T, TSubmitError, TOutput>['linkage']
+  options?: Record<string, OptionsSource<T>>
+  hiddenValues?: UseFormOptions<T, TSubmitError, TOutput>['hiddenValues']
+  submitPolicy?: UseFormOptions<T, TSubmitError, TOutput>['submitPolicy']
+  throwOnInvalid?: UseFormOptions<T, TSubmitError, TOutput>['throwOnInvalid']
 }
 
 export function useForm<
@@ -185,6 +321,7 @@ export function useForm<
   }
 
   const host = computed(() => ({
+    ...(formOptions.adapter?.hostProps?.() ?? {}),
     ref: setHost,
     model: form.model,
     rules: readonly.value ? {} : rules.value,
@@ -300,6 +437,19 @@ export function useForm<
     return form.getMeta(path).hidden
   })
 
+  const optionsCache = new Map<FieldPath, ComputedRef<FieldOptionsState>>()
+  const fieldOptions = (path: FieldPath) => {
+    const cached = optionsCache.get(path)
+    if (cached)
+      return cached
+    const binding = computed(() => {
+      void metaVersion.value
+      return form.getOptionsState(path)
+    })
+    optionsCache.set(path, binding)
+    return binding
+  }
+
   const item = (path: FieldPath): FormItemBinding => {
     void errors.value
     return form.getItemProps(path)
@@ -400,9 +550,186 @@ export function useForm<
     getMeta: form.getMeta,
     fieldArray: form.fieldArray,
     hidden,
+    options: fieldOptions,
+    reloadOptions: form.reloadOptions,
     list,
     raw: form,
   }) as unknown as UseFormReturn<T, TSubmitError, TOutput>
+}
+
+function splitApplicationRules<T extends object>(
+  source: ApplicationRules<T> | undefined,
+): {
+  rules?: RulesSource<T>
+  whenRules?: Record<string, ConditionalRules<T>>
+} {
+  if (source === undefined)
+    return {}
+  if (typeof source === 'function')
+    return { rules: source }
+
+  const rules: FormRulesInput = {}
+  const whenRules: Record<string, ConditionalRules<T>> = {}
+  for (const [path, input] of Object.entries(source)) {
+    if (typeof input === 'function') {
+      whenRules[path] = (_values, context) => input(context)
+    }
+    else {
+      rules[path] = input
+    }
+  }
+
+  return {
+    ...(Object.keys(rules).length ? { rules } : {}),
+    ...(Object.keys(whenRules).length ? { whenRules } : {}),
+  }
+}
+
+/**
+ * Application-facing form used by official UI packages.
+ *
+ * It adapts concise application names to the lower-level runtime once, then
+ * exposes lifecycle, value, field, validation, and draft operations directly.
+ */
+export function useApplicationForm<
+  T extends object,
+  TSubmitError = never,
+  TOutput extends object = T,
+>(
+  options: UseApplicationFormOptions<T, TSubmitError, TOutput>,
+): UseApplicationFormReturn<T, TSubmitError, TOutput> {
+  const {
+    tracking,
+    rules: authoredRules,
+    when,
+    linkage,
+    options: optionSources,
+    hiddenValues,
+    submitPolicy,
+    throwOnInvalid,
+    ...baseOptions
+  } = options
+  const resolvedRules = splitApplicationRules(authoredRules)
+  const form = useForm<T, TSubmitError, TOutput>({
+    ...baseOptions,
+    ...(tracking === undefined ? {} : { modelTracking: tracking }),
+    ...(resolvedRules.rules === undefined
+      ? {}
+      : { rules: resolvedRules.rules }),
+    ...(resolvedRules.whenRules === undefined
+      ? {}
+      : { whenRules: resolvedRules.whenRules }),
+    ...(when === undefined ? {} : { when }),
+    ...(linkage === undefined ? {} : { linkage }),
+    ...(optionSources === undefined ? {} : { optionSources }),
+    ...(hiddenValues === undefined ? {} : { hiddenValues }),
+    ...(submitPolicy === undefined ? {} : { submitPolicy }),
+    ...(throwOnInvalid === undefined ? {} : { throwOnInvalid }),
+  })
+
+  const get = ((target?: FieldPath | { hidden?: GetValuesMode }) =>
+    typeof target === 'string'
+      ? form.getFieldValue(target)
+      : form.getValues(target)) as ApplicationFormGet<T>
+
+  const set = ((
+    target: FieldPath | Parameters<FormApi<T>['setValues']>[0],
+    valueOrOptions?: unknown,
+  ) => {
+    if (typeof target === 'string') {
+      form.setFieldValue(target, valueOrOptions)
+      return
+    }
+    form.setValues(
+      target,
+      valueOrOptions as Parameters<FormApi<T>['setValues']>[1],
+    )
+  }) as ApplicationFormSet<T>
+
+  const optionBindings = new Map<FieldPath, Readonly<FieldOptionsState>>()
+  const readOptions = (path: FieldPath): Readonly<FieldOptionsState> => {
+    const cached = optionBindings.get(path)
+    if (cached)
+      return cached
+
+    const source = form.options(path)
+    const binding: Readonly<FieldOptionsState> = {
+      get items() {
+        return source.value.items
+      },
+      get loading() {
+        return source.value.loading
+      },
+      get error() {
+        return source.value.error
+      },
+      get loaded() {
+        return source.value.loaded
+      },
+    }
+    optionBindings.set(path, binding)
+    return binding
+  }
+
+  const facade = {
+    model: form.model,
+    get host() {
+      return form.host
+    },
+    item: form.item,
+    field: form.field,
+    get submitting() {
+      return form.submitting
+    },
+    get errors() {
+      return form.errors
+    },
+    get dirty() {
+      return form.dirty
+    },
+    get changedPaths() {
+      return form.changedPaths
+    },
+    get mode() {
+      return form.mode
+    },
+    get readonly() {
+      return form.readonly
+    },
+    get editable() {
+      return form.editable
+    },
+    load: form.load,
+    submit: form.submit,
+    reset: form.reset,
+    get,
+    set,
+    rebase: form.rebaseDefaults,
+    notify: form.notifyChange,
+    hidden: form.hidden,
+    options: readOptions,
+    reloadOptions: form.reloadOptions,
+    list: form.list,
+    validate: form.validate,
+    validateField: form.validateField,
+    clearValidate: form.clearValidate,
+    setErrors: form.setErrors,
+    setFieldError: form.setFieldError,
+    clearErrors: form.clearErrors,
+    scrollToFirstError: form.scrollToFirstError,
+    snapshotDraft: form.snapshotDraft,
+    restoreDraft: form.restoreDraft,
+  }
+
+  Object.defineProperty(facade, applicationFormRuntime, {
+    value: form.raw,
+  })
+
+  return facade as unknown as UseApplicationFormReturn<
+    T,
+    TSubmitError,
+    TOutput
+  >
 }
 
 export { createForm }

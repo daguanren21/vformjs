@@ -20,6 +20,8 @@ export { createFieldArray } from './field-array'
 export type { FieldArrayHost, FieldArrayOptions } from './field-array'
 export { createLinkageEngine, assertLinkageRules } from './linkage'
 export type { LinkageEngine, LinkageEngineOptions } from './linkage'
+export { createOptionsEngine, hashOptionsKey } from './options-source'
+export type { OptionsEngine, OptionsEngineHost } from './options-source'
 export {
   createRulePatternContext,
   expandPathPattern,
@@ -51,6 +53,7 @@ export type {
   FieldCondition,
   FieldArrayApi,
   FieldMeta,
+  FieldOptionsState,
   FieldPath,
   FormItemBinding,
   FormApi,
@@ -68,6 +71,8 @@ export type {
   HostValidateResult,
   LinkageCtx,
   LinkageRule,
+  OptionsLoadContext,
+  OptionsSource,
   RuleInput,
   RulePatternContext,
   RuleItem,

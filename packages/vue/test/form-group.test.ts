@@ -1,5 +1,5 @@
 import { describe, expect, expectTypeOf, it, vi } from 'vitest'
-import { useForm } from '../src/use-form'
+import { useApplicationForm, useForm } from '../src/use-form'
 import { useFormGroup } from '../src/use-form-group'
 
 describe('useFormGroup', () => {
@@ -85,6 +85,30 @@ describe('useFormGroup', () => {
     })
     expect(group.submitting).toBe(false)
     expect(notes.errors).toEqual({ note: ['rejected'] })
+  })
+
+  it('composes official flat application forms', async () => {
+    const base = useApplicationForm({
+      defaultValues: { name: 'Ada' },
+    })
+    const details = useApplicationForm({
+      defaultValues: { email: 'ada@example.com' },
+    })
+    const group = useFormGroup({ base, details })
+
+    group.setErrors({ details: { email: ['already used'] } })
+    expect(details.errors).toEqual({ email: ['already used'] })
+    group.setErrors({})
+
+    const result = await group.submit(async (values) => {
+      expectTypeOf(values.base).toEqualTypeOf<{ name: string }>()
+      expect(values).toEqual({
+        base: { name: 'Ada' },
+        details: { email: 'ada@example.com' },
+      })
+    })
+
+    expect(result.ok).toBe(true)
   })
 
   it('joins duplicate group submissions by default', async () => {

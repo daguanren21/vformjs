@@ -2,6 +2,8 @@
 
 vformjs 的表单生命周期不随 UI 宿主变化。迁移工具只处理能一一对应的语法；涉及业务含义和组件行为的差异进入报告，不做猜测。
 
+常规 CRUD、动态字段、大型模型和多区块表单的完整接入路径，见[迁移现有表单](/zh/form-migration-diffs)。
+
 ## 同业务参考
 
 仓库用同一份任务 CRUD 弹窗分别运行两套技术栈：
@@ -19,9 +21,9 @@ vformjs 的表单生命周期不随 UI 宿主变化。迁移工具只处理能�
 |---|---|
 | `defaults` 与 `form.model` 类型推导 | 不变 |
 | `load`、`mode`、`editable`、`readonly` | 不变 |
-| `reset`、`rebaseDefaults`、`dirty`、`changedPaths` | 不变 |
+| `reset`、`rebase`、`dirty`、`changedPaths` | 不变 |
 | `submit`、`validateField`、接口 `errors` | 不变 |
-| `when`、`whenRules`、`linkage`、`list` | 不变 |
+| `when`、条件 `rules`、`linkage`、`form.list` | 不变 |
 | Zod schema 与解析后的提交值 | 不变，只替换 adapter 导入 |
 
 ## 运行迁移

@@ -46,8 +46,11 @@ pnpm add @vformjs/element-plus element-plus vue     # Vue 3
 
 ## 最小例子
 
+每套 UI 只使用一个业务表单入口。Template 保持宿主原生写法；生命周期与
+高级脚本操作都直接放在同一个 `form` 上，不再经过二级 namespace。
+
 ```ts
-import { r, submitFail, useElForm } from '@vformjs/element-plus'
+import { r, useElForm } from '@vformjs/element-plus'
 
 const form = useElForm({
   defaults: { name: '', email: '' },
@@ -55,18 +58,14 @@ const form = useElForm({
     name: [r.required(), r.min(2)],
     email: [r.required(), r.email()],
   },
-  onSubmit: async (values) => {
-    const result = await api.save(values)
-    if (!result.ok)
-      return submitFail(result.error, { errors: result.fieldErrors })
-  },
+  onSubmit: values => api.save(values),
 })
 ```
 
 ```vue
 <template>
   <el-form v-bind="form.host" label-width="100px">
-    <el-form-item label="姓名" v-bind="form.item('name')">
+    <el-form-item label="姓名" prop="name">
       <el-input v-model="form.model.name" />
     </el-form-item>
     <el-form-item label="邮箱" prop="email">
@@ -79,10 +78,10 @@ const form = useElForm({
 </template>
 ```
 
-`form.host` 是 `{ ref, model, rules }`，`form.item(path)` 会补齐宿主字段属性与错误。
-`defaults` 会推 `form.model` 和 `onSubmit(values)` 的类型。
-`onSubmit` 可以返回 `submitFail(error, { errors })`：错误类型保留在
-`result.submitError`，字段错误同步进入响应式 `form.errors`。
+`form.host` 是 `{ ref, model, rules }`；宿主原生 `prop` 继续负责 UI 校验。
+`defaults` 会推导 `form.model` 和 `onSubmit(values)`。低频能力仍在同一个
+对象上：`form.get()`、`form.list()`、`form.validate()`、
+`form.snapshotDraft()`。
 
 ## 装完之后常用这几下
 
@@ -102,10 +101,10 @@ form.scrollToFirstError()
 
 - **模式**：form 放弹窗或表单页里，列表页不要 `useForm`。详情用 Descriptions，别整表 `disabled`。
 - **提交失败**：用 `submitFail` 返回类型化 API 错误，并可附带字段错误。
-- **规则**：`r.required()` / `r.email()` / `r.min()`，或 `rules: (values) => …`。
-- **显隐**：`when`、`whenRules`；模板里 `v-if="!form.hidden('x').value"`。
-- **联动**：`linkage: [{ deps, run }]`。
-- **数组**：`form.list('items')`，`fields` 带稳定 `key`。
+- **规则**：静态与条件规则共用一个 `rules` map。
+- **显隐**：顶层 `when`；模板里用 `form.hidden(path)`。
+- **联动与选项**：顶层 `linkage`、`options`。
+- **数组**：`form.list('items')` 返回带稳定 `key` 的字段数组。
 - **Zod**：`import { useZodForm } from '@vformjs/element-plus/zod'`。
 
 ## 文档
@@ -114,6 +113,7 @@ form.scrollToFirstError()
 |------|------|
 | **[在线示例](https://vformjs.vercel.app/zh/examples)** | 真实 Element Plus 弹窗 CRUD、条件联动、动态数组与 Zod |
 | **[快速开始](https://vformjs.vercel.app/zh/guide)** | 安装、绑定宿主 Form、模式、规则、数组、Zod、adapter |
+| **[迁移现有表单](https://vformjs.vercel.app/zh/form-migration-diffs)** | 看常规 CRUD、动态字段、大型模型和多区块表单如何收进同一套生命周期 |
 | **[Vue 2.7 → Vue 3](https://vformjs.vercel.app/zh/migration)** | 稳定表单契约、安全 codemod 范围、dry-run 与人工复核报告 |
 | **[API](https://vformjs.vercel.app/zh/api)** | 选项、返回值、`r.*`、linkage、adapter 契约 |
 | **[接入反馈](https://github.com/daguanren21/vformjs/issues/new/choose)** | 记录真实项目完成接入或中途卡住的原因 |

@@ -21,6 +21,28 @@ vformjs keeps:
 - stable dynamic arrays;
 - reactive API field errors.
 
+## DX policy: one hook, one flat script API
+
+Each official UI package exposes one application hook: `useElForm`,
+`useNaiveForm`, or `useAntdForm`. Every page gets the same return shape; the
+developer never chooses among multiple form tiers.
+
+| Surface | Purpose |
+|---|---|
+| `form.model`, `host`, `load`, `submit`, `reset` | Common state and lifecycle |
+| `form.get`, `set`, `field`, `rebase`, `notify` | Path reads, writes, baselines, and tracking |
+| `form.hidden`, `options`, `list`, `reloadOptions` | Conditions, remote options, and stable arrays |
+| `form.validate`, `setErrors`, `scrollToFirstError` | Validation and server errors |
+| `form.snapshotDraft`, `restoreDraft` | Versioned draft persistence |
+
+Configuration is flat too: `when`, `rules`, `linkage`, and `options` describe
+field behavior; `submitPolicy` and `throwOnInvalid` describe submission.
+These are ordinary typed values, not a runtime schema or renderer.
+
+vformjs deliberately avoids parallel factory names such as `useCrudForm`.
+Adding a capability changes configuration, not the identity or type family of
+the form.
+
 ## When it fits
 
 vformjs is a good candidate when a Vue admin project:

@@ -1,7 +1,18 @@
-export { useForm, createForm } from './use-form'
+export {
+  applicationFormRuntime,
+  createForm,
+  useApplicationForm,
+  useForm,
+} from './use-form'
 export { useFormGroup } from './use-form-group'
 export type {
+  ApplicationConditionalRule,
+  ApplicationFormGet,
+  ApplicationFormSet,
+  ApplicationRules,
   ModelTracking,
+  UseApplicationFormOptions,
+  UseApplicationFormReturn,
   UseFormReturn,
   UseFormOptions,
   FormMode,
@@ -38,6 +49,9 @@ export type {
   FormValidationResult,
   FormValidationContext,
   FieldArrayApi,
+  FieldOptionsState,
+  OptionsLoadContext,
+  OptionsSource,
   LinkageRule,
   FormHostAdapter,
   FormValueContext,

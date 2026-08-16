@@ -3,23 +3,7 @@ import { useZodForm as useZodFormBase } from '@vformjs/zod'
 import type { ZodType } from 'zod'
 import { createElementPlusAdapter } from './create-adapter'
 
-/**
- * Zod + Element Plus — one import, no manual adapter.
- *
- * ```ts
- * import { useZodForm } from '@vformjs/element-plus/zod'
- * // Explicit `/zod` subpath; the package root stays Zod-free.
- *
- * const form = useZodForm({
- *   schema,
- *   defaults: { name: '', email: '' },
- *   onSubmit: async (v) => api.save(v),
- * })
- * ```
- * ```vue
- * <el-form v-bind="form.host">...</el-form>
- * ```
- */
+/** Zod + Element Plus with the same flat application-form API. */
 export function useZodForm<
   S extends ZodType<Record<string, unknown>>,
   TSubmitError = never,

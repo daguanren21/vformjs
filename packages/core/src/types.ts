@@ -158,6 +158,12 @@ export interface FormHostAdapter {
   clearValidate?: (paths?: FieldPath[]) => void
   scrollToField?: (path: FieldPath) => void
   getItemProps?: (path: FieldPath, error?: string) => FormItemBinding
+  /**
+   * Extra props merged into `form.host`. Lets an adapter neutralize host quirks,
+   * e.g. element's `validate-on-rule-change`, which would otherwise validate a
+   * pristine form the first time vformjs publishes its rules.
+   */
+  hostProps?: () => FormItemBinding
   afterModelReset?: () => void
 }
 
@@ -181,6 +187,60 @@ export interface LinkageRule<T extends object> {
   deps: FieldPath[] | '*'
   when?: 'deps' | 'any' | 'init'
   run: (ctx: LinkageCtx<T>) => void | Promise<void>
+}
+
+export interface OptionsLoadContext<T extends object> {
+  values: Readonly<T>
+  get: (path: FieldPath) => unknown
+  /** Aborted when a newer load for the same field supersedes this one. */
+  signal: AbortSignal
+  /** Materialized field path being loaded; wildcards are already expanded. */
+  path: FieldPath
+  /** Segments matched by `*`, in declaration order. */
+  wildcards: ReadonlyArray<string>
+}
+
+/**
+ * Declarative remote (or computed) options for one field path.
+ * Patterns may use `*` for array rows, e.g. `rows.*.city`.
+ */
+export interface OptionsSource<T extends object> {
+  /**
+   * Field paths whose change reloads this source. A dep change also resets the
+   * field's own value to its factory default unless `resetValue: false`.
+   */
+  deps?: FieldPath[]
+  /**
+   * Cache identity. Sources resolving to the same key share one in-flight
+   * request and one resolved payload. Return `null` to bypass the cache.
+   * Default: the materialized field path plus the current dep values, so
+   * sibling array rows stay distinct.
+   */
+  key?: (values: Readonly<T>, context: OptionsLoadContext<T>) => unknown
+  load: (context: OptionsLoadContext<T>) => unknown | Promise<unknown>
+  /**
+   * Pick this field's slice out of the loaded payload. Runs per field, after
+   * (and outside) the cache, so one endpoint returning many lists can feed many
+   * fields from a single request:
+   * `{ key: () => 'nextOpts', load: fetchAll, select: p => p.truckingNumberOpts }`
+   */
+  select?: (payload: unknown, context: OptionsLoadContext<T>) => unknown
+  /** Reset the field's own value when deps change. Default true when `deps` is set. */
+  resetValue?: boolean
+  /** Skip the load that runs on form creation. Dep changes still load. Default false. */
+  lazy?: boolean
+}
+
+export interface FieldOptionsState {
+  /**
+   * Resolved options for this field — `select(payload)` when declared, otherwise
+   * whatever `load` returned. Mirrored into `getMeta(path).options`.
+   */
+  items: unknown
+  loading: boolean
+  error: unknown
+  /** A load has completed for the current key. */
+  loaded: boolean
 }
 
 export interface RulePatternContext<T extends object> {
@@ -245,6 +305,12 @@ export interface CreateFormOptions<
    */
   whenRules?: Record<string, ConditionalRules<T>>
   linkage?: LinkageRule<T>[]
+  /**
+   * Remote or computed field options. Key = field path (or `rows.*.city`).
+   * Loads on creation, reloads when `deps` change, shares one request per
+   * cache key, and aborts superseded loads.
+   */
+  optionSources?: Record<string, OptionsSource<T>>
   adapter?: FormHostAdapter
   /** Primary validation and optional value-transformation pipeline. */
   resolver?: FormResolver<T, TOutput>
@@ -330,6 +396,10 @@ export interface FormApi<
   setHidden: (path: FieldPath, hidden: boolean) => void
   setDisabled: (path: FieldPath, disabled: boolean) => void
   setOptions: (path: FieldPath, options: unknown) => void
+  /** Load state for a declarative `optionSources` entry. */
+  getOptionsState: (path: FieldPath) => FieldOptionsState
+  /** Drop cached payloads and load again. Omit paths to reload every source. */
+  reloadOptions: (paths?: FieldPath | FieldPath[]) => void
 
   getErrors: () => FormErrors
   setFieldError: (path: FieldPath, messages: string | string[]) => void

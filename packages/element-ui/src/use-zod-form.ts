@@ -3,9 +3,7 @@ import { useZodForm as useZodFormBase } from '@vformjs/zod'
 import type { ZodType } from 'zod'
 import { createElementUiAdapter } from './create-adapter'
 
-/**
- * Zod + element-ui (Vue 2.7) — one import, no manual adapter.
- */
+/** Zod + element-ui with the same flat application-form API. */
 export function useZodForm<
   S extends ZodType<Record<string, unknown>>,
   TSubmitError = never,

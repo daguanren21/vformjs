@@ -23,7 +23,7 @@ const copy = computed(() => props.locale === 'zh'
   ? {
       capability: '条件与联动',
       title: '条件字段与联动：状态仍在普通 TypeScript 里',
-      goal: 'when 控制显隐，whenRules 只在字段生效时挂规则；省份变化通过 linkage 清空城市并清除旧校验。',
+      goal: 'when 控制显隐，rules 条件回调只在字段生效时挂规则；省份变化通过 linkage 清空城市并清除旧校验。',
       steps: [
         '打开「需要发票」— 抬头字段和必填规则一起出现。',
         '切换支付方式 — 账号字段与校验规则随之替换。',
@@ -31,7 +31,7 @@ const copy = computed(() => props.locale === 'zh'
         '先空表提交再填好提交 — 对比报错与解析结果。',
       ],
       expect: '只有生效中的字段参与校验，也只有它们进入提交数据。',
-      apis: ['when', 'whenRules', 'linkage[{ deps, run }]', 'form.hidden()'],
+      apis: ['when', 'conditional rules', 'linkage', 'form.hidden()'],
       stateLabel: '运行时状态',
       invoice: '需要发票',
       invoiceTitle: '发票抬头',
@@ -52,7 +52,7 @@ const copy = computed(() => props.locale === 'zh'
   : {
       capability: 'Conditional + linkage',
       title: 'Conditional fields and linkage stay in plain TypeScript',
-      goal: 'when controls visibility, whenRules attaches validation only while a field is active, and linkage clears the city when its province changes.',
+      goal: 'when controls visibility, conditional rules validate only active fields, and linkage clears the city when its province changes.',
       steps: [
         'Toggle Need invoice — the title field and its required rule appear together.',
         'Switch payment method — the account field and its rules swap.',
@@ -60,7 +60,7 @@ const copy = computed(() => props.locale === 'zh'
         'Submit empty, then valid — compare errors with the parsed result.',
       ],
       expect: 'Only active fields validate, and only they reach the submit payload.',
-      apis: ['when', 'whenRules', 'linkage[{ deps, run }]', 'form.hidden()'],
+      apis: ['when', 'conditional rules', 'linkage', 'form.hidden()'],
       stateLabel: 'Runtime state',
       invoice: 'Need invoice',
       invoiceTitle: 'Invoice title',
@@ -99,11 +99,13 @@ const form = useElForm({
     alipayAccount: values => values.payType === 'alipay',
     city: values => Boolean(values.province),
   },
-  whenRules: {
-    invoiceTitle: values => values.needInvoice ? [r.required()] : null,
-    bankAccount: values => values.payType === 'bank' ? [r.required(), r.min(8)] : null,
-    alipayAccount: values => values.payType === 'alipay' ? [r.required(), r.email()] : null,
-    city: values => values.province ? [r.required()] : null,
+  rules: {
+    invoiceTitle: ({ values }) => values.needInvoice ? r.required() : null,
+    bankAccount: ({ values }) =>
+      values.payType === 'bank' ? [r.required(), r.min(8)] : null,
+    alipayAccount: ({ values }) =>
+      values.payType === 'alipay' ? [r.required(), r.email()] : null,
+    city: ({ values }) => values.province ? r.required() : null,
   },
   linkage: [
     {

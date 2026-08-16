@@ -4,7 +4,7 @@
   "type": "module",
   "packageManager": "pnpm@11.17.0",
   "engines": {
-    "node": ">=20.19.0"
+    "node": "^22.11 || ^24 || >=26"
   },
   "scripts": {
     "prepare": "husky",
@@ -38,7 +38,7 @@
     "commitlint": "commitlint --edit"
   },
   "devDependencies": {
-    "@changesets/cli": "2.31.1",
+    "@changesets/cli": "3.0.0",
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
     "@types/node": "^22.19.0",

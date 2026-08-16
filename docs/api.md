@@ -13,7 +13,7 @@ import {
   createElementPlusAdapter,
   submitFail,
   type UseElFormOptions,
-  type UseFormReturn,
+  type UseApplicationFormReturn,
   type FormMode,
   type FormErrors,
   type SubmitResult,
@@ -44,176 +44,190 @@ import {
 import { useZodForm, zodToRules } from '@vformjs/zod'
 ```
 
+`useForm` is the low-level custom-adapter hook. Its flat `UseFormReturn` is for
+adapter and library authors; application code should use the official facade
+below.
+
 ---
 
-## `useElForm(options)`
+## One application facade
 
-Element entry. Sets adapter for you. `defaults` is required (infers `T`).
+Each official UI package exposes one form hook. The hook name changes with the
+host library; its options and return shape do not.
+
+| UI host | Hook |
+|---|---|
+| Element Plus / element-ui | `useElForm` |
+| Naive UI | `useNaiveForm` |
+| Ant Design Vue | `useAntdForm` |
+| Any official `/zod` entry | `useZodForm` |
+
+`defaults` infers the model type. Zod additionally infers the parsed submit
+output from `schema`.
 
 ```ts
-type UseElFormOptions<T> = Omit<UseFormOptions<T>, 'defaultValues' | 'adapter'> & {
-  defaults: T | (() => T)
-}
-
 function useElForm<T extends object>(
   options: UseElFormOptions<T>,
-): UseFormReturn<T>
+): UseApplicationFormReturn<T>
 ```
 
-Same return shape as `useForm` below.
-
----
-
-## `useForm(options)`
+Lifecycle and advanced operations share one flat object. The template contract
+does not change:
 
 ```ts
-type FormMode = 'create' | 'edit' | 'detail'
+form.model
+form.host
+form.item('email')
+form.load('edit', detail)
+form.submit()
+form.reset()
 
-type UseFormOptions<T> = CreateFormOptions<T> & {
-  mode?: FormMode   // default 'create'
-}
-
-function useForm<T>(options: UseFormOptions<T>): UseFormReturn<T>
+form.get()
+form.get('profile.email')
+form.set('profile.email', 'ada@example.com')
+form.list('contacts')
+form.validate()
+form.snapshotDraft()
 ```
 
-### Options (`CreateFormOptions`)
+There is no `values`, `fields`, `validation`, `draft`, or `raw` namespace on
+the application form.
+
+### Options
 
 | Option | Type | Default | Notes |
-|--------|------|---------|--------|
-| `defaultValues` / `defaults` | `T \| () => T` | **required** | `useElForm` uses `defaults` |
-| `model` | `T` | — | caller-owned mutable model; identity retained |
-| `valuePolicy` | `FormValuePolicy` | opaque objects use identity | custom clone/equality for File, URL, value objects |
-| `rules` | `FormRulesInput \| (values) => FormRulesInput` | — | async-validator style |
-| `when` | `Record<path, (values) => boolean>` | — | show/hide; hidden drops rules |
-| `whenRules` | `Record<path, (values) => RuleInput>` | — | conditional rules; `null` clears |
-| `linkage` | `LinkageRule[]` | — | side effects on deps change |
-| `adapter` | `FormHostAdapter` | — | host validate bridge |
-| `resolver` | `FormResolver<T, TOutput>` | — | primary validation and output transform; runs before host projection |
-| `mode` | `FormMode` | `'create'` | initial mode |
-| `modelTracking` | `'deep' \| 'explicit'` | `'deep'` | explicit mode tracks form methods and `field(path)` without full-model scans |
-| `throwOnInvalid` | `boolean` | `false` | throw instead of `{ ok: false }` |
-| `scrollToError` | `boolean` | `true` | submit scrolls to its first field error |
-| `hiddenValues` | `'keep' \| 'omit'` | `'keep'` | snapshot of hidden fields |
-| `trimOnSuccess` | `boolean` | `false` | trim top-level strings on ok |
-| `submitPolicy` | `'join' \| 'parallel'` | `'join'` | duplicate submit joins the active promise unless parallel is explicit |
-| `onSubmit` | `(values, ctx) => SubmitHandlerResult<E>` | — | typed API outcome; `void` means success |
-| `onInvalid` | `(errors, ctx) => void` | — | after failed validate/submit |
-| `createState` | `(initial) => T` | Vue `reactive` in `useForm` | advanced |
-
-### Return (`UseFormReturn`)
-
-#### State
-
-| Member | Type | Description |
-|--------|------|-------------|
-| `model` | `T` | Live reactive model (same identity) |
-| `rules` | `FormRulesMap` | Current normalized rules |
-| `host` | `{ ref, model, rules }` | Bind any supported host with `v-bind="form.host"` |
-| `item(path)` | `FormItemBinding` | Host-specific `prop` / `path` / `name` and field error |
-| `field(path)` | `WritableComputedRef<TypedFieldValue<T, Path>>` | Exact-path binding for large forms |
-| `submitting` | `boolean` | True during `submit` |
-| `errors` | `Readonly<FormErrors>` | Reactive core/server error snapshot |
-| `dirty` | `boolean` | Whether values differ from the current reset baseline |
-| `changedPaths` | `ReadonlyArray<FieldPath>` | Changed dotted leaf paths |
-| `mode` | `FormMode` | create / edit / detail |
-| `editable` | `boolean` | create \| edit |
-| `readonly` | `boolean` | detail |
-| `raw` | `FormApi<T, E>` | Underlying headless API |
-
-#### Modes
-
-| Method | Signature | Description |
-|--------|-----------|-------------|
-| `load` | `(mode, values?: Partial<T>) => void` | Switch mode; edit/detail fill model & rebase defaults |
-| `setMode` | `(mode) => void` | Mode only, no value fill |
-
-#### Values
-
-| Method | Signature | Description |
-|--------|-----------|-------------|
-| `getValues` | `(opts?: { hidden?: 'keep'\|'omit' }) => T` | Deep snapshot |
-| `setValues` | `(partial, opts?: { merge?: boolean }) => void` | Patch model |
-| `setFieldValue` | `(path, value) => void` | Path write + notify |
-| `getFieldValue` | `(path) => V \| undefined` | Path read |
-| `field` | `(path) => WritableComputedRef` | Typed path read/write through `setFieldValue`; cached per path |
-| `reset` | `(paths?) => void` | Restore to current defaults |
-| `rebaseDefaults` | `(values?: T) => void` | Next reset baseline (edit load uses this) |
-| `notifyChange` | `(paths?) => void` | After direct v-model mutation for linkage |
-
-#### Validate / submit
-
-| Method | Signature | Description |
-|--------|-----------|-------------|
-| `validate` | `(paths?) => Promise<FormValidationResult<T, TOutput> \| FormResult<T>>` | Resolver, then host interaction |
-| `validateField` | `(paths?) => Promise<FormValidationResult<T, TOutput> \| FormResult<T>>` | Same pipeline scoped to paths |
-| `submit` | `(handler?) => Promise<SubmitResult<TOutput, E, T>>` | Validate → transformed output → typed API outcome |
-| `clearValidate` | `(paths?) => void` | Host + internal errors |
-
-#### Drafts
-
-| Method | Signature | Description |
-|--------|-----------|-------------|
-| `snapshotDraft` | `() => FormDraftSnapshot` | Versioned, JSON-serializable capture of current values |
-| `restoreDraft` | `(snapshot: unknown) => DraftRestoreResult` | Heal-or-reject restore against the current baseline; never throws |
-
-`restoreDraft` returns a structured outcome instead of failing silently or throwing:
-
-- `'restored'` — draft matched the baseline shape exactly
-- `'healed'` — draft applied after dropping unknown paths (`droppedPaths`) and filling missing ones from the baseline (`filledPaths`)
-- `'fresh'` — draft rejected (`reason`: `empty` / `malformed` / `unsupported-version`); current values untouched
-
-Restore does **not** rebase: a restored draft is unsaved input, so `dirty` / `changedPaths` reflect it and `reset()` still returns to the baseline. Errors are cleared on restore.
+|---|---|---|---|
+| `defaults` | `T \| () => T` | **required** | Initial values and reset baseline |
+| `model` | `T` | — | Caller-owned reactive model; identity retained |
+| `rules` | `ApplicationRules<T>` | — | Static inputs and field-local conditional callbacks in one map; a whole-form callback is also accepted |
+| `when` | `Record<path, (values) => boolean>` | — | Field visibility; hidden fields leave active validation |
+| `linkage` | `LinkageRule[]` | — | Dependency-driven side effects |
+| `options` | `Record<path, OptionsSource<T>>` | — | Remote options with cache, abort, and dependency reload |
+| `hiddenValues` | `'keep' \| 'omit'` | `'keep'` | Include or omit hidden fields from snapshots |
+| `tracking` | `'deep' \| 'explicit'` | `'deep'` | Explicit mode avoids whole-model scans |
+| `submitPolicy` | `'join' \| 'parallel'` | `'join'` | Duplicate submit behavior |
+| `throwOnInvalid` | `boolean` | `false` | Throw instead of returning `{ ok: false }` |
+| `mode` | `'create' \| 'edit' \| 'detail'` | `'create'` | Initial mode |
+| `valuePolicy` | `FormValuePolicy` | built in | Clone/equality policy for opaque values |
+| `resolver` | `FormResolver<T, TOutput>` | — | Validation and output transform; Zod supplies this |
+| `scrollToError` | `boolean` | `true` | Submit scrolls to its first field error |
+| `trimOnSuccess` | `boolean` | `false` | Trim top-level strings after successful validation |
+| `onSubmit` | `(values, ctx) => SubmitHandlerResult<E>` | — | Typed API outcome; `void` means success |
+| `onInvalid` | `(errors, ctx) => void` | — | Runs after failed validation or submit |
 
 ```ts
-// persist
-localStorage.setItem('draft', JSON.stringify(form.snapshotDraft()))
-
-// restore
-const result = form.restoreDraft(JSON.parse(localStorage.getItem('draft') ?? 'null'))
-if (result.status === 'healed')
-  console.info('draft adjusted to current schema', result.droppedPaths, result.filledPaths)
+const form = useElForm({
+  defaults: { country: '', city: '' },
+  rules: {
+    country: r.required(),
+    city: ({ values }) => values.country ? r.required() : null,
+  },
+  when: {
+    city: values => Boolean(values.country),
+  },
+  options: {
+    city: {
+      deps: ['country'],
+      load: ({ get, signal }) => api.cities(get('country'), { signal }),
+    },
+  },
+  submitPolicy: 'join',
+})
 ```
 
-#### Errors
+A field-local rule callback receives one `RulePatternContext<T>` object:
+`{ values, pattern, path, wildcards, index, item, value }`. Static rule inputs
+may be a single rule; arrays are only needed for multiple rules.
 
-| Method | Signature | Description |
-|--------|-----------|-------------|
-| `setErrors` | `(errors: FormErrors) => void` | Replace errors, typically from an API response |
-| `setFieldError` | `(path, messages) => void` | Set one field error |
-| `clearErrors` | `(paths?) => void` | Clear core errors only |
-| `scrollToFirstError` | `() => FieldPath \| undefined` | Ask the bound host to scroll to the first field error |
+### State and lifecycle
 
-Changing a field clears stale core/server errors for that path. `clearValidate` clears both core errors and host validation UI.
+| Member | Description |
+|---|---|
+| `model` | Live reactive model |
+| `host` | `{ ref, model, rules }` for `v-bind="form.host"` |
+| `item(path)` | Host field binding plus projected field errors |
+| `submitting` | `true` while submit is running |
+| `errors` | Reactive core and server errors |
+| `dirty` | Whether values differ from the reset baseline |
+| `changedPaths` | Changed dotted leaf paths |
+| `mode` | `'create'`, `'edit'`, or `'detail'` |
+| `editable` / `readonly` | Mode-derived booleans |
+| `load(mode, values?)` | Switch mode; edit/detail values become the clean baseline |
+| `submit(handler?)` | Validate, transform, then execute the submit handler |
+| `reset(paths?)` | Restore all or selected paths to the baseline |
+
+### Values and fields
+
+| Method | Description |
+|---|---|
+| `field(path)` | Cached, typed writable computed for one path |
+| `get()` | Deep value snapshot |
+| `get({ hidden: 'omit' })` | Snapshot without hidden fields |
+| `get(path)` | Type-safe dotted-path read |
+| `set(partial, opts?)` | Patch or replace model values |
+| `set(path, value)` | Type-safe dotted-path write and dependency notification |
+| `rebase(values?)` | Replace the next-reset baseline |
+| `notify(paths?)` | Notify linkage after direct model mutation |
+| `hidden(path)` | `ComputedRef<boolean>` for conditional rendering |
+| `options(path)` | Stable live `{ items, loading, error, loaded }` object; no `.value` |
+| `reloadOptions(paths?)` | Drop matching option caches and refetch |
+| `list(path, opts?)` | Reactive field array with stable row keys |
+
+```ts
+form.set('profile.email', 'ada@example.com')
+const email = form.get('profile.email') // string
+const members = form.list<Member>('members')
+const cities = form.options('city')
+cities.loading
+```
+
+### Validation and server errors
+
+| Method | Description |
+|---|---|
+| `validate(paths?)` | Run resolver and host validation |
+| `validateField(paths)` | Run the same pipeline for selected paths |
+| `clearValidate(paths?)` | Clear host validation and internal errors |
+| `setErrors(errors)` | Replace server/core errors |
+| `setFieldError(path, messages)` | Set one field error |
+| `clearErrors(paths?)` | Clear internal errors only |
+| `scrollToFirstError()` | Ask the host to scroll to the first field error |
+
+Changing a field clears stale core/server errors for that path.
 
 ```ts
 type FormValidationResult<TInput, TOutput = TInput> =
   | { ok: true, values: TOutput }
   | { ok: false, values: TInput, errors: FormErrors }
 
-type FormResult<T> =
-  | { ok: true, values: T }
-  | { ok: false, values: T, errors: FormErrors }
-
 type FormErrors = Record<string, string[]>
 ```
 
-A resolver is the validation source of truth and may transform successful values:
+### Drafts
 
 ```ts
-type FormResolver<TInput, TOutput = TInput> = (
-  values: TInput,
-  context: {
-    paths?: readonly FieldPath[]
-    signal: AbortSignal
-    validationId: number
-  },
-) => FormValidationResult<TInput, TOutput> | Promise<...>
+localStorage.setItem('draft', JSON.stringify(form.snapshotDraft()))
+
+const result = form.restoreDraft(
+  JSON.parse(localStorage.getItem('draft') ?? 'null'),
+)
 ```
 
-#### Typed API submission failures
+`restoreDraft` never throws. It returns:
 
-Return `submitFail(error)` for an expected API failure. Its error type is inferred into
-`SubmitResult<T, E>`. Optional field errors are copied into reactive `form.errors`.
+- `'restored'` — the draft matches the baseline shape.
+- `'healed'` — unknown paths were dropped and missing paths were filled from
+  the baseline.
+- `'fresh'` — the draft was empty, malformed, or from an unsupported version;
+  current values remain unchanged.
+
+Restore does not rebase. The restored draft remains unsaved input, so `dirty`
+and `changedPaths` reflect it.
+
+### Typed submission failures
+
+Return `submitFail(error)` for an expected API failure. Optional field errors
+are copied into `form.errors`.
 
 ```ts
 type SaveUserError =
@@ -237,36 +251,35 @@ if (!result.ok && 'submitError' in result)
   result.submitError // SaveUserError
 ```
 
-```ts
-type SubmitOutcome<E> =
-  | { ok: true }
-  | { ok: false, error: E, errors?: FormErrors }
+Returning `void` or `submitOk()` means success. Expected failures should use
+`submitFail`; thrown errors remain rejected promises. Concurrent submit calls
+join the active promise by default. Set `submitPolicy: 'parallel'` only when
+duplicate writes are intentional.
 
-type SubmitResult<T, E = never> =
-  | FormResult<T>
-  | { ok: false, values: T, submitError: E, errors?: FormErrors }
+### `OptionsSource`
+
+```ts
+interface OptionsSource<T extends object> {
+  deps?: FieldPath[]                                   // reload triggers; also resets the field value
+  key?: (values, context) => unknown                   // cache identity; null bypasses the cache
+  load: (context) => unknown | Promise<unknown>        // context: { values, get, signal, path, wildcards }
+  select?: (payload, context) => unknown               // per-field slice of a shared payload
+  resetValue?: boolean                                 // default true when deps is set
+  lazy?: boolean                                       // skip the create-time load
+}
+
+interface FieldOptionsState {
+  items: unknown
+  loading: boolean
+  error: unknown
+  loaded: boolean
+}
 ```
 
-`submit()` scrolls to the first field error by default. Set `scrollToError: false`
-when a screen owns custom error navigation.
-
-Returning `void` or `submitOk()` means API success. A thrown or rejected handler still rejects
-`submit()`; convert expected failures to `submitFail` and leave unexpected defects as exceptions.
-When no typed API failure is configured (`E = never`), `submit()` remains
-`Promise<FormResult<T>>`.
-
-Concurrent calls join the active submission promise by default, so the handler runs once.
-Set `submitPolicy: 'parallel'` only when duplicate API writes are intentional.
-
-#### Meta / arrays
-
-| Method | Signature | Description |
-|--------|-----------|-------------|
-| `getMeta` | `(path) => FieldMeta` | `{ hidden, disabled, options?, extra? }` |
-| `hidden` | `(path) => ComputedRef<boolean>` | Vue computed for `v-if` |
-| `list` | `(path, opts?) => FieldArrayApi & { fields: ComputedRef }` | Reactive field array |
-| `fieldArray` | same without computed unwrap | From `raw` / core |
-| `bindHost` | `(instance?) => void` | Hand host form instance to adapter |
+Patterns may use `*` for array rows (`rows.*.city`); sibling rows get distinct
+cache keys. A dep change resets the dependent value to its factory default,
+which cascades to deeper dependents. `form.set` / `reset` /
+`load('edit', …)` refresh options but never clear the incoming record.
 
 ---
 
@@ -293,17 +306,34 @@ Options: `{ defaultItem?: () => TItem, keyName?: string }`.
 Rules and conditional rules accept wildcard row paths:
 
 ```ts
-rules: {
-  'contacts.*.name': [r.required()],
-},
-whenRules: {
-  'contacts.*.phone': (_values, { item, index, path }) =>
-    (item as Contact).phoneRequired ? [r.required()] : null,
-}
+const form = useElForm({
+  defaults: { contacts: [] as Contact[] },
+  rules: {
+    'contacts.*.name': r.required(),
+    'contacts.*.phone': ({ item }) =>
+      (item as Contact).phoneRequired ? r.required() : null,
+  },
+})
 ```
 
 Wildcard rules are materialized to host paths such as `contacts.0.name` whenever
 the array changes. Literal paths override wildcard rules.
+
+Row-scoped errors follow their row across structural changes:
+
+| Op | Effect on row errors |
+|----|----------------------|
+| `append` | untouched |
+| `prepend` / `insert(i)` | rows at or after `i` shift up |
+| `remove(i)` | row `i` dropped; later rows shift down |
+| `move(from, to)` | remapped with the moved row |
+| `replace(i)` | row `i` cleared only |
+| `update(i, partial)` | only the assigned leaf paths cleared |
+| `clear` | all row errors dropped; non-row errors kept |
+
+Generated row keys track the row object, so `move` carries the key, and
+`reset()` / `load('edit', record)` keep keys for surviving positions instead of
+re-keying the list. Pass `keyName` to key rows off a backend id instead.
 
 ---
 
@@ -482,8 +512,8 @@ fieldPath('contacts', index, 'phone') // dynamic: 'contacts.3.phone'
 
 ## `createForm` (core)
 
-Headless, no Vue. Same options/API as `FormApi` under `form.raw`.  
-Vue apps should use `useForm` / `useElForm` so model is `reactive` and modes work.
+Headless, no Vue. `createForm` returns the full low-level `FormApi`. Vue apps
+should use `useForm` / `useElForm` so model state is reactive and modes work.
 
 `FormRulesMap` is a host-rule description, not a headless validator. If active `rules`
 exist without an adapter, `validate()` / `submit()` return `{ ok: false }` with a

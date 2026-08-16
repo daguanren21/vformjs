@@ -135,6 +135,12 @@ export function createElementUiAdapter(): FormHostAdapter {
         'data-vform-path': path,
       }
     },
+    hostProps() {
+      // element's `rules` watcher validates the whole form when
+      // `validateOnRuleChange` is on. vformjs publishes rules after the first
+      // render, which would light up every required field on a pristine form.
+      return { validateOnRuleChange: false }
+    },
     afterModelReset() {
       host?.clearValidate?.()
     },

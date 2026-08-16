@@ -29,27 +29,26 @@ const form = useElForm({
 })
 ```
 
-`rules` 支持 `RulesSource`：对象或 `(values) => rules`。  
-也可先建 form 再 `form.raw.setRules(...)`，`equalTo` 读 `form.model`。
+`rules` 支持静态规则、字段条件回调，或整个 `(values) => rules`。
+跨字段规则优先从回调上下文读取 `values`，不在创建后修改底层规则。
 
 ## 条件显隐
 
 ```ts
 useElForm({
   defaults: { type: 'a', extra: '' },
-  rules: { extra: [r.required()] },
+  // 条件规则返回 RuleInput；不需要时用 null
+  rules: {
+    extra: ({ values }) => values.type === 'b' ? r.required() : null,
+  },
   // key = 字段 path；predicate 为 true 时显示该字段
   when: {
-    extra: (m) => m.type === 'b',
-  },
-  // 可选：条件规则（返回 RuleInput；不需要时 [] 或 null）
-  whenRules: {
-    extra: (m) => (m.type === 'b' ? [r.required()] : []),
+    extra: values => values.type === 'b',
   },
 })
 ```
 
-隐藏字段会自动摘掉 rules 并清校验。模板：`v-if="!form.hidden('extra').value"` 或读 meta。
+隐藏字段会自动摘掉 rules 并清校验。模板：`v-if="!form.hidden('extra').value"`。
 
 ## 动态数组
 
@@ -92,34 +91,27 @@ const form = useElForm({
   defaults,
   rules,
   onSubmit: async (values) => {
-    try {
-      await api.save(values)
-    }
-    catch (e: unknown) {
-      const err = e as { fields?: Record<string, string>, message?: string }
-      if (err.fields?.email)
-        form.raw.setFieldError('email', err.fields.email)
-      else
-        form.raw.setFieldError('_form', err.message ?? '保存失败')
-      // setFieldError 写 core errors；Element 红字仍依赖 prop rules。
-      // 常见：再 validateField，或把接口错误映射进临时 rules。
-      throw e // 让 submit 以异常结束，避免当成成功
+    const response = await api.save(values)
+    if (!response.ok) {
+      return submitFail(response.error, {
+        errors: response.fieldErrors,
+      })
     }
   },
 })
 ```
 
-## Naive / Antd 最小 useForm
+## Naive / Antd 官方入口
 
-注意：通用 `useForm` 选项名是 **`defaultValues`**（不是 `useElForm` 的 `defaults`）。
+Naive UI 使用 `useNaiveForm`，Ant Design Vue 使用 `useAntdForm`；两者与
+`useElForm` 使用相同的 facade 和 `defaults` 参数。
 
 ```ts
-import { useForm, r } from '@vformjs/vue'
+import { r, useNaiveForm } from '@vformjs/naive-ui'
 
-const form = useForm({
-  defaultValues: defaults,
+const form = useNaiveForm({
+  defaults,
   rules: { name: [r.required()] },
-  adapter: createNaiveAdapter(), // or createAntdAdapter()
   onSubmit,
 })
 ```

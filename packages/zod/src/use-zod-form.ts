@@ -1,6 +1,12 @@
-import type { SubmitHandlerResult } from '@vformjs/core'
-import type { UseFormOptions, UseFormReturn } from '@vformjs/vue'
-import { useForm } from '@vformjs/vue'
+import type { FormApi, SubmitHandlerResult } from '@vformjs/core'
+import type {
+  UseApplicationFormOptions,
+  UseApplicationFormReturn,
+} from '@vformjs/vue'
+import {
+  applicationFormRuntime,
+  useApplicationForm,
+} from '@vformjs/vue'
 import type { z, ZodType } from 'zod'
 import { createZodResolver } from './resolver'
 import {
@@ -16,7 +22,7 @@ export interface UseZodFormOptions<
   S extends ZodType<Record<string, unknown>>,
   TSubmitError = never,
 > extends Omit<
-  UseFormOptions<ZodInput<S>, TSubmitError, ZodOutput<S>>,
+  UseApplicationFormOptions<ZodInput<S>, TSubmitError, ZodOutput<S>>,
   'rules' | 'defaultValues' | 'onSubmit' | 'resolver'
 > {
   schema: S
@@ -29,11 +35,7 @@ export interface UseZodFormOptions<
   onSubmit?: (
     values: ZodOutput<S>,
     ctx: {
-      form: UseFormReturn<
-        ZodInput<S>,
-        TSubmitError,
-        ZodOutput<S>
-      >['raw']
+      form: FormApi<ZodInput<S>, TSubmitError, ZodOutput<S>>
     },
   ) => SubmitHandlerResult<TSubmitError>
   /**
@@ -51,7 +53,11 @@ export interface UseZodFormOptions<
 export type UseZodFormReturn<
   S extends ZodType<Record<string, unknown>>,
   TSubmitError = never,
-> = UseFormReturn<ZodInput<S>, TSubmitError, ZodOutput<S>> & {
+> = UseApplicationFormReturn<
+  ZodInput<S>,
+  TSubmitError,
+  ZodOutput<S>
+> & {
   schema: S
 }
 
@@ -115,34 +121,36 @@ export function useZodForm<
     fallbackPath: () => firstRulePath,
   })
 
-  const form = useForm<TInput, TSubmitError, TOutput>({
+  const form = useApplicationForm<TInput, TSubmitError, TOutput>({
     ...formOptions,
     defaultValues,
     rules,
     resolver,
   })
-  getValues = () => form.getValues() as Record<string, unknown>
+  getValues = () => form.get() as Record<string, unknown>
+  const runtime = form[applicationFormRuntime]
 
   const resyncArrayRulesIfNeeded = () => {
     if (!arrays)
       return
-    const live = form.getValues() as Record<string, unknown>
+    const live = form.get() as Record<string, unknown>
     const signature = arrayLengthSignature(schema, live)
     if (signature === lastArraySignature)
       return
     lastArraySignature = signature
     rules = buildRules()
     firstRulePath = Object.keys(rules)[0]
-    form.raw.setRules(rules)
+    runtime.setRules(rules)
   }
 
-  form.raw.subscribe((event) => {
+  runtime.subscribe((event) => {
     if (event.type === 'values' || event.type === 'reset') {
       parser.invalidate()
       resyncArrayRulesIfNeeded()
     }
   })
 
-  // Mutate the reactive form object; spreading would unwrap Vue refs.
+  // Preserve the facade getters; spreading would snapshot lifecycle state.
   return Object.assign(form, { schema }) as UseZodFormReturn<S, TSubmitError>
 }
+

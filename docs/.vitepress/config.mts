@@ -28,8 +28,9 @@ export default defineConfig({
         nav: [
           { text: 'Guide', link: '/guide' },
           { text: 'Examples', link: '/examples' },
+          { text: 'Form migration', link: '/form-migration-diffs' },
           { text: 'Why vformjs', link: '/why' },
-          { text: 'Migration', link: '/migration' },
+          { text: 'Vue migration', link: '/migration' },
           { text: 'API', link: '/api' },
         ],
         sidebar: [
@@ -38,6 +39,7 @@ export default defineConfig({
             items: [
               { text: 'Guide', link: '/guide' },
               { text: 'Examples', link: '/examples' },
+              { text: 'Migrate existing forms', link: '/form-migration-diffs' },
               { text: 'Why vformjs', link: '/why' },
               { text: 'Vue 2.7 → Vue 3', link: '/migration' },
             ],
@@ -62,8 +64,9 @@ export default defineConfig({
         nav: [
           { text: '快速开始', link: '/zh/guide' },
           { text: '示例', link: '/zh/examples' },
+          { text: '迁移表单', link: '/zh/form-migration-diffs' },
           { text: '为什么用', link: '/zh/why' },
-          { text: '迁移', link: '/zh/migration' },
+          { text: 'Vue 迁移', link: '/zh/migration' },
           { text: 'API', link: '/zh/api' },
         ],
         sidebar: [
@@ -72,6 +75,7 @@ export default defineConfig({
             items: [
               { text: '快速开始', link: '/zh/guide' },
               { text: '示例入口', link: '/zh/examples' },
+              { text: '迁移现有表单', link: '/zh/form-migration-diffs' },
               { text: '为什么用 vformjs', link: '/zh/why' },
               { text: 'Vue 2.7 → Vue 3', link: '/zh/migration' },
             ],

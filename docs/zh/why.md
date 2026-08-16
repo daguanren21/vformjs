@@ -21,6 +21,23 @@ vformjs 管理：
 - 带稳定 key 的动态数组；
 - 响应式接口字段错误。
 
+## DX 原则：一个入口，一层脚本 API
+
+每个官方 UI 包只暴露一个业务入口：`useElForm`、`useNaiveForm` 或
+`useAntdForm`。所有页面拿到相同的返回结构，不需要先给表单分档。
+
+| 表面 | 用途 |
+|---|---|
+| `form.model`、`host`、`load`、`submit`、`reset` | 常用状态和生命周期 |
+| `form.get`、`set`、`field`、`rebase`、`notify` | 路径读写、基线与追踪 |
+| `form.hidden`、`options`、`list`、`reloadOptions` | 条件字段、远程选项、稳定数组 |
+| `form.validate`、`setErrors`、`scrollToFirstError` | 校验和接口错误 |
+| `form.snapshotDraft`、`restoreDraft` | 版本化草稿保存与恢复 |
+
+配置也保持一层：`when`、`rules`、`linkage`、`options` 描述字段行为，
+`submitPolicy`、`throwOnInvalid` 描述提交策略。它们是普通类型值，不是
+另一套 schema 或渲染器。vformjs 不增加 `useCrudForm` 之类的平行入口。
+
 ## 哪些项目值得试
 
 下面这些场景可以拿一个表单试接：

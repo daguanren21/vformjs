@@ -35,7 +35,7 @@ const copy = computed(() => props.locale === 'zh'
           index: '02',
           capability: '条件与联动',
           goal: '显隐、按需校验、省市联动都写在普通 TypeScript 里。',
-          verify: ['when', 'whenRules', 'linkage'],
+          verify: ['when', 'conditional rules', 'linkage'],
         },
         {
           anchor: 'zod-list',
@@ -75,7 +75,7 @@ const copy = computed(() => props.locale === 'zh'
           index: '02',
           capability: 'Conditional + linkage',
           goal: 'Visibility, active-only rules, and province→city resets stay in plain TypeScript.',
-          verify: ['when', 'whenRules', 'linkage'],
+          verify: ['when', 'conditional rules', 'linkage'],
         },
         {
           anchor: 'zod-list',
