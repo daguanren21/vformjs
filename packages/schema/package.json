@@ -1,6 +1,7 @@
 {
   "name": "@vformjs/schema",
   "version": "0.5.0",
+  "private": true,
   "description": "Standard Schema bridge for vformjs",
   "keywords": [
     "vue",
@@ -50,10 +51,6 @@
     "typescript": "catalog:",
     "vitest": "catalog:",
     "vue": "catalog:"
-  },
-  "publishConfig": {
-    "access": "public",
-    "provenance": true
   },
   "repository": {
     "type": "git",

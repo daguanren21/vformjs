@@ -20,9 +20,6 @@ pnpm add @vformjs/ant-design-vue ant-design-vue vue
 # Custom UI only
 pnpm add @vformjs/vue vue
 
-# Optional generic schema bridge
-pnpm add @vformjs/schema
-
 # Optional Zod-specific rules and resolver
 pnpm add @vformjs/zod zod
 ```
@@ -35,7 +32,6 @@ pnpm add @vformjs/zod zod
 | `@vformjs/ant-design-vue` | `useAntdForm`, `r`, schema hooks from subpaths |
 | `@vformjs/vue` | `useForm`, `defineAdapter`, `r` |
 | `@vformjs/zod` | `useZodForm` (or via UI package) |
-| `@vformjs/schema` | Standard Schema resolver and `useSchemaForm` |
 | `@vformjs/core` | transitive — rarely direct |
 
 ## One hook per UI

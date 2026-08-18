@@ -42,7 +42,6 @@ pnpm add @vformjs/element-plus element-plus vue     # Vue 3
 | `@vformjs/ant-design-vue` | Vue 3 + Ant Design Vue |
 | `@vformjs/vue` | 自定义 UI 时用 `useForm` / `defineAdapter` |
 | `@vformjs/zod` | Zod schema 桥 |
-| `@vformjs/schema` | Standard Schema 通用桥 |
 | `@vformjs/core` | 无头引擎，一般不用直接装 |
 
 ## 最小例子

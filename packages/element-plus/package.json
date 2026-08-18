@@ -58,8 +58,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@standard-schema/spec": "catalog:",
     "@vformjs/core": "workspace:^",
-    "@vformjs/schema": "workspace:^",
     "@vformjs/vue": "workspace:^",
     "@vformjs/zod": "workspace:^"
   },

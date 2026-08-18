@@ -42,7 +42,6 @@ pnpm add @vformjs/element-plus element-plus vue     # Vue 3
 | `@vformjs/ant-design-vue` | Vue 3 + Ant Design Vue |
 | `@vformjs/vue` | `useForm` / `defineAdapter` for custom UI |
 | `@vformjs/zod` | Zod schema bridge |
-| `@vformjs/schema` | Standard Schema bridge |
 | `@vformjs/core` | Headless engine (transitive) |
 
 ## Quick start

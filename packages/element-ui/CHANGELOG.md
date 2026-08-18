@@ -22,8 +22,8 @@
   Subscriptions can filter by `events`, concrete or wildcard `paths`, and optional exact matching. Path-only subscriptions receive value/meta events; global lifecycle events are delivered when explicitly selected.
 - 79cff44: Add Standard Schema support for object schemas with inferred input and transformed output types.
   
-  - `@vformjs/schema` exports `createSchemaResolver`, `schemaIssuesToFormErrors`, and `useSchemaForm`;
-  - every official UI package exposes a `/schema` subpath with its host adapter already bound;
+  - the official `/schema` subpath bundles the private Standard Schema bridge;
+  - compatible object schemas infer input and transformed output types;
   - pathless and unsupported symbol-path issues fall back to `_form`, while partial validation keeps only overlapping field issues.
 - 79cff44: Expose `validating` on core forms, every Vue application facade, schema-aware forms, and composed form groups.
   
@@ -45,7 +45,6 @@
   - @vformjs/core@0.5.0
   - @vformjs/vue@0.5.0
   - @vformjs/zod@0.5.0
-  - @vformjs/schema@0.5.0
 
 ## 0.4.0
 

@@ -12,7 +12,6 @@ export default defineConfig({
     '@vformjs/core',
     '@vformjs/vue',
     '@vformjs/zod',
-    '@vformjs/schema',
   ],
   outExtensions({ format }) {
     return { js: format === 'cjs' ? '.cjs' : '.js' }

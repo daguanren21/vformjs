@@ -120,12 +120,12 @@ importers:
 
   packages/ant-design-vue:
     dependencies:
+      '@standard-schema/spec':
+        specifier: 'catalog:'
+        version: 1.1.0
       '@vformjs/core':
         specifier: workspace:^
         version: link:../core
-      '@vformjs/schema':
-        specifier: workspace:^
-        version: link:../schema
       '@vformjs/vue':
         specifier: workspace:^
         version: link:../vue
@@ -194,12 +194,12 @@ importers:
 
   packages/element-plus:
     dependencies:
+      '@standard-schema/spec':
+        specifier: 'catalog:'
+        version: 1.1.0
       '@vformjs/core':
         specifier: workspace:^
         version: link:../core
-      '@vformjs/schema':
-        specifier: workspace:^
-        version: link:../schema
       '@vformjs/vue':
         specifier: workspace:^
         version: link:../vue
@@ -225,12 +225,12 @@ importers:
 
   packages/element-ui:
     dependencies:
+      '@standard-schema/spec':
+        specifier: 'catalog:'
+        version: 1.1.0
       '@vformjs/core':
         specifier: workspace:^
         version: link:../core
-      '@vformjs/schema':
-        specifier: workspace:^
-        version: link:../schema
       '@vformjs/vue':
         specifier: workspace:^
         version: link:../vue
@@ -256,12 +256,12 @@ importers:
 
   packages/naive-ui:
     dependencies:
+      '@standard-schema/spec':
+        specifier: 'catalog:'
+        version: 1.1.0
       '@vformjs/core':
         specifier: workspace:^
         version: link:../core
-      '@vformjs/schema':
-        specifier: workspace:^
-        version: link:../schema
       '@vformjs/vue':
         specifier: workspace:^
         version: link:../vue

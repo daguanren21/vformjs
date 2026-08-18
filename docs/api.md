@@ -44,8 +44,6 @@ import {
 
 // Zod bridge without Element adapter
 import { useZodForm, zodToRules } from '@vformjs/zod'
-// Standard Schema bridge without a UI adapter
-import { createSchemaResolver, useSchemaForm } from '@vformjs/schema'
 ```
 
 `useForm` is the low-level custom-adapter hook. Its flat `UseFormReturn` is for
