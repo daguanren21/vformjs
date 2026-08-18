@@ -1,5 +1,34 @@
 # @vformjs/core
 
+## 0.5.0
+
+### Minor Changes
+
+- 79cff44: Add array-root rules and post-insert focus to `form.list()` / `form.fieldArray()`.
+  
+  - `rules` register host validation on the array root path;
+  - `focus` names the default child path focused after append, prepend, or insert;
+  - each insertion can override the child path or pass `{ focus: false }`;
+  - official adapters bridge focus to their registered field instances without adding row keys to submitted values.
+- 79cff44: Expose concise submit lifecycle state through every form facade and composed form group:
+  
+  - `submitCount` counts logical submit attempts, with joined duplicate calls counted once;
+  - `submitOk` reports whether the latest submit attempt completed successfully.
+  
+  A new attempt clears `submitOk`. Full resets and record loads clear both values
+  without publishing stale model values.
+- 79cff44: Replace callback-only subscriptions with typed subscription options and expose `subscribe()` on every Vue application facade.
+  
+  Subscriptions can filter by `events`, concrete or wildcard `paths`, and optional exact matching. Path-only subscriptions receive value/meta events; global lifecycle events are delivered when explicitly selected.
+- 79cff44: Expose `validating` on core forms, every Vue application facade, schema-aware forms, and composed form groups.
+  
+  The flag stays true across superseded validation runs and returns to false only when the active resolver and host-validation pipeline settles.
+- 79cff44: Allow `validate()` and `validateField()` to accept wildcard paths such as
+  `rows.*.code`. Patterns expand against the current model before resolver and
+  host validation, and an empty wildcard selection succeeds without invoking the
+  host. Selected-path success returns the input model; whole-form validation and
+  submit remain the transformed-output boundary.
+
 ## 0.4.0
 
 ### Minor Changes
