@@ -12,9 +12,13 @@ describe('official host adapter contract', () => {
     })
     const clearValidate = vi.fn()
     const scrollToField = vi.fn()
+    const focus = vi.fn()
     const adapter = createElementPlusAdapter()
     adapter.bind?.({
-      fields: [{ prop: 'email' }],
+      fields: [{
+        prop: 'email',
+        $el: { querySelector: () => ({ focus }) },
+      }],
       validateField,
       clearValidate,
       scrollToField,
@@ -24,11 +28,13 @@ describe('official host adapter contract', () => {
     adapter.clearValidate?.(['email'])
     adapter.afterModelReset?.()
     adapter.scrollToField?.('email')
+    adapter.focusField?.('email')
 
     expect(validateField).toHaveBeenCalledWith(['email'], expect.any(Function))
     expect(clearValidate).toHaveBeenNthCalledWith(1, ['email'])
     expect(clearValidate).toHaveBeenNthCalledWith(2)
     expect(scrollToField).toHaveBeenCalledWith('email')
+    expect(focus).toHaveBeenCalledOnce()
     expect(adapter.getItemProps?.('email', 'already used')).toEqual({
       prop: 'email',
       error: 'already used',
@@ -40,9 +46,16 @@ describe('official host adapter contract', () => {
     const validateField = vi.fn((_path: string, callback: (message?: string) => void) => callback())
     const clearValidate = vi.fn()
     const scrollIntoView = vi.fn()
+    const focus = vi.fn()
     const adapter = createElementUiAdapter()
     adapter.bind?.({
-      fields: [{ prop: 'email', $el: { scrollIntoView } }],
+      fields: [{
+        prop: 'email',
+        $el: {
+          scrollIntoView,
+          querySelector: () => ({ focus }),
+        },
+      }],
       validateField,
       clearValidate,
     })
@@ -51,11 +64,13 @@ describe('official host adapter contract', () => {
     adapter.clearValidate?.(['email'])
     adapter.afterModelReset?.()
     adapter.scrollToField?.('email')
+    adapter.focusField?.('email')
 
     expect(validateField).toHaveBeenCalledWith('email', expect.any(Function))
     expect(clearValidate).toHaveBeenNthCalledWith(1, ['email'])
     expect(clearValidate).toHaveBeenNthCalledWith(2)
     expect(scrollIntoView).toHaveBeenCalledWith({ block: 'center' })
+    expect(focus).toHaveBeenCalledOnce()
     expect(adapter.getItemProps?.('email', 'already used')).toEqual({
       prop: 'email',
       error: 'already used',
@@ -70,12 +85,18 @@ describe('official host adapter contract', () => {
     })
     const restoreValidation = vi.fn()
     const scrollIntoView = vi.fn()
+    const focus = vi.fn()
+    const emailItem = {
+      dataset: { vformPath: 'email' },
+      scrollIntoView,
+      querySelector: () => ({ focus }),
+    }
     const adapter = createNaiveAdapter()
     adapter.bind?.({
       validate,
       restoreValidation,
       $el: {
-        querySelectorAll: () => [{ dataset: { vformPath: 'email' }, scrollIntoView }],
+        querySelectorAll: () => [emailItem],
         querySelector: () => null,
       },
     })
@@ -84,9 +105,12 @@ describe('official host adapter contract', () => {
     adapter.clearValidate?.(['email'])
     adapter.afterModelReset?.()
     adapter.scrollToField?.('email')
+    adapter.focusField?.('email')
+    adapter.focusField?.('missing')
 
     expect(restoreValidation).toHaveBeenCalledTimes(2)
     expect(scrollIntoView).toHaveBeenCalledWith({ block: 'center' })
+    expect(focus).toHaveBeenCalledOnce()
     expect(adapter.getItemProps?.('email', 'already used')).toEqual({
       path: 'email',
       feedback: 'already used',
@@ -99,18 +123,31 @@ describe('official host adapter contract', () => {
     const validateFields = vi.fn(async () => ({}))
     const clearValidate = vi.fn()
     const scrollToField = vi.fn()
+    const focus = vi.fn()
     const adapter = createAntdAdapter()
-    adapter.bind?.({ validateFields, clearValidate, scrollToField })
+    adapter.bind?.({
+      validateFields,
+      clearValidate,
+      scrollToField,
+      $el: {
+        querySelectorAll: () => [{
+          dataset: { vformPath: 'email' },
+          querySelector: () => ({ focus }),
+        }],
+      },
+    })
 
     expect(await adapter.validate(['email'])).toEqual({ valid: true })
     adapter.clearValidate?.(['email'])
     adapter.afterModelReset?.()
     adapter.scrollToField?.('email')
+    adapter.focusField?.('email')
 
     expect(validateFields).toHaveBeenCalledWith([['email']])
     expect(clearValidate).toHaveBeenNthCalledWith(1, ['email'])
     expect(clearValidate).toHaveBeenNthCalledWith(2)
     expect(scrollToField).toHaveBeenCalledWith(['email'])
+    expect(focus).toHaveBeenCalledOnce()
     expect(adapter.getItemProps?.('profile.email', 'already used')).toEqual({
       name: ['profile', 'email'],
       validateStatus: 'error',

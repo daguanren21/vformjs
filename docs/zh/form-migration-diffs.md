@@ -29,6 +29,7 @@ vformjs 继续使用 Element Plus、element-ui、Naive UI 或 Ant Design Vue 的
 ```vue
 <script setup lang="ts">
 import { reactive, shallowRef, useTemplateRef } from 'vue' // [!code --]
+import { shallowRef } from 'vue' // [!code ++]
 import type { FormInstance, FormRules } from 'element-plus' // [!code --]
 import { r, useElForm } from '@vformjs/element-plus' // [!code ++]
 
@@ -392,7 +393,201 @@ function resetAll() {
 - `group.load()` 把数据切片交给对应成员。记录里缺少某个 section 时，该成员回到自己的 factory defaults。
 - 子组件已经拥有 form 时，只向父页面暴露 `FormGroupMember` 需要的接口，内部响应式状态仍由子组件管理。
 
-## 用 Agent 迁移存量页面
+
+## 5. 原子编辑页：把强耦合区块收进一个 form
+
+### 公开文档使用重构示例
+
+下面的示例是重新构造的通用代码。路由、标识符、字段标签、API 名称和
+payload 结构均不来自业务仓库；只保留工程形态：多个可视区块原子提交、
+重复行存在跨行规则，并且服务端草稿只校验少数字段。
+
+只有当这些区块共享提交边界和联动关系时，才使用一个 form。如果每个
+section 都有独立提交边界，应继续保留独立宿主，并使用上一节的
+`useFormGroup`。
+
+### section ref 和行级宿主重复维护生命周期
+
+```ts
+import { computed, reactive, ref, useTemplateRef, watch } from 'vue' // [!code --]
+import { r, useElForm } from '@vformjs/element-plus' // [!code ++]
+
+interface VariantRow {
+  code: string
+  color: string
+  notes: string
+  attributes: Record<string, unknown>
+}
+
+interface EditorValues {
+  summary: {
+    code: string
+    notes: string
+  }
+  attributes: Record<string, unknown>
+  variants: VariantRow[]
+}
+
+interface EditorPayload { // [!code ++]
+  header: EditorValues['summary'] // [!code ++]
+  fields: Record<string, unknown> // [!code ++]
+  entries: VariantRow[] // [!code ++]
+} // [!code ++]
+ // [!code ++]
+function toPayload(values: EditorValues): EditorPayload { // [!code ++]
+  return { // [!code ++]
+    header: { ...values.summary }, // [!code ++]
+    fields: { ...values.attributes }, // [!code ++]
+    entries: values.variants.map(row => ({ // [!code ++]
+      code: row.code, // [!code ++]
+      color: row.color, // [!code ++]
+      notes: row.notes, // [!code ++]
+      attributes: { ...row.attributes }, // [!code ++]
+    })), // [!code ++]
+  } // [!code ++]
+} // [!code ++]
+
+const summaryRef = useTemplateRef<SectionHandle>('summaryRef') // [!code --]
+const attributesRef = useTemplateRef<SectionHandle>('attributesRef') // [!code --]
+const variantsRef = useTemplateRef<SectionHandle>('variantsRef') // [!code --]
+const submitting = ref(false) // [!code --]
+const savingDraft = ref(false) // [!code --]
+
+const summaryModel = reactive({ code: '', notes: '' }) // [!code --]
+const variantRows = ref<VariantRow[]>([]) // [!code --]
+const colorRules = computed(() => [{ // [!code --]
+  required: variantRows.value.some(row => Boolean(row.color)), // [!code --]
+  message: 'Required', // [!code --]
+}]) // [!code --]
+watch( // [!code --]
+  () => summaryModel.notes, // [!code --]
+  (notes) => { // [!code --]
+    variantRows.value.forEach((row) => { // [!code --]
+      row.notes = notes // [!code --]
+    }) // [!code --]
+  }, // [!code --]
+) // [!code --]
+
+const form = useElForm<EditorValues>({ // [!code ++]
+  defaults: { // [!code ++]
+    summary: { code: '', notes: '' }, // [!code ++]
+    attributes: {}, // [!code ++]
+    variants: [], // [!code ++]
+  }, // [!code ++]
+  tracking: 'explicit', // [!code ++]
+  rules: { // [!code ++]
+    'summary.code': r.required(), // [!code ++]
+    'variants.*.code': r.required(), // [!code ++]
+    'variants.*.color': ({ values }) => // [!code ++]
+      values.variants.some(row => row.color) ? r.required() : null, // [!code ++]
+  }, // [!code ++]
+  linkage: [ // [!code ++]
+    { // [!code ++]
+      deps: ['summary.notes'], // [!code ++]
+      run: ({ get, set, values }) => { // [!code ++]
+        const notes = String(get('summary.notes') ?? '') // [!code ++]
+        values.variants.forEach((_row, index) => { // [!code ++]
+          set(`variants.${index}.notes`, notes) // [!code ++]
+        }) // [!code ++]
+      }, // [!code ++]
+    }, // [!code ++]
+  ], // [!code ++]
+}) // [!code ++]
+
+const variants = form.list<VariantRow>('variants', { // [!code ++]
+  defaultItem: () => ({ // [!code ++]
+    code: '', // [!code ++]
+    color: '', // [!code ++]
+    notes: form.model.summary.notes, // [!code ++]
+    attributes: {}, // [!code ++]
+  }), // [!code ++]
+}) // [!code ++]
+
+async function submit() {
+  const results = await Promise.allSettled([ // [!code --]
+    summaryRef.value?.validate(), // [!code --]
+    attributesRef.value?.validate(), // [!code --]
+    variantsRef.value?.validate(), // [!code --]
+  ]) // [!code --]
+  if (results.some(result => result.status === 'rejected')) // [!code --]
+    return // [!code --]
+ // [!code --]
+  submitting.value = true // [!code --]
+  try { // [!code --]
+    await editorApi.save({ // [!code --]
+      summary: summaryRef.value?.getValues(), // [!code --]
+      attributes: attributesRef.value?.getValues(), // [!code --]
+      variants: variantsRef.value?.getValues(), // [!code --]
+    }) // [!code --]
+  } // [!code --]
+  finally { // [!code --]
+    submitting.value = false // [!code --]
+  } // [!code --]
+  await form.submit(values => editorApi.save(toPayload(values))) // [!code ++]
+}
+
+async function saveDraft() {
+  summaryRef.value?.clearValidate() // [!code --]
+  attributesRef.value?.clearValidate() // [!code --]
+  variantsRef.value?.clearValidate() // [!code --]
+  await Promise.all([ // [!code --]
+    summaryRef.value?.validateField('code'), // [!code --]
+    variantsRef.value?.validateField('code'), // [!code --]
+  ]) // [!code --]
+
+  const result = await form.validateField([ // [!code ++]
+    'summary.code', // [!code ++]
+    'variants.*.code', // [!code ++]
+  ]) // [!code ++]
+  if (!result.ok) // [!code ++]
+    return // [!code ++]
+
+  savingDraft.value = true
+  try {
+    await editorApi.saveDraft(toPayload(form.get()))
+  }
+  finally {
+    savingDraft.value = false
+  }
+}
+```
+
+```vue
+<template>
+  <SummarySection ref="summaryRef" /> <!-- [!code --] -->
+  <AttributesSection ref="attributesRef" /> <!-- [!code --] -->
+  <VariantsSection ref="variantsRef" /> <!-- [!code --] -->
+
+  <el-form v-bind="form.host"> <!-- [!code ++] -->
+    <SummarySection :form="form" /> <!-- [!code ++] -->
+    <AttributesSection :form="form" /> <!-- [!code ++] -->
+    <div v-for="row in variants.fields" :key="row.key"> <!-- [!code ++] -->
+      <VariantSection :form="form" :index="row.index" /> <!-- [!code ++] -->
+      <el-button @click="variants.remove(row.index)">移除</el-button> <!-- [!code ++] -->
+    </div> <!-- [!code ++] -->
+  </el-form> <!-- [!code ++] -->
+
+  <el-button :loading="submitting" @click="submit">提交</el-button> <!-- [!code --] -->
+  <el-button :loading="form.submitting" @click="submit">提交</el-button> <!-- [!code ++] -->
+  <el-button :loading="savingDraft" @click="saveDraft">保存草稿</el-button>
+</template>
+```
+
+### 一个状态所有者，边界仍然明确
+
+- 一个宿主统一负责校验顺序、错误、loading 和首个错误滚动。
+- `form.list()` 把行 key 留在提交值之外，并在插入、删除和移动后重映射
+  行错误。
+- wildcard 规则替代逐行注册 validator。任意一行填写 `color` 后，条件规则
+  会要求每一行都填写该字段。
+- `linkage` 显式描述跨区块同步。子 section 只渲染字段，不再通过组件 ref
+  暴露生命周期方法。
+- `toPayload()` 是上面定义的应用层 mapper。运行时字段渲染、上传、计算和
+  传输层序列化不会迁入 vformjs。
+- 服务端草稿仍然是 API 动作；`snapshotDraft()` 是本地版本化快照，不能
+  替代服务端保存。
+
+## 6. 用 Agent 迁移存量页面
 
 vformjs CLI 带有与当前版本匹配的迁移 skill。Agent 会读取完整组件、调用方、模型和 API 类型、子表单合同与测试，再把页面里重复的表单状态迁入 vformjs。
 
@@ -449,6 +644,7 @@ skill 安装包内包含当前 CLI 版本的迁移决策和验证规则，工具
 | 单宿主、静态规则、标准 CRUD | 从一个新增/编辑弹窗开始 |
 | 条件字段、动态行、远程选项 | 列出字段依赖，再配置 `when`、条件 `rules`、`options` 和 `form.list()` |
 | 大表格或深层嵌套模型 | 使用 `tracking: 'explicit'`，逐字段接入 |
+| 多个强耦合 section 原子提交 | 优先使用一个宿主；section 只负责渲染，重复行使用 `form.list()` |
 | 多个可独立校验的 section | 每个 section 一个 form，再用 `useFormGroup` 组合 |
 | 纯查询、纯详情、只有一两个字段 | 保留宿主原生 Form |
 

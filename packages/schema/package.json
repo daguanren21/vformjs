@@ -1,0 +1,67 @@
+{
+  "name": "@vformjs/schema",
+  "version": "0.3.0",
+  "description": "Standard Schema bridge for vformjs",
+  "keywords": [
+    "vue",
+    "standard-schema",
+    "forms",
+    "schema-validation",
+    "typescript",
+    "crud"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --root ../.. packages/schema/test"
+  },
+  "dependencies": {
+    "@standard-schema/spec": "catalog:",
+    "@vformjs/core": "workspace:^",
+    "@vformjs/vue": "workspace:^"
+  },
+  "peerDependencies": {
+    "vue": "^2.7.0 || ^3.0.0"
+  },
+  "devDependencies": {
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "vue": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/daguanren21/vformjs.git",
+    "directory": "packages/schema"
+  },
+  "homepage": "https://vformjs.vercel.app/guide",
+  "bugs": {
+    "url": "https://github.com/daguanren21/vformjs/issues"
+  }
+}

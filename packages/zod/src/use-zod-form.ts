@@ -143,11 +143,12 @@ export function useZodForm<
     runtime.setRules(rules)
   }
 
-  runtime.subscribe((event) => {
-    if (event.type === 'values' || event.type === 'reset') {
+  runtime.subscribe({
+    events: ['values', 'reset'],
+    callback() {
       parser.invalidate()
       resyncArrayRulesIfNeeded()
-    }
+    },
   })
 
   // Preserve the facade getters; spreading would snapshot lifecycle state.

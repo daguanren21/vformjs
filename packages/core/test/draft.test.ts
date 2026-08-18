@@ -165,7 +165,7 @@ describe('draft snapshots', () => {
       defaultValues: { name: 'a' },
     })
     const listener = vi.fn()
-    form.subscribe(listener)
+    form.subscribe({ callback: listener })
 
     form.restoreDraft(form.snapshotDraft())
 

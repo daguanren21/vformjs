@@ -17,7 +17,7 @@ export type {
   AdapterValidateContext,
 } from './define-adapter'
 export { createFieldArray } from './field-array'
-export type { FieldArrayHost, FieldArrayOptions } from './field-array'
+export type { FieldArrayHost } from './field-array'
 export { createLinkageEngine, assertLinkageRules } from './linkage'
 export type { LinkageEngine, LinkageEngineOptions } from './linkage'
 export { createOptionsEngine, hashOptionsKey } from './options-source'
@@ -51,6 +51,8 @@ export type {
   DraftRestoreStatus,
   FormDraftSnapshot,
   FieldCondition,
+  FieldArrayActionOptions,
+  FieldArrayOptions,
   FieldArrayApi,
   FieldMeta,
   FieldOptionsState,
@@ -59,7 +61,10 @@ export type {
   FormApi,
   FormErrors,
   FormEvent,
+  FormEventType,
+  FormSubscription,
   FormHostAdapter,
+  FormValidate,
   FormResult,
   FormResolver,
   FormResolverContext,

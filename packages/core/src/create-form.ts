@@ -38,7 +38,10 @@ import type {
   FormApi,
   FormErrors,
   FormEvent,
+  FormEventType,
+  FormSubscription,
   FormHostAdapter,
+  FormValidate,
   FormResult,
   FormValidationResult,
   FormRulesMap,
@@ -50,6 +53,62 @@ import type {
   SubmitOutcome,
   SubmitResult,
 } from './types'
+
+interface ActiveSubscription {
+  events?: Set<FormEventType>
+  paths?: ReadonlyArray<FieldPath>
+  exact: boolean
+  callback: (event: FormEvent) => void
+}
+
+function formEventPaths(event: FormEvent): ReadonlyArray<FieldPath> | undefined {
+  if (event.type === 'values')
+    return event.paths
+  if (event.type === 'meta')
+    return [event.path]
+  return undefined
+}
+
+function subscriptionPathMatches(
+  eventPath: FieldPath,
+  target: FieldPath,
+  exact: boolean,
+): boolean {
+  if (eventPath === '*')
+    return true
+  const eventSegments = eventPath.split('.')
+  const targetSegments = target.split('.')
+  if (exact && eventSegments.length !== targetSegments.length)
+    return false
+
+  const sharedLength = Math.min(eventSegments.length, targetSegments.length)
+  for (let index = 0; index < sharedLength; index++) {
+    const expected = targetSegments[index]
+    if (expected !== '*' && expected !== eventSegments[index])
+      return false
+  }
+  return true
+}
+
+function subscriptionMatches(
+  subscription: ActiveSubscription,
+  event: FormEvent,
+): boolean {
+  if (subscription.events && !subscription.events.has(event.type))
+    return false
+  const targets = subscription.paths
+  if (!targets)
+    return true
+
+  const paths = formEventPaths(event)
+  if (!paths)
+    return subscription.events !== undefined
+  return paths.some(path =>
+    targets.some(target =>
+      subscriptionPathMatches(path, target, subscription.exact),
+    ),
+  )
+}
 
 /** Explicit successful API submission outcome. Returning `void` is equivalent. */
 export function submitOk(): SubmitOutcome<never> {
@@ -379,17 +438,31 @@ export function createForm<
   changedPaths.sort((left, right) => left < right ? -1 : left > right ? 1 : 0)
   const changedPathSet = new Set<FieldPath>(changedPaths)
   let adapter: FormHostAdapter | undefined = options.adapter
+  let validating = false
   let submitting = false
   let activeSubmissionCount = 0
+  let submitCount = 0
+  let lastSubmitOk = false
+  let submitSequence = 0
+  let latestSubmitId = 0
   let joinedSubmission:
     | Promise<SubmitResult<TOutput, unknown, T>>
     | undefined
   let form!: FormApi<T, TSubmitError, TOutput>
-
-  const listeners = new Set<(event: FormEvent) => void>()
+  const listeners = new Set<ActiveSubscription>()
   const emit = (event: FormEvent) => {
-    for (const listener of listeners)
-      listener(event)
+    for (const subscription of listeners) {
+      if (subscriptionMatches(subscription, event))
+        subscription.callback(event)
+    }
+  }
+
+  const resetSubmitState = () => {
+    submitCount = 0
+    lastSubmitOk = false
+    latestSubmitId = 0
+    joinedSubmission = undefined
+    emit({ type: 'submit-state' })
   }
 
   const getMeta = (path: FieldPath): FieldMeta => {
@@ -419,6 +492,16 @@ export function createForm<
       }
     }
     return cloned
+  }
+
+  const materializeValidationPaths = (
+    paths?: FieldPath[],
+  ): FieldPath[] | undefined => {
+    if (!paths || paths.includes('*'))
+      return undefined
+
+    const concrete = paths.flatMap(path => expandPathPattern(values, path))
+    return [...new Set(concrete)]
   }
 
   let linkageEngine: LinkageEngine | undefined
@@ -591,6 +674,7 @@ export function createForm<
   interface ValidationRun {
     id: number
     paths: FieldPath[] | undefined
+    selected: boolean
     controller: AbortController
     settled: boolean
     promise: Promise<ValidationResult>
@@ -622,21 +706,26 @@ export function createForm<
   function rerouteValidation(run: ValidationRun): Promise<ValidationResult> {
     if (activeValidation && activeValidation !== run)
       return activeValidation.promise
-    return startValidation(run.paths)
+    return startValidation(run.paths, run.selected)
   }
 
-  function startValidation(paths?: FieldPath[]): Promise<ValidationResult> {
+  function startValidation(paths?: FieldPath[], selected = false): Promise<ValidationResult> {
     if (activeValidation && !activeValidation.settled)
       activeValidation.controller.abort()
 
     const run: ValidationRun = {
       id: ++validationSequence,
       paths,
+      selected,
       controller: new AbortController(),
       settled: false,
       promise: undefined as unknown as Promise<ValidationResult>,
     }
     activeValidation = run
+    if (!validating) {
+      validating = true
+      emit({ type: 'validate-start' })
+    }
     run.promise = performValidation(run)
     return run.promise
   }
@@ -649,6 +738,12 @@ export function createForm<
     }
 
     try {
+      if (list?.length === 0) {
+        return {
+          ok: true,
+          values: snapshotValues(),
+        }
+      }
       let resolved: ValidationResult | undefined
 
       if (options.resolver) {
@@ -735,9 +830,17 @@ export function createForm<
         }
       }
 
-      if (list)
-        clearErrorsInternal(list)
-      else if (Object.keys(errors).length)
+      if (run.selected) {
+        if (list)
+          clearErrorsInternal(list)
+        else if (Object.keys(errors).length)
+          setErrorState({})
+        return {
+          ok: true,
+          values: snapshotValues(),
+        }
+      }
+      if (Object.keys(errors).length)
         setErrorState({})
 
       if (resolved)
@@ -752,8 +855,11 @@ export function createForm<
       }
     }
     finally {
-      if (activeValidation === run)
+      if (activeValidation === run) {
         run.settled = true
+        validating = false
+        emit({ type: 'validate-end' })
+      }
     }
   }
 
@@ -845,6 +951,24 @@ export function createForm<
     })
   }
 
+  const validate = ((paths?: FieldPath | FieldPath[]) => {
+    const list = paths == null
+      ? undefined
+      : Array.isArray(paths) ? paths : [paths]
+    return startValidation(materializeValidationPaths(list), paths != null)
+  }) as FormValidate<T, TOutput>
+
+  const validateField = async (
+    paths?: FieldPath | FieldPath[],
+  ): Promise<FormResult<T>> => {
+    const result = paths == null
+      ? await validate()
+      : await validate(paths)
+    if (!result.ok)
+      return result
+    return { ok: true, values: snapshotValues() }
+  }
+
   form = {
     get values() {
       return values
@@ -852,8 +976,17 @@ export function createForm<
     get model() {
       return values
     },
+    get validating() {
+      return validating
+    },
     get submitting() {
       return submitting
+    },
+    get submitCount() {
+      return submitCount
+    },
+    get submitOk() {
+      return lastSubmitOk
     },
     get dirty() {
       return changedPaths.length > 0
@@ -890,12 +1023,17 @@ export function createForm<
       notifyValues([path])
     },
 
+    resetSubmit() {
+      resetSubmitState()
+    },
+
     getFieldValue<V = unknown>(path: FieldPath) {
       return getByPath<V>(values, path)
     },
 
     reset(paths) {
       if (paths == null) {
+        resetSubmitState()
         restoreInPlace(
           values as Record<string, unknown>,
           baseline as Record<string, unknown>,
@@ -968,6 +1106,7 @@ export function createForm<
         deepClone(healed, valuePolicy),
         valuePolicy,
       )
+      resetSubmitState()
       setErrorState({})
       emit({ type: 'reset' })
       notifyValues(['*'])
@@ -982,6 +1121,7 @@ export function createForm<
 
     /** Restore factory defaults + baseline (for load('create')). */
     resetToCreateDefaults() {
+      resetSubmitState()
       baseline = deepClone(createDefaults, valuePolicy)
       restoreInPlace(
         values as Record<string, unknown>,
@@ -1084,16 +1224,8 @@ export function createForm<
       adapter?.clearValidate?.(list)
     },
 
-    validate(paths?: FieldPath | FieldPath[]) {
-      const list = paths == null
-        ? undefined
-        : Array.isArray(paths) ? paths : [paths]
-      return startValidation(list)
-    },
-
-    async validateField(paths?: FieldPath | FieldPath[]) {
-      return paths == null ? form.validate() : form.validate(paths)
-    },
+    validate,
+    validateField,
 
     submit<TActionError = never>(
       handler?: SubmitAction<TOutput, TActionError, T, TSubmitError>,
@@ -1104,9 +1236,18 @@ export function createForm<
         >
       }
 
-      const submission = (async (): Promise<
+      let submission!: Promise<
+        SubmitResult<TOutput, TSubmitError | TActionError, T>
+      >
+      submission = (async (): Promise<
         SubmitResult<TOutput, TSubmitError | TActionError, T>
       > => {
+        const submitId = ++submitSequence
+        latestSubmitId = submitId
+        submitCount += 1
+        lastSubmitOk = false
+        emit({ type: 'submit-state' })
+        let attemptOk = false
         activeSubmissionCount += 1
         if (activeSubmissionCount === 1) {
           submitting = true
@@ -1146,15 +1287,20 @@ export function createForm<
             return failure as SubmitResult<TOutput, TSubmitError | TActionError, T>
           }
 
+          attemptOk = true
           return { ok: true, values: output }
         }
         finally {
+          if (submitId === latestSubmitId) {
+            lastSubmitOk = attemptOk
+            emit({ type: 'submit-state' })
+          }
           activeSubmissionCount -= 1
           if (activeSubmissionCount === 0) {
             submitting = false
             emit({ type: 'submit-end' })
           }
-          if (submitPolicy === 'join')
+          if (submitPolicy === 'join' && joinedSubmission === submission)
             joinedSubmission = undefined
         }
       })()
@@ -1173,6 +1319,9 @@ export function createForm<
           values,
           notifyArray,
           notifyValues,
+          setRules: (arrayPath, rules) =>
+            form.setFieldRules(arrayPath, rules),
+          focusField: target => adapter?.focusField?.(target),
           cloneValue: (value, valuePath) =>
             deepClone(value, valuePolicy, valuePath),
         },
@@ -1198,10 +1347,24 @@ export function createForm<
       adapter?.bind?.(instance)
     },
 
-    subscribe(listener) {
-      listeners.add(listener)
+    subscribe(options: FormSubscription) {
+      const events = options.events === undefined
+        ? undefined
+        : new Set<FormEventType>(
+            typeof options.events === 'string' ? [options.events] : options.events,
+          )
+      const paths = options.paths === undefined
+        ? undefined
+        : typeof options.paths === 'string' ? [options.paths] : options.paths
+      const subscription: ActiveSubscription = {
+        ...(events === undefined ? {} : { events }),
+        ...(paths === undefined ? {} : { paths }),
+        exact: options.exact ?? false,
+        callback: options.callback,
+      }
+      listeners.add(subscription)
       return () => {
-        listeners.delete(listener)
+        listeners.delete(subscription)
       }
     },
 

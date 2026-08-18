@@ -1,6 +1,6 @@
 # Guide
 
-Install → bind host form → submit. Modes, arrays, linkage, Zod, custom UI.
+Install → bind host form → submit. Modes, arrays, linkage, schema validation, custom UI.
 
 ## Install
 
@@ -20,18 +20,22 @@ pnpm add @vformjs/ant-design-vue ant-design-vue vue
 # Custom UI only
 pnpm add @vformjs/vue vue
 
-# Optional schema validation
+# Optional generic schema bridge
+pnpm add @vformjs/schema
+
+# Optional Zod-specific rules and resolver
 pnpm add @vformjs/zod zod
 ```
 
 | Package | You import |
 |---------|------------|
-| `@vformjs/element-plus` | `useElForm`, `r`, `useZodForm` |
+| `@vformjs/element-plus` | `useElForm`, `r`, schema hooks from `/schema` or `/zod` |
 | `@vformjs/element-ui` | same for Vue 2.7 |
-| `@vformjs/naive-ui` | `useNaiveForm`, `r`, `useZodForm` |
-| `@vformjs/ant-design-vue` | `useAntdForm`, `r`, `useZodForm` |
+| `@vformjs/naive-ui` | `useNaiveForm`, `r`, schema hooks from subpaths |
+| `@vformjs/ant-design-vue` | `useAntdForm`, `r`, schema hooks from subpaths |
 | `@vformjs/vue` | `useForm`, `defineAdapter`, `r` |
 | `@vformjs/zod` | `useZodForm` (or via UI package) |
+| `@vformjs/schema` | Standard Schema resolver and `useSchemaForm` |
 | `@vformjs/core` | transitive — rarely direct |
 
 ## One hook per UI
@@ -425,10 +429,13 @@ const form = useElForm({
 ```ts
 const contacts = form.list<{ name: string, phone: string }>('contacts', {
   defaultItem: () => ({ name: '', phone: '' }),
+  rules: { type: 'array', min: 1, message: 'Add at least one contact' },
+  focus: 'name',
 })
 ```
 
 ```vue
+<el-form-item v-bind="form.item('contacts')" />
 <div v-for="row in contacts.fields" :key="row.key">
   <el-form-item :prop="`contacts.${row.index}.name`">
     <el-input v-model="form.model.contacts[row.index].name" />
@@ -436,6 +443,9 @@ const contacts = form.list<{ name: string, phone: string }>('contacts', {
   <el-button @click="contacts.remove(row.index)">Remove</el-button>
 </div>
 <el-button @click="contacts.append()">Add</el-button>
+<el-button @click="contacts.insert(0, undefined, { focus: 'phone' })">
+  Add phone first
+</el-button>
 ```
 
 API: `append` · `prepend` · `insert` · `remove` · `move` · `replace` · `update` · `clear` · `fields`.
@@ -445,6 +455,10 @@ down; `append` / `prepend` / `move` / `replace` remap the rest instead of
 clearing the whole array. `update(index, partial)` only touches the leaves it
 assigns. Row keys stay stable across `load('edit', record)` and `reset()`, so a
 list is patched rather than torn down.
+
+`rules` register on the array root; mount `form.item('contacts')` to show their
+host feedback. `focus` is a relative child path used after append, prepend, and
+insert. Override it per action or pass `{ focus: false }`.
 
 ## Composed forms
 
@@ -484,6 +498,34 @@ the previous record. The loaded record becomes the clean baseline, so
 
 Errors are grouped by section. The first invalid member owns scrolling. No
 provide/inject registration or UI-specific parent wrapper is required.
+
+## Standard Schema
+
+Use any Standard Schema-compatible object schema through the same typed
+resolver contract. Zod is used here only as one compatible schema library:
+
+```ts
+import { z } from 'zod'
+import { useSchemaForm } from '@vformjs/element-plus/schema'
+
+const schema = z.object({
+  email: z.email(),
+  age: z.coerce.number().min(0),
+})
+
+const form = useSchemaForm({
+  schema,
+  defaults: { email: '', age: '0' },
+  onSubmit: async (values) => {
+    // Input is inferred from the schema; values is the transformed output.
+    await api.save(values)
+  },
+})
+```
+
+The `/schema` entry handles submit and explicit validation and projects schema
+issues through `form.item(path)`. Use the Zod-specific `/zod` entry when host
+blur/change validation also needs generated Zod rules.
 
 ## Zod
 
@@ -533,8 +575,8 @@ const form = useNaiveForm({
 </n-form>
 ```
 
-Use `name` on Ant Design Vue fields. Import schema-aware entries from
-`@vformjs/naive-ui/zod` or `@vformjs/ant-design-vue/zod`.
+Use `name` on Ant Design Vue fields. Import generic schema entries from each
+official package's `/schema` subpath, or Zod-specific entries from `/zod`.
 
 For another host with form-level rules and a validation instance, use
 `defineAdapter` from `@vformjs/vue`. The adapter should only bridge the host's

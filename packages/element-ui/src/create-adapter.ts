@@ -16,6 +16,12 @@ interface ElementUiFormInstance {
   fields?: Array<{ prop?: string, $el?: Element }>
 }
 
+function focusFirst(root?: Element): void {
+  root?.querySelector<HTMLElement>(
+    'input:not([disabled]),textarea:not([disabled]),select:not([disabled]),button:not([disabled]),[tabindex]:not([tabindex="-1"])',
+  )?.focus()
+}
+
 function fieldsToErrors(fields: unknown): FormErrors {
   if (!fields || typeof fields !== 'object')
     return {}
@@ -127,6 +133,10 @@ export function createElementUiAdapter(): FormHostAdapter {
     scrollToField(path) {
       const field = host?.fields?.find(item => item.prop != null && String(item.prop) === path)
       field?.$el?.scrollIntoView({ block: 'center' })
+    },
+    focusField(path) {
+      const field = host?.fields?.find(item => item.prop != null && String(item.prop) === path)
+      focusFirst(field?.$el)
     },
     getItemProps(path, error) {
       return {

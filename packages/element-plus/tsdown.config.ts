@@ -1,7 +1,7 @@
 import { defineConfig } from 'tsdown'
 
 export default defineConfig({
-  entry: ['src/index.ts', 'src/use-zod-form.ts'],
+  entry: ['src/index.ts', 'src/use-zod-form.ts', 'src/use-schema-form.ts'],
   tsconfig: 'tsconfig.build.json',
   format: ['esm', 'cjs'],
   dts: { generator: 'oxc' },
@@ -13,6 +13,7 @@ export default defineConfig({
     '@vformjs/core',
     '@vformjs/vue',
     '@vformjs/zod',
+    '@vformjs/schema',
   ],
   outExtensions({ format }) {
     return { js: format === 'cjs' ? '.cjs' : '.js' }

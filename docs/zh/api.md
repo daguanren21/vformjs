@@ -15,9 +15,11 @@ import {
   type UseFormReturn,
 } from '@vformjs/element-plus'
 import { useZodForm } from '@vformjs/element-plus/zod'
+import { useSchemaForm } from '@vformjs/element-plus/schema'
 ```
 
-Naive UI 使用 `useNaiveForm`，Ant Design Vue 使用 `useAntdForm`；两个包都提供 `/zod` 子路径。
+Naive UI 使用 `useNaiveForm`，Ant Design Vue 使用 `useAntdForm`；各官方包
+都提供通用 `/schema` 和 Zod 专用 `/zod` 子路径。
 
 ## 一个表单入口
 
@@ -79,9 +81,12 @@ import {
 |---|---|
 | `model` | 响应式表单模型 |
 | `host` | 统一绑定宿主的 `ref`、`model`、`rules` |
+| `validating` | resolver 或宿主校验执行中 |
 | `item(path)` | 映射宿主字段属性与接口错误 |
 | `errors` | 响应式 core / 接口错误 |
 | `submitting` | submit 执行中 |
+| `submitCount` | 最近一次全量 reset 或 load 后的逻辑提交次数 |
+| `submitOk` | 最近一次提交是否成功完成 |
 | `dirty` | 当前值是否偏离重置基线 |
 | `changedPaths` | 发生变化的 dotted paths |
 | `mode` | `create` / `edit` / `detail` |
@@ -90,6 +95,7 @@ import {
 | `load(mode, values?)` | 切换模式；edit/detail 数据成为 clean baseline |
 | `submit(handler?)` | 校验、转换并执行提交 |
 | `reset(paths?)` | 全量或按路径恢复基线 |
+| `subscribe(options)` | 按事件类型和 value/meta 路径订阅 |
 
 ## 值与基线
 
@@ -123,6 +129,24 @@ const email = form.field('profile.email') // WritableComputedRef<string>
 
 `explicit` 模式不做整棵模型的 deep watch / clone / diff。字段必须通过
 `form.field`、`form.set` 或 `form.list` 更新。
+
+## 精确订阅
+
+```ts
+const stop = form.subscribe({
+  events: ['values', 'meta'],
+  paths: ['profile', 'members.*.email'],
+  callback(event) {
+    console.log(event)
+  },
+})
+
+stop()
+```
+
+`paths` 支持具体前缀和 wildcard 路径；`exact: true` 关闭父子路径匹配。
+只配置 `paths` 时，仅接收 values 和 meta 事件。`reset`、`submit-end`
+等全局生命周期事件必须通过 `events` 显式选择。
 
 ## 草稿
 
@@ -160,11 +184,20 @@ form.load('detail', detail)
 ```ts
 const validated = await form.validate()
 const emailResult = await form.validateField('email')
+const rowResult = await form.validateField('members.*.email')
 const submitted = await form.submit()
 
 form.clearValidate()
 form.clearValidate(['email', 'name'])
 ```
+
+`validateField()` 接受具体路径和 wildcard 路径。比如
+`members.*.email` 会按当前数组展开为每一行的邮箱字段，不需要业务代码
+手工拼接行下标。
+
+按路径校验成功时返回当前输入模型，不会声称整张表单已经完成 transform。
+输入输出类型不同时，只有无参数 `validate()` 或 `submit()` 返回 resolver
+转换后的完整输出。
 
 返回值：
 
@@ -218,6 +251,10 @@ type SubmitResult<T, E = never> =
 重复调用 `submit()` 默认复用正在执行的 Promise，handler 只运行一次；
 只有明确设置 `submitPolicy: 'parallel'` 才会并发提交。
 
+`submitCount` 按逻辑提交计数，复用同一个 Promise 的重复调用只计一次。
+新提交开始时 `submitOk` 立即变回 `false`，只有校验和 handler 都成功后才
+变为 `true`；全量 `reset()` 或 `load()` 会清空这两个状态。
+
 ## 接口错误
 
 ```ts
@@ -236,16 +273,22 @@ form.scrollToFirstError()
 ```ts
 const list = form.list('contacts', {
   defaultItem: () => ({ name: '', phone: '' }),
+  rules: { type: 'array', min: 1, message: '至少添加一位联系人' },
+  focus: 'name',
 })
 
 list.append()
-list.prepend()
-list.insert(1)
+list.prepend(undefined, { focus: false })
+list.insert(1, undefined, { focus: 'phone' })
 list.remove(0)
 list.move(1, 0)
 list.update(0, { name: 'Lin' })
 list.clear()
 ```
+
+
+`rules` 注册在数组根路径；挂载 `form.item('contacts')` 显示错误。`focus`
+是新增行内的相对路径，在宿主挂载后执行。
 
 数组规则可使用通配路径，只声明一次：
 
@@ -271,13 +314,17 @@ const group = useFormGroup({
 })
 
 group.dirty
+group.validating
 group.changedPaths
+group.submitCount
+group.submitOk
 await group.validate()
 await group.submit(async values => api.save(values))
 group.reset()
 ```
 
-每个成员保留自己的宿主和错误；group 聚合校验、滚动、提交、dirty 与 reset。
+每个成员保留自己的宿主和错误；group 聚合校验、滚动、提交、dirty 与
+reset。`submitCount` 和 `submitOk` 的 reset / load 语义与单个 form 一致。
 
 ## 联动
 

@@ -63,6 +63,27 @@ describe('useForm modes', () => {
     expect(form.model.age).toBe(20)
     expect(form.model.note).toBe('')
   })
+  it('loads edit values atomically without publishing the previous baseline', () => {
+    const form = useForm({
+      defaultValues: { name: '', age: 0 },
+    })
+    const valueEvents: string[][] = []
+    form.subscribe({
+      events: 'values',
+      callback(event) {
+        if (event.type === 'values')
+          valueEvents.push(event.paths)
+      },
+    })
+
+    form.load('edit', { name: 'Ada', age: 18 })
+
+    expect(valueEvents).toEqual([['*']])
+    expect(form.model).toEqual({ name: 'Ada', age: 18 })
+    expect(form.submitCount).toBe(0)
+    expect(form.submitOk).toBe(false)
+  })
+
   it('projects server errors and direct model dirty state reactively', async () => {
     const form = useForm({
       defaultValues: { name: '', profile: { city: '' } },
@@ -87,9 +108,12 @@ describe('useForm modes', () => {
       defaultValues: { first: '', second: '' },
     })
     const valueEvents: string[][] = []
-    const unsubscribe = form.raw.subscribe((event) => {
-      if (event.type === 'values')
-        valueEvents.push(event.paths)
+    const unsubscribe = form.raw.subscribe({
+      events: 'values',
+      callback(event) {
+        if (event.type === 'values')
+          valueEvents.push(event.paths)
+      },
     })
 
     form.model.first = 'one'
@@ -172,5 +196,23 @@ describe('useForm modes', () => {
       prop: 'email',
       error: 'already used',
     })
+  })
+
+  it('projects concise submit state and clears it when another record loads', async () => {
+    const form = useForm({
+      defaultValues: { name: '' },
+    })
+
+    expect(form.submitCount).toBe(0)
+    expect(form.submitOk).toBe(false)
+
+    const result = await form.submit()
+    expect(result.ok).toBe(true)
+    expect(form.submitCount).toBe(1)
+    expect(form.submitOk).toBe(true)
+
+    form.load('edit', { name: 'Ada' })
+    expect(form.submitCount).toBe(0)
+    expect(form.submitOk).toBe(false)
   })
 })

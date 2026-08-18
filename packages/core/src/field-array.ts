@@ -4,12 +4,13 @@ import {
   getByPath,
   setByPath,
 } from './vendor/shared'
-import type { FieldArrayApi, FieldPath } from './types'
-
-export interface FieldArrayOptions<TItem extends object> {
-  defaultItem?: () => TItem
-  keyName?: string
-}
+import type {
+  FieldArrayActionOptions,
+  FieldArrayApi,
+  FieldArrayOptions,
+  FieldPath,
+  RuleInput,
+} from './types'
 
 /**
  * A structural array mutation, so the host can shift per-row state (errors,
@@ -57,6 +58,8 @@ export interface FieldArrayHost<T extends object> {
   notifyArray: (path: FieldPath, op: FieldArrayOp) => void
   /** Value-only change (`update`): notify the touched leaf paths. */
   notifyValues: (paths: FieldPath[]) => void
+  setRules?: (path: FieldPath, rules: RuleInput) => void
+  focusField?: (path: FieldPath) => void
   cloneValue?: <V>(value: V, path?: FieldPath) => V
 }
 
@@ -100,6 +103,22 @@ export function createFieldArray<
   opts: FieldArrayOptions<TItem> = {},
 ): FieldArrayApi<TItem> {
   const keyName = opts.keyName ?? 'key'
+  if (opts.rules !== undefined)
+    form.setRules?.(path, opts.rules)
+
+  const focusRow = (
+    index: number,
+    options?: FieldArrayActionOptions,
+  ) => {
+    const relativePath = options?.focus === false
+      ? undefined
+      : options?.focus ?? opts.focus
+    const focusField = form.focusField
+    if (!relativePath || !focusField)
+      return
+    const target = `${path}.${index}.${relativePath}`
+    queueMicrotask(() => focusField(target))
+  }
   const keys = new WeakMap<object, string>()
   const cloneValue = <V>(value: V, itemPath?: FieldPath): V =>
     form.cloneValue?.(value, itemPath) ?? deepClone(value)
@@ -127,22 +146,25 @@ export function createFieldArray<
     get fields() {
       return snapshotFields()
     },
-    append(item) {
+    append(item, options) {
       const list = ensureArray<TItem, T>(form, path)
       const index = list.length
       list.push(materialize(item, `${path}.${index}`))
       form.notifyArray(path, { type: 'insert', index })
+      focusRow(index, options)
     },
-    prepend(item) {
+    prepend(item, options) {
       const list = ensureArray<TItem, T>(form, path)
       list.unshift(materialize(item, `${path}.0`))
       form.notifyArray(path, { type: 'insert', index: 0 })
+      focusRow(0, options)
     },
-    insert(index, item) {
+    insert(index, item, options) {
       const list = ensureArray<TItem, T>(form, path)
       const i = Math.max(0, Math.min(index, list.length))
       list.splice(i, 0, materialize(item, `${path}.${i}`))
       form.notifyArray(path, { type: 'insert', index: i })
+      focusRow(i, options)
     },
     remove(index) {
       const list = ensureArray<TItem, T>(form, path)

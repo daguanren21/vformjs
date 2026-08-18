@@ -20,6 +20,8 @@ import {
 } from '@vformjs/element-plus'
 // Zod-only subpath:
 import { useZodForm } from '@vformjs/element-plus/zod'
+// Any Standard Schema-compatible library:
+import { useSchemaForm } from '@vformjs/element-plus/schema'
 
 // element-ui (Vue 2.7) — same surface from '@vformjs/element-ui'
 // Naive UI (Vue 3): useNaiveForm from root; useZodForm from '@vformjs/naive-ui/zod'
@@ -42,6 +44,8 @@ import {
 
 // Zod bridge without Element adapter
 import { useZodForm, zodToRules } from '@vformjs/zod'
+// Standard Schema bridge without a UI adapter
+import { createSchemaResolver, useSchemaForm } from '@vformjs/schema'
 ```
 
 `useForm` is the low-level custom-adapter hook. Its flat `UseFormReturn` is for
@@ -146,7 +150,10 @@ may be a single rule; arrays are only needed for multiple rules.
 | `model` | Live reactive model |
 | `host` | `{ ref, model, rules }` for `v-bind="form.host"` |
 | `item(path)` | Host field binding plus projected field errors |
+| `validating` | `true` while the active resolver or host validation is running |
 | `submitting` | `true` while submit is running |
+| `submitCount` | Logical submit attempts since the last full reset or load |
+| `submitOk` | Whether the latest submit attempt completed successfully |
 | `errors` | Reactive core and server errors |
 | `dirty` | Whether values differ from the reset baseline |
 | `changedPaths` | Changed dotted leaf paths |
@@ -155,6 +162,7 @@ may be a single rule; arrays are only needed for multiple rules.
 | `load(mode, values?)` | Switch mode; edit/detail values become the clean baseline |
 | `submit(handler?)` | Validate, transform, then execute the submit handler |
 | `reset(paths?)` | Restore all or selected paths to the baseline |
+| `subscribe(options)` | Filter form events by type and value/meta path |
 
 ### Values and fields
 
@@ -181,12 +189,32 @@ const cities = form.options('city')
 cities.loading
 ```
 
+### Subscriptions
+
+```ts
+const stop = form.subscribe({
+  events: ['values', 'meta'],
+  paths: ['profile', 'members.*.email'],
+  callback(event) {
+    console.log(event)
+  },
+})
+
+stop()
+```
+
+`paths` accepts concrete prefixes and wildcard paths. Set `exact: true` to
+disable parent/child prefix matching. With only `paths`, the subscription
+receives value and meta events. Global lifecycle events such as `reset` or
+`submit-end` are delivered only when explicitly selected through `events`.
+
 ### Validation and server errors
 
 | Method | Description |
 |---|---|
-| `validate(paths?)` | Run resolver and host validation |
-| `validateField(paths)` | Run the same pipeline for selected paths |
+| `validate()` | Run whole-form resolver and host validation; success may return transformed output |
+| `validate(paths)` | Validate selected concrete or wildcard paths and return the current input model |
+| `validateField(paths)` | Selected-path alias; `rows.*.code` expands against current rows |
 | `clearValidate(paths?)` | Clear host validation and internal errors |
 | `setErrors(errors)` | Replace server/core errors |
 | `setFieldError(path, messages)` | Set one field error |
@@ -194,6 +222,10 @@ cities.loading
 | `scrollToFirstError()` | Ask the host to scroll to the first field error |
 
 Changing a field clears stale core/server errors for that path.
+
+Selected-path validation never claims that the entire model was transformed.
+Use parameterless `validate()` or `submit()` when resolver output differs from
+the input model.
 
 ```ts
 type FormValidationResult<TInput, TOutput = TInput> =
@@ -256,6 +288,11 @@ Returning `void` or `submitOk()` means success. Expected failures should use
 join the active promise by default. Set `submitPolicy: 'parallel'` only when
 duplicate writes are intentional.
 
+`submitCount` increments once per logical attempt, so joined duplicate calls
+count once. `submitOk` resets to `false` when a new attempt starts and becomes
+`true` only after validation and the submit handler succeed. A full reset or
+`load()` clears both values.
+
 ### `OptionsSource`
 
 ```ts
@@ -288,9 +325,9 @@ which cascades to deeper dependents. `form.set` / `reset` /
 ```ts
 interface FieldArrayApi<TItem> {
   fields: ReadonlyArray<{ key: string, index: number }>
-  append: (item?: Partial<TItem> | TItem) => void
-  prepend: (item?: Partial<TItem> | TItem) => void
-  insert: (index: number, item?: Partial<TItem> | TItem) => void
+  append: (item?, options?: { focus?: FieldPath | false }) => void
+  prepend: (item?, options?: { focus?: FieldPath | false }) => void
+  insert: (index, item?, options?: { focus?: FieldPath | false }) => void
   remove: (index: number | number[]) => void
   move: (from: number, to: number) => void
   replace: (index: number, item: TItem) => void
@@ -301,7 +338,24 @@ interface FieldArrayApi<TItem> {
 
 `form.list` exposes `fields` as `ComputedRef` for templates.
 
-Options: `{ defaultItem?: () => TItem, keyName?: string }`.
+Options: `{ defaultItem?, keyName?, rules?, focus? }`.
+
+
+```ts
+const contacts = form.list<Contact>('contacts', {
+  defaultItem: () => ({ name: '', phone: '' }),
+  rules: { type: 'array', min: 1, message: 'Add at least one contact' },
+  focus: 'name',
+})
+
+contacts.append()
+contacts.insert(0, undefined, { focus: 'phone' })
+contacts.prepend(undefined, { focus: false })
+```
+
+`rules` are registered on the array root. Mount `form.item('contacts')` to show
+their host feedback. `focus` is relative to the inserted row and runs after the
+host mounts it.
 
 Rules and conditional rules accept wildcard row paths:
 
@@ -349,6 +403,9 @@ const group = useFormGroup({
 
 group.dirty
 group.changedPaths // ['base.name', 'details.items.0.amount']
+group.submitCount
+group.validating
+group.submitOk
 await group.validate()
 await group.submit(async ({ base, details }) => api.save({ ...base, details }))
 group.reset()
@@ -356,7 +413,8 @@ group.reset()
 
 Validation errors are keyed by member name. `submit` receives each member's
 validated output, scrolls the first invalid member, and uses the same
-`join` / `parallel` submit policy.
+`join` / `parallel` submit policy. `submitCount` and `submitOk` follow the same
+reset and load semantics as an individual form.
 
 ---
 

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { createForm } from '../src/index'
 import { shiftRowIndex } from '../src/field-array'
 
@@ -170,6 +170,38 @@ describe('field array keeps row errors with their rows', () => {
       'contacts.0.name': ['r0'],
       'contacts.2.name': ['r4'],
     })
+  })
+
+  it('registers root rules and focuses configured children after insertion', async () => {
+    const focusField = vi.fn()
+    const form = createForm<F>({
+      defaultValues: { title: '', contacts: [] },
+      adapter: {
+        validate: async () => ({ valid: true }),
+        focusField,
+      },
+    })
+    const list = form.fieldArray<Row>('contacts', {
+      defaultItem: () => ({ name: '', phone: '' }),
+      rules: { type: 'array', min: 1, message: 'add a contact' },
+      focus: 'name',
+    })
+
+    expect(form.getRules().contacts).toEqual([
+      { type: 'array', min: 1, message: 'add a contact' },
+    ])
+
+    list.append()
+    await settle()
+    expect(focusField).toHaveBeenLastCalledWith('contacts.0.name')
+
+    list.prepend(undefined, { focus: false })
+    await settle()
+    expect(focusField).toHaveBeenCalledOnce()
+
+    list.insert(1, undefined, { focus: 'phone' })
+    await settle()
+    expect(focusField).toHaveBeenLastCalledWith('contacts.1.phone')
   })
 
   it('move() keeps the generated key bound to its row', () => {

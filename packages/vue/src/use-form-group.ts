@@ -14,6 +14,7 @@ export interface FormGroupMemberState<TInput extends object = object> {
   readonly dirty: boolean
   readonly changedPaths: ReadonlyArray<string>
   readonly submitting: boolean
+  readonly validating: boolean
   reset: () => void
   /**
    * Present on Vue form members. The group forwards mode switches and record
@@ -160,7 +161,12 @@ export interface UseFormGroupReturn<TForms extends FormGroupMap> {
   readonly errors: FormGroupErrors<TForms>
   readonly dirty: boolean
   readonly changedPaths: ReadonlyArray<string>
+  readonly validating: boolean
   readonly submitting: boolean
+  /** Logical group submit attempts since the last reset or load. */
+  readonly submitCount: number
+  /** Whether the latest completed group submit attempt succeeded. */
+  readonly submitOk: boolean
   /** Mode of the first member that reports one. `group.load` keeps them aligned. */
   readonly mode: FormMode
   /**
@@ -213,6 +219,10 @@ export function useFormGroup<const TForms extends FormGroupMap>(
 ): UseFormGroupReturn<TForms> {
   const entries = Object.entries(forms) as Array<[string, FormGroupMember]>
   const localSubmissionCount = ref(0)
+  const submitCount = ref(0)
+  const submitOk = ref(false)
+  let submitSequence = 0
+  let latestSubmitId = 0
   let joinedSubmission:
     | Promise<FormGroupSubmitResult<TForms, unknown>>
     | undefined
@@ -240,6 +250,9 @@ export function useFormGroup<const TForms extends FormGroupMap>(
     }
     return grouped as FormGroupErrors<TForms>
   })
+  const validating = computed(() =>
+    entries.some(([, form]) => form.validating),
+  )
 
   const dirty = computed(() => entries.some(([, form]) => form.dirty))
   const submitting = computed(() =>
@@ -267,6 +280,10 @@ export function useFormGroup<const TForms extends FormGroupMap>(
     next: FormMode,
     values?: Partial<FormGroupInput<TForms>>,
   ) => {
+    submitCount.value = 0
+    submitOk.value = false
+    latestSubmitId = 0
+    joinedSubmission = undefined
     for (const [name, form] of entries) {
       form.load?.(
         next,
@@ -333,9 +350,15 @@ export function useFormGroup<const TForms extends FormGroupMap>(
       >
     }
 
-    const submission = (async (): Promise<
+    let submission!: Promise<FormGroupSubmitResult<TForms, TError>>
+    submission = (async (): Promise<
       FormGroupSubmitResult<TForms, TError>
     > => {
+      const submitId = ++submitSequence
+      latestSubmitId = submitId
+      submitCount.value += 1
+      submitOk.value = false
+      let attemptOk = false
       localSubmissionCount.value += 1
       try {
         const validation = await validate()
@@ -362,12 +385,19 @@ export function useFormGroup<const TForms extends FormGroupMap>(
           } as FormGroupSubmitResult<TForms, TError>
         }
 
+        attemptOk = true
         return validation
       }
       finally {
+        if (submitId === latestSubmitId)
+          submitOk.value = attemptOk
         localSubmissionCount.value -= 1
-        if ((options.submitPolicy ?? 'join') === 'join')
+        if (
+          (options.submitPolicy ?? 'join') === 'join'
+          && joinedSubmission === submission
+        ) {
           joinedSubmission = undefined
+        }
       }
     })()
 
@@ -380,6 +410,10 @@ export function useFormGroup<const TForms extends FormGroupMap>(
   }
 
   const reset = () => {
+    submitCount.value = 0
+    submitOk.value = false
+    latestSubmitId = 0
+    joinedSubmission = undefined
     for (const [, form] of entries)
       form.reset()
   }
@@ -390,7 +424,10 @@ export function useFormGroup<const TForms extends FormGroupMap>(
     errors,
     dirty,
     changedPaths,
+    validating,
     submitting,
+    submitCount,
+    submitOk,
     mode,
     load,
     validate,

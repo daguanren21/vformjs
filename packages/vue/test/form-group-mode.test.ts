@@ -91,6 +91,7 @@ describe('useFormGroup mode + load', () => {
       errors: {},
       dirty: false,
       changedPaths: [] as ReadonlyArray<string>,
+      validating: false,
       submitting: false,
       getValues: () => ({ note: '' }),
       setErrors: () => {},

@@ -7,6 +7,7 @@
       "@vformjs/core",
       "@vformjs/vue",
       "@vformjs/zod",
+      "@vformjs/schema",
       "@vformjs/element-plus",
       "@vformjs/element-ui",
       "@vformjs/naive-ui",

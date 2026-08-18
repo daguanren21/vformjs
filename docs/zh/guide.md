@@ -21,8 +21,8 @@ pnpm add @vformjs/naive-ui naive-ui vue
 # pnpm add @vformjs/ant-design-vue ant-design-vue vue
 ```
 
-对应入口是 `useNaiveForm`、`useAntdForm`；Zod 子路径分别是
-`@vformjs/naive-ui/zod`、`@vformjs/ant-design-vue/zod`。这两套包已经内置宿主 adapter。
+对应入口是 `useNaiveForm`、`useAntdForm`；通用 schema 子路径分别是
+`/schema`，Zod 专用子路径是 `/zod`。官方包已经内置对应宿主 adapter。
 
 ## 每套 UI 只用一个入口
 
@@ -208,9 +208,13 @@ const form = useElForm({
 ```ts
 const contacts = form.list<{ name: string, phone: string }>('contacts', {
   defaultItem: () => ({ name: '', phone: '' }),
+  rules: { type: 'array', min: 1, message: '至少添加一位联系人' },
+  focus: 'name',
 })
 
 contacts.append()
+contacts.insert(0, undefined, { focus: 'phone' })
+contacts.prepend(undefined, { focus: false })
 contacts.remove(0)
 contacts.move(1, 0)
 ```
@@ -220,8 +224,38 @@ contacts.move(1, 0)
 行规则可写成 `'contacts.*.name': r.required()`。条件规则回调接收
 `{ values, item, index, path }`，可读取当前行和展开后的宿主路径。
 
+`rules` 注册在数组根路径；挂载 `form.item('contacts')` 显示宿主错误。
+`focus` 是新增行内的相对字段路径，可按单次操作覆盖或设为 `false`。
+
 多个独立宿主表单使用 `useFormGroup({ base, details, fees })` 显式组合；
 group 聚合 `validate`、`submit`、`dirty`、`changedPaths`、错误滚动和 `reset`。
+
+## Standard Schema
+
+任何实现 Standard Schema 的对象 schema 都可以使用同一套类型化 resolver。
+下面只把 Zod 当作兼容实现之一：
+
+```ts
+import { z } from 'zod'
+import { useSchemaForm } from '@vformjs/element-plus/schema'
+
+const schema = z.object({
+  email: z.email(),
+  age: z.coerce.number().min(0),
+})
+
+const form = useSchemaForm({
+  schema,
+  defaults: { email: '', age: '0' },
+  onSubmit: async (values) => {
+    // 输入和转换后的输出类型都由 schema 推导。
+    await api.save(values)
+  },
+})
+```
+
+`/schema` 负责提交和显式校验，并通过 `form.item(path)` 显示 schema
+错误。宿主 blur/change 也需要自动生成 Zod rules 时，使用 `/zod`。
 
 ## Zod
 
@@ -243,9 +277,10 @@ const form = useZodForm({
 })
 ```
 
-Naive UI 与 Ant Design Vue 项目只需把导入路径换成各自官方包的 `/zod` 子路径。
+Naive UI 与 Ant Design Vue 项目把导入路径换成各自官方包的 `/schema`
+或 `/zod` 子路径即可。
 
-Zod 是 core 的唯一 resolver，支持异步 refine；UI adapter 只处理宿主绑定、错误展示和滚动。
+`/zod` 额外生成宿主交互规则并支持异步 refine；resolver 仍由 core 统一执行。
 
 ## Agent CLI
 

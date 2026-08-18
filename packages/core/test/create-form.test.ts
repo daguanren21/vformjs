@@ -7,6 +7,14 @@ import {
   type SubmitResult,
 } from '../src'
 
+function deferred() {
+  let resolve!: () => void
+  const promise = new Promise<void>((done) => {
+    resolve = done
+  })
+  return { promise, resolve }
+}
+
 describe('createForm', () => {
   it('initializes model from defaultValues', () => {
     const form = createForm({
@@ -332,12 +340,16 @@ describe('createForm', () => {
     const form = createForm({
       defaultValues: { name: 'Ada' },
     })
+    expect(form.submitCount).toBe(0)
+    expect(form.submitOk).toBe(false)
 
     const first = form.submit(firstHandler)
     const second = form.submit(ignoredHandler)
 
     expect(second).toBe(first)
     expect(form.submitting).toBe(true)
+    expect(form.submitCount).toBe(1)
+    expect(form.submitOk).toBe(false)
     await expect(first).resolves.toEqual({
       ok: true,
       values: { name: 'Ada' },
@@ -345,6 +357,40 @@ describe('createForm', () => {
     expect(firstHandler).toHaveBeenCalledTimes(1)
     expect(ignoredHandler).not.toHaveBeenCalled()
     expect(form.submitting).toBe(false)
+    expect(form.submitCount).toBe(1)
+    expect(form.submitOk).toBe(true)
+    form.reset()
+    expect(form.submitCount).toBe(0)
+    expect(form.submitOk).toBe(false)
+  })
+
+  it('detaches a pending joined submit when submit state resets', async () => {
+    const firstGate = deferred()
+    const secondGate = deferred()
+    const firstHandler = vi.fn(async () => firstGate.promise)
+    const secondHandler = vi.fn(async () => secondGate.promise)
+    const ignoredHandler = vi.fn()
+    const form = createForm({
+      defaultValues: { name: 'Ada' },
+    })
+
+    const first = form.submit(firstHandler)
+    form.resetSubmit()
+    const second = form.submit(secondHandler)
+
+    expect(second).not.toBe(first)
+    expect(form.submitCount).toBe(1)
+
+    firstGate.resolve()
+    await first
+    const joinedSecond = form.submit(ignoredHandler)
+    expect(joinedSecond).toBe(second)
+    expect(ignoredHandler).not.toHaveBeenCalled()
+
+    secondGate.resolve()
+    await second
+    expect(firstHandler).toHaveBeenCalledOnce()
+    expect(secondHandler).toHaveBeenCalledOnce()
   })
 
   it('supports explicit parallel submissions with stable lifecycle events', async () => {
@@ -356,9 +402,9 @@ describe('createForm', () => {
       submitPolicy: 'parallel',
     })
     const events: string[] = []
-    form.subscribe((event) => {
-      if (event.type === 'submit-start' || event.type === 'submit-end')
-        events.push(event.type)
+    form.subscribe({
+      events: ['submit-start', 'submit-end'],
+      callback: event => events.push(event.type),
     })
 
     const first = form.submit(handler)
@@ -366,10 +412,13 @@ describe('createForm', () => {
 
     expect(second).not.toBe(first)
     expect(form.submitting).toBe(true)
+    expect(form.submitCount).toBe(2)
+    expect(form.submitOk).toBe(false)
     await Promise.all([first, second])
     expect(handler).toHaveBeenCalledTimes(2)
     expect(events).toEqual(['submit-start', 'submit-end'])
     expect(form.submitting).toBe(false)
+    expect(form.submitOk).toBe(true)
   })
 
   it('returns typed API submit failures and stores their field errors', async () => {
@@ -404,6 +453,8 @@ describe('createForm', () => {
       email: ['Email already registered'],
     })
     expect(form.submitting).toBe(false)
+    expect(form.submitCount).toBe(1)
+    expect(form.submitOk).toBe(false)
   })
 
   it('infers one-off submit errors without widening the default result', async () => {
@@ -445,6 +496,7 @@ describe('createForm', () => {
     type Model = { code: string }
     const contexts: Array<{ signal: AbortSignal, validationId: number }> = []
     const onInvalid = vi.fn()
+    const events: string[] = []
     const form = createForm<Model>({
       defaultValues: { code: 'old' },
       resolver: async (values, context) => {
@@ -459,8 +511,14 @@ describe('createForm', () => {
           : { ok: true, values }
       },
     })
+    form.subscribe({
+      events: ['validate-start', 'validate-end'],
+      callback: event => events.push(event.type),
+    })
+    expect(form.validating).toBe(false)
 
     const validation = form.validate()
+    expect(form.validating).toBe(true)
     expect(contexts[0]?.validationId).toBe(1)
 
     form.setFieldValue('code', 'new')
@@ -474,6 +532,8 @@ describe('createForm', () => {
     })
     expect(form.getErrors()).toEqual({})
     expect(onInvalid).not.toHaveBeenCalled()
+    expect(form.validating).toBe(false)
+    expect(events).toEqual(['validate-start', 'validate-end'])
   })
   it('rejects rules when no validation host is bound', async () => {
     const onSubmit = vi.fn()
@@ -629,6 +689,111 @@ describe('createForm', () => {
     })
   })
 
+  it('expands wildcard paths before partial host validation', async () => {
+    const validatedPaths: Array<string[] | undefined> = []
+    const form = createForm({
+      defaultValues: {
+        summary: { code: '' },
+        variants: [{ code: '' }, { code: '' }],
+      },
+      adapter: {
+        validate: async (paths) => {
+          validatedPaths.push(paths ? [...paths] : undefined)
+          return { valid: true }
+        },
+      },
+    })
+
+    const result = await form.validateField([
+      'summary.code',
+      'variants.*.code',
+      'variants.0.code',
+    ])
+
+    expect(result.ok).toBe(true)
+    expect(validatedPaths).toEqual([[
+      'summary.code',
+      'variants.0.code',
+      'variants.1.code',
+    ]])
+  })
+
+  it('treats an empty wildcard selection as valid without calling the host', async () => {
+    const validate = vi.fn(async () => ({ valid: true }))
+    const form = createForm({
+      defaultValues: { variants: [] as Array<{ code: string }> },
+      adapter: { validate },
+    })
+
+    const result = await form.validateField('variants.*.code')
+
+    expect(result).toEqual({ ok: true, values: { variants: [] } })
+    expect(validate).not.toHaveBeenCalled()
+  })
+
+  it('filters subscriptions by event type and wildcard path', () => {
+    const form = createForm({
+      defaultValues: {
+        members: [{ email: '', name: '' }],
+      },
+    })
+    const emailEvents = vi.fn()
+    const pathEvents = vi.fn()
+    const resetEvents = vi.fn()
+    const unsubscribe = form.subscribe({
+      events: 'values',
+      paths: 'members.*.email',
+      exact: true,
+      callback: emailEvents,
+    })
+    form.subscribe({
+      paths: 'members.0',
+      callback: pathEvents,
+    })
+    form.subscribe({
+      events: 'reset',
+      paths: 'members.*.email',
+      callback: resetEvents,
+    })
+
+    form.setFieldValue('members.0.name', 'Ada')
+    form.setErrors({ 'members.0.email': ['invalid'] })
+    expect(emailEvents).not.toHaveBeenCalled()
+    expect(pathEvents).toHaveBeenCalledOnce()
+
+    form.setFieldValue('members.0.email', 'ada@example.com')
+    expect(emailEvents).toHaveBeenCalledOnce()
+    expect(pathEvents).toHaveBeenCalledTimes(2)
+
+    form.reset()
+    expect(resetEvents).toHaveBeenCalledOnce()
+    expect(emailEvents).toHaveBeenCalledTimes(2)
+
+    unsubscribe()
+    form.setFieldValue('members.0.email', 'next@example.com')
+    expect(emailEvents).toHaveBeenCalledTimes(2)
+  })
+
+  it('matches wildcard subscriptions across parent and child paths', () => {
+    const form = createForm({
+      defaultValues: {
+        members: [{ email: '', name: '' }],
+      },
+    })
+    const listener = vi.fn()
+    form.subscribe({
+      events: 'values',
+      paths: 'members.*',
+      callback: listener,
+    })
+
+    form.setFieldValue('members.0.email', 'ada@example.com')
+    form.setValues({
+      members: [{ email: 'next@example.com', name: 'Ada' }],
+    })
+
+    expect(listener).toHaveBeenCalledTimes(2)
+  })
 
   it('runs linkage on field change', async () => {
     const form = createForm({

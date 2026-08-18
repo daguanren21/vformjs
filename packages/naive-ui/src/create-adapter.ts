@@ -5,15 +5,28 @@ interface NaiveFormHost extends FormInst {
   $el?: ParentNode
 }
 
-function findScrollTarget(host: NaiveFormHost, path: string): Element | undefined {
+function findPathTarget(host: NaiveFormHost, path: string): Element | undefined {
   if (!host.$el)
     return undefined
   for (const item of host.$el.querySelectorAll<HTMLElement>('[data-vform-path]')) {
     if (item.dataset.vformPath === path)
       return item
   }
-  const invalid = host.$el.querySelector<HTMLElement>('.n-form-item-blank--error')
+  return undefined
+}
+
+function findScrollTarget(host: NaiveFormHost, path: string): Element | undefined {
+  const target = findPathTarget(host, path)
+  if (target)
+    return target
+  const invalid = host.$el?.querySelector<HTMLElement>('.n-form-item-blank--error')
   return invalid?.closest('.n-form-item') ?? invalid ?? undefined
+}
+
+function focusFirst(root?: Element): void {
+  root?.querySelector<HTMLElement>(
+    'input:not([disabled]),textarea:not([disabled]),select:not([disabled]),button:not([disabled]),[tabindex]:not([tabindex="-1"])',
+  )?.focus()
 }
 
 /**
@@ -60,6 +73,10 @@ export const createNaiveAdapter: DefineAdapterFactory<NaiveFormHost> = defineAda
 
   scrollToField(host, path) {
     findScrollTarget(host, path)?.scrollIntoView({ block: 'center' })
+  },
+
+  focusField(host, path) {
+    focusFirst(findPathTarget(host, path))
   },
 
   itemProps(path, error) {

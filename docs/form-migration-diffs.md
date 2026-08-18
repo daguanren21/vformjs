@@ -29,6 +29,7 @@ Pages commonly maintain the host ref, defaults, rules, reset order, and submit l
 ```vue
 <script setup lang="ts">
 import { reactive, shallowRef, useTemplateRef } from 'vue' // [!code --]
+import { shallowRef } from 'vue' // [!code ++]
 import type { FormInstance, FormRules } from 'element-plus' // [!code --]
 import { r, useElForm } from '@vformjs/element-plus' // [!code ++]
 
@@ -110,15 +111,12 @@ async function submit() {
 
 
 ## 2. Dynamic forms: define conditions, rows, and remote options together
-### Field dependencies split across templates and watchers
 ### Dependencies split across the page
 
 Visibility often lives in the template, dependent requests and loading flags in watchers, and dynamic rows in another set of temporary keys, index rules, and error cleanup. The field dependency graph is scattered across the page.
-### Let the form own the dependency graph
 ### Adopt vformjs
 
 ```ts
-import { r, useElForm } from '@vformjs/element-plus' // [!code ++]
 import { r, useElForm } from '@vformjs/element-plus' // [!code ++]
 
 interface ContactRow {
@@ -199,21 +197,14 @@ const availableRegions = form.options('region') // [!code ++]
 </template>
 ```
 ### Requests, row keys, and rules each have an owner
-### Review points
 - `options` resets the dependent value, aborts superseded requests, and keeps only the latest result. Business code still supplies the domain endpoint.
 - Keys from `contacts.fields` never enter submitted values. Existing field errors follow the matching business row through move and remove operations.
 - `when` controls visibility; conditional callbacks in `rules` control active validation. Hidden fields leave validation with their rules removed.
 
-### Whole-model tracking increases runtime cost
-
-### Cost that grows with the model
-
 ### Track fields explicitly
 
-### Adopt vformjs
 
 ```ts
-import { r, submitFail, useElForm } from '@vformjs/element-plus' // [!code ++]
 import type { FormInstance } from 'element-plus' // [!code --]
 import { r, submitFail, useElForm } from '@vformjs/element-plus' // [!code ++]
 
@@ -333,9 +324,6 @@ const baseModel = reactive({ title: '' }) // [!code --]
 const baseForm = useElForm({ defaults: { title: '' } }) // [!code ++]
 const linesForm = useElForm({ defaults: { lines: [] as LineRow[] } }) // [!code ++]
 const reviewForm = useElForm({ defaults: { remark: '' } }) // [!code ++]
-const baseForm = useElForm({ defaults: { title: '' } }) // [!code ++]
-const linesForm = useElForm({ defaults: { lines: [] as LineRow[] } }) // [!code ++]
-const reviewForm = useElForm({ defaults: { remark: '' } }) // [!code ++]
 const group = useFormGroup({ // [!code ++]
   base: baseForm, // [!code ++]
   lines: linesForm, // [!code ++]
@@ -379,10 +367,10 @@ function resetAll() {
   <ReviewSection :form="reviewForm" /> <!-- [!code ++] -->
 
   <el-button :loading="group.submitting" @click="submit">Submit all</el-button>
-### Each section remains independent
+</template>
 ```
 
-### Review points
+### Each section remains independent
 
 - Each member still binds its own UI Form and rules. `useFormGroup` does not create one giant host.
 
@@ -390,7 +378,204 @@ function resetAll() {
 - `group.load()` passes each value slice to the corresponding member. An omitted section returns to its factory defaults instead of retaining the previous record.
 - If a child already owns its form, expose the minimal `FormGroupMember` surface. Do not let the parent mutate private child state.
 
-## 5. Let an AI Agent handle the “manual” cases
+
+## 5. Atomic editors: collapse coupled sections into one form
+
+### Reconstructed public example
+
+The example below is synthetic. Routes, identifiers, field labels, API names,
+and payload shapes do not come from an application repository. It preserves
+only the engineering shape: several visual sections submit atomically, repeated
+rows have cross-row rules, and a small subset of fields is required for a
+server-side draft.
+
+Use this approach when the sections are not independent forms. If each section
+has its own submit boundary, keep the separate hosts and use `useFormGroup` as
+shown above.
+
+### Section refs and row-local hosts duplicate the lifecycle
+
+```ts
+import { computed, reactive, ref, useTemplateRef, watch } from 'vue' // [!code --]
+import { r, useElForm } from '@vformjs/element-plus' // [!code ++]
+
+interface VariantRow {
+  code: string
+  color: string
+  notes: string
+  attributes: Record<string, unknown>
+}
+
+interface EditorValues {
+  summary: {
+    code: string
+    notes: string
+  }
+  attributes: Record<string, unknown>
+  variants: VariantRow[]
+}
+
+interface EditorPayload { // [!code ++]
+  header: EditorValues['summary'] // [!code ++]
+  fields: Record<string, unknown> // [!code ++]
+  entries: VariantRow[] // [!code ++]
+} // [!code ++]
+ // [!code ++]
+function toPayload(values: EditorValues): EditorPayload { // [!code ++]
+  return { // [!code ++]
+    header: { ...values.summary }, // [!code ++]
+    fields: { ...values.attributes }, // [!code ++]
+    entries: values.variants.map(row => ({ // [!code ++]
+      code: row.code, // [!code ++]
+      color: row.color, // [!code ++]
+      notes: row.notes, // [!code ++]
+      attributes: { ...row.attributes }, // [!code ++]
+    })), // [!code ++]
+  } // [!code ++]
+} // [!code ++]
+
+const summaryRef = useTemplateRef<SectionHandle>('summaryRef') // [!code --]
+const attributesRef = useTemplateRef<SectionHandle>('attributesRef') // [!code --]
+const variantsRef = useTemplateRef<SectionHandle>('variantsRef') // [!code --]
+const submitting = ref(false) // [!code --]
+const savingDraft = ref(false) // [!code --]
+
+const summaryModel = reactive({ code: '', notes: '' }) // [!code --]
+const variantRows = ref<VariantRow[]>([]) // [!code --]
+const colorRules = computed(() => [{ // [!code --]
+  required: variantRows.value.some(row => Boolean(row.color)), // [!code --]
+  message: 'Required', // [!code --]
+}]) // [!code --]
+watch( // [!code --]
+  () => summaryModel.notes, // [!code --]
+  (notes) => { // [!code --]
+    variantRows.value.forEach((row) => { // [!code --]
+      row.notes = notes // [!code --]
+    }) // [!code --]
+  }, // [!code --]
+) // [!code --]
+
+const form = useElForm<EditorValues>({ // [!code ++]
+  defaults: { // [!code ++]
+    summary: { code: '', notes: '' }, // [!code ++]
+    attributes: {}, // [!code ++]
+    variants: [], // [!code ++]
+  }, // [!code ++]
+  tracking: 'explicit', // [!code ++]
+  rules: { // [!code ++]
+    'summary.code': r.required(), // [!code ++]
+    'variants.*.code': r.required(), // [!code ++]
+    'variants.*.color': ({ values }) => // [!code ++]
+      values.variants.some(row => row.color) ? r.required() : null, // [!code ++]
+  }, // [!code ++]
+  linkage: [ // [!code ++]
+    { // [!code ++]
+      deps: ['summary.notes'], // [!code ++]
+      run: ({ get, set, values }) => { // [!code ++]
+        const notes = String(get('summary.notes') ?? '') // [!code ++]
+        values.variants.forEach((_row, index) => { // [!code ++]
+          set(`variants.${index}.notes`, notes) // [!code ++]
+        }) // [!code ++]
+      }, // [!code ++]
+    }, // [!code ++]
+  ], // [!code ++]
+}) // [!code ++]
+
+const variants = form.list<VariantRow>('variants', { // [!code ++]
+  defaultItem: () => ({ // [!code ++]
+    code: '', // [!code ++]
+    color: '', // [!code ++]
+    notes: form.model.summary.notes, // [!code ++]
+    attributes: {}, // [!code ++]
+  }), // [!code ++]
+}) // [!code ++]
+
+async function submit() {
+  const results = await Promise.allSettled([ // [!code --]
+    summaryRef.value?.validate(), // [!code --]
+    attributesRef.value?.validate(), // [!code --]
+    variantsRef.value?.validate(), // [!code --]
+  ]) // [!code --]
+  if (results.some(result => result.status === 'rejected')) // [!code --]
+    return // [!code --]
+ // [!code --]
+  submitting.value = true // [!code --]
+  try { // [!code --]
+    await editorApi.save({ // [!code --]
+      summary: summaryRef.value?.getValues(), // [!code --]
+      attributes: attributesRef.value?.getValues(), // [!code --]
+      variants: variantsRef.value?.getValues(), // [!code --]
+    }) // [!code --]
+  } // [!code --]
+  finally { // [!code --]
+    submitting.value = false // [!code --]
+  } // [!code --]
+  await form.submit(values => editorApi.save(toPayload(values))) // [!code ++]
+}
+
+async function saveDraft() {
+  summaryRef.value?.clearValidate() // [!code --]
+  attributesRef.value?.clearValidate() // [!code --]
+  variantsRef.value?.clearValidate() // [!code --]
+  await Promise.all([ // [!code --]
+    summaryRef.value?.validateField('code'), // [!code --]
+    variantsRef.value?.validateField('code'), // [!code --]
+  ]) // [!code --]
+
+  const result = await form.validateField([ // [!code ++]
+    'summary.code', // [!code ++]
+    'variants.*.code', // [!code ++]
+  ]) // [!code ++]
+  if (!result.ok) // [!code ++]
+    return // [!code ++]
+
+  savingDraft.value = true
+  try {
+    await editorApi.saveDraft(toPayload(form.get()))
+  }
+  finally {
+    savingDraft.value = false
+  }
+}
+```
+
+```vue
+<template>
+  <SummarySection ref="summaryRef" /> <!-- [!code --] -->
+  <AttributesSection ref="attributesRef" /> <!-- [!code --] -->
+  <VariantsSection ref="variantsRef" /> <!-- [!code --] -->
+
+  <el-form v-bind="form.host"> <!-- [!code ++] -->
+    <SummarySection :form="form" /> <!-- [!code ++] -->
+    <AttributesSection :form="form" /> <!-- [!code ++] -->
+    <div v-for="row in variants.fields" :key="row.key"> <!-- [!code ++] -->
+      <VariantSection :form="form" :index="row.index" /> <!-- [!code ++] -->
+      <el-button @click="variants.remove(row.index)">Remove</el-button> <!-- [!code ++] -->
+    </div> <!-- [!code ++] -->
+  </el-form> <!-- [!code ++] -->
+
+  <el-button :loading="submitting" @click="submit">Submit</el-button> <!-- [!code --] -->
+  <el-button :loading="form.submitting" @click="submit">Submit</el-button> <!-- [!code ++] -->
+  <el-button :loading="savingDraft" @click="saveDraft">Save draft</el-button>
+</template>
+```
+
+### One owner, explicit boundaries
+
+- One host owns validation order, errors, loading, and first-error scrolling.
+- `form.list()` keeps row keys outside submitted values and remaps row errors
+  after insertion, removal, and movement.
+- Wildcard rules replace row-by-row validator registration. The conditional
+  color rule activates for every row after any row supplies a color.
+- `linkage` makes cross-section propagation explicit. Child sections render
+  fields; they no longer expose lifecycle methods through component refs.
+- `toPayload()` is the application-owned mapper defined above. Runtime field
+  renderers, uploads, calculations, and transport-specific serialization do
+  not move into vformjs.
+- A server-side draft is still an API action. `snapshotDraft()` is a local,
+  versioned snapshot and is not a replacement for that endpoint.
+
+## 6. Let an AI Agent handle the “manual” cases
 
 “Manual” in an audit report means a deterministic codemod cannot infer the
 semantics safely. It does **not** mean a person must type every edit. An Agent
@@ -455,6 +640,7 @@ pages. Keep host-native forms for search-only, read-only, or one/two-field UI.
 | One host, static rules, standard CRUD | Good first migration |
 | Conditional fields, dynamic rows, remote options | Map dependencies, then configure `when`, conditional `rules`, `options`, and `form.list()` |
 | Large table or deeply nested model | Set `tracking: 'explicit'` before wiring fields |
+| Coupled sections submitted atomically | Prefer one host; keep sections presentational and use `form.list()` for repeated rows |
 | Independently valid sections | One form per section, composed with `useFormGroup` |
 | Search-only, read-only, or one/two fields | Keep the host-native form; the benefit is usually too small |
 

@@ -33,6 +33,16 @@
         "types": "./dist/use-zod-form.d.cts",
         "default": "./dist/use-zod-form.cjs"
       }
+    },
+    "./schema": {
+      "import": {
+        "types": "./dist/use-schema-form.d.ts",
+        "default": "./dist/use-schema-form.js"
+      },
+      "require": {
+        "types": "./dist/use-schema-form.d.cts",
+        "default": "./dist/use-schema-form.cjs"
+      }
     }
   },
   "main": "./dist/index.cjs",
@@ -49,6 +59,7 @@
   },
   "dependencies": {
     "@vformjs/core": "workspace:^",
+    "@vformjs/schema": "workspace:^",
     "@vformjs/vue": "workspace:^",
     "@vformjs/zod": "workspace:^"
   },

@@ -2,6 +2,24 @@ import { defineAdapter, type DefineAdapterFactory } from '@vformjs/core'
 import type { FormInstance } from 'ant-design-vue/es/form'
 import type { NamePath } from 'ant-design-vue/es/form/interface'
 
+
+function findPathTarget(host: FormInstance, path: string): Element | undefined {
+  const root = host.$el as ParentNode | undefined
+  if (!root)
+    return undefined
+  for (const item of root.querySelectorAll<HTMLElement>('[data-vform-path]')) {
+    if (item.dataset.vformPath === path)
+      return item
+  }
+  return undefined
+}
+
+function focusFirst(root?: Element): void {
+  root?.querySelector<HTMLElement>(
+    'input:not([disabled]),textarea:not([disabled]),select:not([disabled]),button:not([disabled]),[tabindex]:not([tabindex="-1"])',
+  )?.focus()
+}
+
 function toNamePath(path: string): NamePath {
   return path.split('.').map(segment =>
     segment !== '' && String(Number(segment)) === segment
@@ -39,6 +57,10 @@ export const createAntdAdapter: DefineAdapterFactory<FormInstance> = defineAdapt
 
   scrollToField(host, path) {
     host.scrollToField(toNamePath(path))
+  },
+
+  focusField(host, path) {
+    focusFirst(findPathTarget(host, path))
   },
 
   itemProps(path, error) {

@@ -15,7 +15,13 @@ interface ElementPlusFormInstance {
   scrollToField?: (prop: string) => void
   resetFields?: (props?: string | string[]) => void
   /** Registered form items (Element Plus internal) */
-  fields?: Array<{ prop?: string | string[] }>
+  fields?: Array<{ prop?: string | string[], $el?: Element }>
+}
+
+function focusFirst(root?: Element): void {
+  root?.querySelector<HTMLElement>(
+    'input:not([disabled]),textarea:not([disabled]),select:not([disabled]),button:not([disabled]),[tabindex]:not([tabindex="-1"])',
+  )?.focus()
 }
 
 function fieldsToErrors(fields: unknown): FormErrors {
@@ -144,6 +150,14 @@ export function createElementPlusAdapter(): FormHostAdapter {
     },
     scrollToField(path) {
       host?.scrollToField?.(path)
+    },
+    focusField(path) {
+      const field = host?.fields?.find((item) => {
+        if (Array.isArray(item.prop))
+          return item.prop.map(String).join('.') === path
+        return item.prop != null && String(item.prop) === path
+      })
+      focusFirst(field?.$el)
     },
     getItemProps(path, error) {
       return {

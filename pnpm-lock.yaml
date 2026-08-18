@@ -6,6 +6,9 @@ settings:
 
 catalogs:
   default:
+    '@standard-schema/spec':
+      specifier: 1.1.0
+      version: 1.1.0
     '@vitejs/plugin-vue':
       specifier: 6.0.8
       version: 6.0.8
@@ -120,6 +123,9 @@ importers:
       '@vformjs/core':
         specifier: workspace:^
         version: link:../core
+      '@vformjs/schema':
+        specifier: workspace:^
+        version: link:../schema
       '@vformjs/vue':
         specifier: workspace:^
         version: link:../vue
@@ -191,6 +197,9 @@ importers:
       '@vformjs/core':
         specifier: workspace:^
         version: link:../core
+      '@vformjs/schema':
+        specifier: workspace:^
+        version: link:../schema
       '@vformjs/vue':
         specifier: workspace:^
         version: link:../vue
@@ -219,6 +228,9 @@ importers:
       '@vformjs/core':
         specifier: workspace:^
         version: link:../core
+      '@vformjs/schema':
+        specifier: workspace:^
+        version: link:../schema
       '@vformjs/vue':
         specifier: workspace:^
         version: link:../vue
@@ -247,6 +259,9 @@ importers:
       '@vformjs/core':
         specifier: workspace:^
         version: link:../core
+      '@vformjs/schema':
+        specifier: workspace:^
+        version: link:../schema
       '@vformjs/vue':
         specifier: workspace:^
         version: link:../vue
@@ -272,6 +287,31 @@ importers:
       zod:
         specifier: 'catalog:'
         version: 4.4.3
+
+  packages/schema:
+    dependencies:
+      '@standard-schema/spec':
+        specifier: 'catalog:'
+        version: 1.1.0
+      '@vformjs/core':
+        specifier: workspace:^
+        version: link:../core
+      '@vformjs/vue':
+        specifier: workspace:^
+        version: link:../vue
+    devDependencies:
+      tsdown:
+        specifier: 'catalog:'
+        version: 0.22.14(@volar/typescript@2.4.15)(typescript@7.0.2)
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.10(@types/node@26.1.2)(happy-dom@20.11.1)(vite@8.1.5(@types/node@26.1.2)(esbuild@0.28.1)(jiti@2.7.0)(sass-embedded@1.97.2)(sass@1.97.2)(yaml@2.9.0))
+      vue:
+        specifier: 'catalog:'
+        version: 3.5.40(typescript@7.0.2)
 
   packages/vue:
     dependencies:

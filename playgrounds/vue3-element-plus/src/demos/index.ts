@@ -1,4 +1,5 @@
 import type { Component } from 'vue'
+import AtomicEditorDemo from './AtomicEditorDemo.vue'
 import BasicDemo from './BasicDemo.vue'
 import ConditionalDemo from './ConditionalDemo.vue'
 import CrossFieldDemo from './CrossFieldDemo.vue'
@@ -17,6 +18,7 @@ export type DemoId =
   | 'rules'
   | 'conditional'
   | 'dynamic-list'
+  | 'atomic-editor'
   | 'cross-field'
   | 'zod'
   | 'zod-list'
@@ -65,6 +67,12 @@ export const demos: DemoMeta[] = [
     title: '动态数组',
     desc: 'form.list + fieldPath',
     component: DynamicListDemo,
+  },
+  {
+    id: 'atomic-editor',
+    title: '原子编辑页',
+    desc: '区块 + 联动 + 动态行 + 草稿',
+    component: AtomicEditorDemo,
   },
   {
     id: 'cross-field',

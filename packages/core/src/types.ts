@@ -82,6 +82,17 @@ export type FormResolver<
   | FormResult<TInput>
   | Promise<FormValidationResult<TInput, TOutput> | FormResult<TInput>>
 
+export interface FormValidate<TInput extends object, TOutput extends object> {
+  /** Whole-form validation may return transformed resolver output. */
+  (): Promise<FormValidationResult<TInput, TOutput> | FormResult<TInput>>
+  /** Selected-path validation returns the current input model. */
+  (paths: FieldPath | FieldPath[]): Promise<FormResult<TInput>>
+  /** Compatibility overload for an explicitly optional path variable. */
+  (
+    paths: FieldPath | FieldPath[] | undefined
+  ): Promise<FormValidationResult<TInput, TOutput> | FormResult<TInput>>
+}
+
 /** Configured API submission handler. */
 export type SubmitHandler<
   TInput extends object,
@@ -157,6 +168,7 @@ export interface FormHostAdapter {
   ) => Promise<HostValidateResult>
   clearValidate?: (paths?: FieldPath[]) => void
   scrollToField?: (path: FieldPath) => void
+  focusField?: (path: FieldPath) => void
   getItemProps?: (path: FieldPath, error?: string) => FormItemBinding
   /**
    * Extra props merged into `form.host`. Lets an adapter neutralize host quirks,
@@ -337,11 +349,25 @@ export interface CreateFormOptions<
   ) => void
 }
 
+export interface FieldArrayActionOptions {
+  /** Relative child path to focus after the row is mounted; false disables it. */
+  focus?: FieldPath | false
+}
+
+export interface FieldArrayOptions<TItem extends object> {
+  defaultItem?: () => TItem
+  keyName?: string
+  /** Host rules registered on the array root path. */
+  rules?: RuleInput
+  /** Default relative child path focused after append/prepend/insert. */
+  focus?: FieldPath
+}
+
 export interface FieldArrayApi<TItem extends object = Record<string, unknown>> {
   fields: ReadonlyArray<{ key: string, index: number }>
-  append: (item?: Partial<TItem> | TItem) => void
-  prepend: (item?: Partial<TItem> | TItem) => void
-  insert: (index: number, item?: Partial<TItem> | TItem) => void
+  append: (item?: Partial<TItem> | TItem, options?: FieldArrayActionOptions) => void
+  prepend: (item?: Partial<TItem> | TItem, options?: FieldArrayActionOptions) => void
+  insert: (index: number, item?: Partial<TItem> | TItem, options?: FieldArrayActionOptions) => void
   remove: (index: number | number[]) => void
   move: (from: number, to: number) => void
   replace: (index: number, item: TItem) => void
@@ -364,6 +390,8 @@ export interface FormApi<
   /** Dotted leaf paths that differ from the current reset baseline. */
   readonly changedPaths: ReadonlyArray<FieldPath>
 
+  /** Reset submit counters/outcome without mutating model values. */
+  resetSubmit: () => void
   getValues: (opts?: { hidden?: GetValuesMode }) => T
   setValues: (partial: DeepPartial<T>, opts?: { merge?: boolean }) => void
   setFieldValue: (path: FieldPath, value: unknown) => void
@@ -412,26 +440,30 @@ export interface FormApi<
   clearErrors: (paths?: FieldPath | FieldPath[]) => void
   clearValidate: (paths?: FieldPath | FieldPath[]) => void
 
-  validate: (
-    paths?: FieldPath | FieldPath[]
-  ) => Promise<FormValidationResult<T, TOutput> | FormResult<T>>
+  /**
+   * Validate the whole form or selected concrete/wildcard paths. Selected-path
+   * success returns the current input model; only whole-form validation may
+   * return transformed resolver output.
+   */
+  validate: FormValidate<T, TOutput>
+  /** Validate selected fields without transforming the whole model output. */
   validateField: (
     paths?: FieldPath | FieldPath[]
-  ) => Promise<FormValidationResult<T, TOutput> | FormResult<T>>
+  ) => Promise<FormResult<T>>
   submit: <TActionError = never>(
     handler?: SubmitAction<TOutput, TActionError, T, TSubmitError>,
   ) => Promise<SubmitResult<TOutput, TSubmitError | TActionError, T>>
 
   fieldArray: <TItem extends object = Record<string, unknown>>(
     path: FieldPath,
-    opts?: { defaultItem?: () => TItem, keyName?: string },
+    opts?: FieldArrayOptions<TItem>,
   ) => FieldArrayApi<TItem>
 
   bindAdapter: (adapter: FormHostAdapter) => void
   bindHost: (instance: unknown) => void
 
-  /** Subscribe to value/meta/rules changes. Returns unsubscribe. */
-  subscribe: (listener: (event: FormEvent) => void) => () => void
+  /** Subscribe to filtered form events. Returns unsubscribe. */
+  subscribe: (options: FormSubscription) => () => void
 
   /**
    * Notify that model paths changed outside setFieldValue
@@ -442,7 +474,12 @@ export interface FormApi<
   /** Props for host form: `{ model, rules }`. */
   getFormProps: () => { model: T, rules: FormRulesMap }
 
+  readonly validating: boolean
   readonly submitting: boolean
+  /** Logical submit attempts since the last full reset or load. */
+  readonly submitCount: number
+  /** Whether the latest completed submit attempt succeeded. */
+  readonly submitOk: boolean
 }
 
 export type FormEvent =
@@ -452,4 +489,20 @@ export type FormEvent =
   | { type: 'errors' }
   | { type: 'dirty' }
   | { type: 'reset' }
-  | { type: 'submit-start' | 'submit-end' }
+  | { type: 'validate-start' | 'validate-end' }
+  | { type: 'submit-start' | 'submit-end' | 'submit-state' }
+
+export type FormEventType = FormEvent['type']
+
+export interface FormSubscription {
+  /** Event types to receive. Omit to receive every event. */
+  events?: FormEventType | ReadonlyArray<FormEventType>
+  /**
+   * Scope value/meta events to concrete or wildcard paths. When `events` is
+   * omitted, path subscriptions receive only value/meta events.
+   */
+  paths?: FieldPath | ReadonlyArray<FieldPath>
+  /** Require an exact concrete or wildcard path match. Default false. */
+  exact?: boolean
+  callback: (event: FormEvent) => void
+}

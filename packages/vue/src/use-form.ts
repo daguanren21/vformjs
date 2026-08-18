@@ -7,6 +7,7 @@ import {
   type CreateFormOptions,
   type FieldOptionsState,
   type FieldArrayApi,
+  type FieldArrayOptions,
   type FieldPath,
   type FormApi,
   type FormEvent,
@@ -88,7 +89,12 @@ export interface UseFormReturn<
     ): WritableComputedRef<TypedFieldValue<T, Path>>
     <TValue = unknown>(path: FieldPath): WritableComputedRef<TValue>
   }
+  validating: boolean
   submitting: boolean
+  /** Logical submit attempts since the last reset or load. */
+  submitCount: number
+  /** Whether the latest completed submit attempt succeeded. */
+  submitOk: boolean
   /** Reactive snapshot of core and server-side field errors. */
   errors: Readonly<FormErrors>
   /** True when the model differs from the current reset baseline. */
@@ -132,6 +138,7 @@ export interface UseFormReturn<
   snapshotDraft: FormApi<T, TSubmitError, TOutput>['snapshotDraft']
   restoreDraft: FormApi<T, TSubmitError, TOutput>['restoreDraft']
   getMeta: FormApi<T, TSubmitError, TOutput>['getMeta']
+  subscribe: FormApi<T, TSubmitError, TOutput>['subscribe']
   fieldArray: FormApi<T, TSubmitError, TOutput>['fieldArray']
   hidden: (path: FieldPath) => ComputedRef<boolean>
   /** Reactive load state for an `optionSources` entry. */
@@ -139,7 +146,7 @@ export interface UseFormReturn<
   reloadOptions: FormApi<T, TSubmitError, TOutput>['reloadOptions']
   list: <TItem extends object = Record<string, unknown>>(
     path: FieldPath,
-    opts?: { defaultItem?: () => TItem, keyName?: string },
+    opts?: FieldArrayOptions<TItem>,
   ) => FieldArrayApi<TItem>
   raw: FormApi<T, TSubmitError, TOutput>
 }
@@ -203,7 +210,10 @@ export type UseApplicationFormReturn<
   | 'host'
   | 'item'
   | 'field'
+  | 'validating'
   | 'submitting'
+  | 'submitCount'
+  | 'submitOk'
   | 'errors'
   | 'dirty'
   | 'changedPaths'
@@ -218,6 +228,7 @@ export type UseApplicationFormReturn<
   | 'list'
   | 'validate'
   | 'validateField'
+  | 'subscribe'
   | 'clearValidate'
   | 'setErrors'
   | 'setFieldError'
@@ -302,7 +313,10 @@ export function useForm<
   })
 
   const rules = ref(form.getRules()) as Ref<FormRulesMap>
+  const validating = ref(false)
   const submitting = ref(false)
+  const submitCount = ref(form.submitCount)
+  const submitOk = ref(form.submitOk)
   const errors = shallowRef<FormErrors>(form.getErrors())
   const dirty = shallowRef(form.dirty)
   const changedPaths = shallowRef<ReadonlyArray<FieldPath>>(form.changedPaths)
@@ -384,34 +398,44 @@ export function useForm<
     queueMicrotask(flushModelSync)
   }
 
-  const unsub = form.subscribe((event: FormEvent) => {
-    // Do NOT resync rules on every values event — Element validateOnRuleChange
-    // would revalidate the whole form on each keystroke.
-    if (event.type === 'rules' || event.type === 'reset')
-      syncRules()
-    if (event.type === 'meta' || event.type === 'reset')
-      metaVersion.value += 1
-    if (event.type === 'values') {
-      if (modelSyncQueued) {
-        for (const path of event.paths)
-          observedCorePaths.add(path)
+  const unsub = form.subscribe({
+    callback(event: FormEvent) {
+      // Do NOT resync rules on every values event — Element validateOnRuleChange
+      // would revalidate the whole form on each keystroke.
+      if (event.type === 'rules' || event.type === 'reset')
+        syncRules()
+      if (event.type === 'meta' || event.type === 'reset')
+        metaVersion.value += 1
+      if (event.type === 'values') {
+        if (modelSyncQueued) {
+          for (const path of event.paths)
+            observedCorePaths.add(path)
+        }
+        else if (!flushingModelSync) {
+          refreshSnapshot()
+        }
       }
-      else if (!flushingModelSync) {
+      if (event.type === 'reset')
         refreshSnapshot()
+      if (event.type === 'errors')
+        errors.value = form.getErrors()
+      if (event.type === 'validate-start')
+        validating.value = true
+      if (event.type === 'validate-end')
+        validating.value = false
+      if (event.type === 'dirty') {
+        dirty.value = form.dirty
+        changedPaths.value = form.changedPaths
       }
-    }
-    if (event.type === 'reset')
-      refreshSnapshot()
-    if (event.type === 'errors')
-      errors.value = form.getErrors()
-    if (event.type === 'dirty') {
-      dirty.value = form.dirty
-      changedPaths.value = form.changedPaths
-    }
-    if (event.type === 'submit-start')
-      submitting.value = true
-    if (event.type === 'submit-end')
-      submitting.value = false
+      if (event.type === 'submit-start')
+        submitting.value = true
+      if (event.type === 'submit-end')
+        submitting.value = false
+      if (event.type === 'submit-state') {
+        submitCount.value = form.submitCount
+        submitOk.value = form.submitOk
+      }
+    },
   })
 
   const stopModelWatch = modelTracking === 'deep'
@@ -470,7 +494,7 @@ export function useForm<
 
   const list = <TItem extends object = Record<string, unknown>>(
     path: FieldPath,
-    opts?: { defaultItem?: () => TItem, keyName?: string },
+    opts?: FieldArrayOptions<TItem>,
   ): FieldArrayApi<TItem> => form.fieldArray<TItem>(path, opts)
 
   const setMode = (next: FormMode) => {
@@ -486,7 +510,7 @@ export function useForm<
     }
 
     // edit / detail: start from factory defaults, then apply payload
-    // so omitted keys from record B never leak values from record A
+    form.resetSubmit()
     const createDefaults = form.getCreateDefaults()
     const nextValues = Object.assign(
       {},
@@ -521,7 +545,10 @@ export function useForm<
     host,
     item,
     field,
+    validating,
     submitting,
+    submitCount,
+    submitOk,
     errors,
     dirty,
     changedPaths,
@@ -536,6 +563,7 @@ export function useForm<
     reset: form.reset,
     setFieldValue: form.setFieldValue,
     getFieldValue: form.getFieldValue,
+    subscribe: form.subscribe,
     setValues: form.setValues,
     getValues: form.getValues,
     setErrors: form.setErrors,
@@ -678,8 +706,17 @@ export function useApplicationForm<
     },
     item: form.item,
     field: form.field,
+    get validating() {
+      return form.validating
+    },
     get submitting() {
       return form.submitting
+    },
+    get submitCount() {
+      return form.submitCount
+    },
+    get submitOk() {
+      return form.submitOk
     },
     get errors() {
       return form.errors
@@ -693,6 +730,7 @@ export function useApplicationForm<
     get mode() {
       return form.mode
     },
+    subscribe: form.subscribe,
     get readonly() {
       return form.readonly
     },

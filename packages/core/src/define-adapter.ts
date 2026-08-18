@@ -37,6 +37,7 @@ export interface DefineAdapterOptions<THost = unknown> {
   clearValidate?: (host: THost, paths?: FieldPath[]) => void
 
   scrollToField?: (host: THost, path: FieldPath) => void
+  focusField?: (host: THost, path: FieldPath) => void
   itemProps?: (path: FieldPath, error?: string) => FormItemBinding
 
   /** After form.reset / load('create'). Usually same as clearValidate. */
@@ -287,6 +288,12 @@ export function defineAdapter<THost = unknown>(
         if (host == null || !options.scrollToField)
           return
         options.scrollToField(host, path)
+      },
+
+      focusField(path: FieldPath) {
+        if (host == null || !options.focusField)
+          return
+        options.focusField(host, path)
       },
 
       getItemProps(path, error) {

@@ -20,6 +20,8 @@ const form = useElForm({
 
 const members = form.list('members', {
   defaultItem: () => ({ name: '', role: 'dev' }),
+  rules: { type: 'array', min: 1, message: '至少添加一位成员' },
+  focus: 'name',
 })
 
 async function onSubmit() {
@@ -37,6 +39,14 @@ async function onSubmit() {
     <el-form v-bind="form.host" label-width="100px" style="max-width: 640px">
       <el-form-item label="项目名" prop="project">
         <el-input v-model="form.model.project" />
+      </el-form-item>
+
+      <el-form-item
+        v-if="members.fields.length === 0"
+        v-bind="form.item('members')"
+        label="成员"
+      >
+        请至少添加一位成员
       </el-form-item>
 
       <el-form-item

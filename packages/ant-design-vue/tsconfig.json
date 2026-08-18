@@ -4,7 +4,8 @@
     "paths": {
       "@vformjs/core": ["../core/src/index.ts"],
       "@vformjs/vue": ["../vue/src/index.ts"],
-      "@vformjs/zod": ["../zod/src/index.ts"]
+      "@vformjs/zod": ["../zod/src/index.ts"],
+      "@vformjs/schema": ["../schema/src/index.ts"]
     }
   },
   "include": ["src", "test"]
