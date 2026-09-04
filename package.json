@@ -57,7 +57,7 @@
     "oxlint": "1.76.0",
     "turbo": "^2.5.4",
     "typescript": "catalog:",
-    "vitepress": "2.0.0-alpha.18",
+    "vitepress": "2.0.0-alpha.20",
     "vitest": "catalog:",
     "vue": "catalog:",
     "vue-demi": "catalog:",
