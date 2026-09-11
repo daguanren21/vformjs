@@ -42,7 +42,7 @@
     "sass-embedded": "1.97.2",
     "unplugin-auto-import": "0.18.6",
     "unplugin-vue-setup-extend-plus": "1.0.1",
-    "vite": "6.4.1",
+    "vite": "6.4.3",
     "vite-plugin-compression": "0.5.1",
     "vite-plugin-svg-icons": "2.0.1"
   },
