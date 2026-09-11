@@ -411,8 +411,8 @@ importers:
         specifier: 3.5.26
         version: 3.5.26(typescript@7.0.2)
       vue-cropper:
-        specifier: 1.1.1
-        version: 1.1.1
+        specifier: 1.1.4
+        version: 1.1.4
       vue-router:
         specifier: 4.6.4
         version: 4.6.4(vue@3.5.26(typescript@7.0.2))
@@ -5181,8 +5181,8 @@ packages:
   vue-component-type-helpers@3.3.8:
     resolution: {integrity: sha512-troqCMmQodQDqUqn63NQaFi+CDSclSe7sc8VEBFqf5GFLqmGR2Ph3P2WEC7qwpRVyEWsTi/aAr4vyOe/B1hU3g==}
 
-  vue-cropper@1.1.1:
-    resolution: {integrity: sha512-WsqKMpaBf9Osi1LQlE/5AKdD0nHWOy1asLXocaG8NomOWO07jiZi968+/PbMmnD0QbPJOumDQaGuGa13qys85A==}
+  vue-cropper@1.1.4:
+    resolution: {integrity: sha512-5m98vBsCEI9rbS4JxELxXidtAui3qNyTHLHg67Qbn7g8cg+E6LcnC+hh3SM/p94x6mFh6KRxT1ttnta+wCYqWA==}
 
   vue-demi@0.14.10:
     resolution: {integrity: sha512-nMZBOwuzabUO0nLgIcc6rycZEebF6eeUfaiQx9+WSk8e29IbLvPU9feI6tqW4kTo3hvoYAJkMh8n8D0fuISphg==}
@@ -9894,7 +9894,7 @@ snapshots:
 
   vue-component-type-helpers@3.3.8: {}
 
-  vue-cropper@1.1.1: {}
+  vue-cropper@1.1.4: {}
 
   vue-demi@0.14.10(vue@2.7.16):
     dependencies:
