@@ -155,8 +155,8 @@ importers:
   packages/cli:
     dependencies:
       '@babel/parser':
-        specifier: 7.29.7
-        version: 7.29.7
+        specifier: 7.29.8
+        version: 7.29.8
       '@vue/compiler-dom':
         specifier: 3.5.40
         version: 3.5.40
@@ -6561,7 +6561,7 @@ snapshots:
 
   '@vue/compiler-core@3.5.26':
     dependencies:
-      '@babel/parser': 7.29.7
+      '@babel/parser': 7.29.8
       '@vue/shared': 3.5.26
       entities: 7.0.1
       estree-walker: 2.0.2
@@ -6600,7 +6600,7 @@ snapshots:
 
   '@vue/compiler-sfc@2.7.16':
     dependencies:
-      '@babel/parser': 7.29.7
+      '@babel/parser': 7.29.8
       postcss: 8.5.24
       source-map: 0.6.1
     optionalDependencies:
@@ -6608,7 +6608,7 @@ snapshots:
 
   '@vue/compiler-sfc@3.5.26':
     dependencies:
-      '@babel/parser': 7.29.7
+      '@babel/parser': 7.29.8
       '@vue/compiler-core': 3.5.26
       '@vue/compiler-dom': 3.5.26
       '@vue/compiler-ssr': 3.5.26
@@ -6620,7 +6620,7 @@ snapshots:
 
   '@vue/compiler-sfc@3.5.40':
     dependencies:
-      '@babel/parser': 7.29.7
+      '@babel/parser': 7.29.8
       '@vue/compiler-core': 3.5.40
       '@vue/compiler-dom': 3.5.40
       '@vue/compiler-ssr': 3.5.40
