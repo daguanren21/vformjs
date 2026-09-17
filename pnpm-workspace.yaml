@@ -16,7 +16,7 @@ catalog:
   vitest: 4.1.10
   '@vitejs/plugin-vue': 6.0.8
   '@vitejs/plugin-vue2': 2.3.4
-  vue: 3.5.40
+  vue: 3.5.43
   vue-demi: 0.14.10
   zod: 4.4.3
   '@standard-schema/spec': 1.1.0
