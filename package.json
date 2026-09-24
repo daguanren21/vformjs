@@ -50,7 +50,7 @@
     "@vformjs/vue": "workspace:*",
     "@vformjs/zod": "workspace:*",
     "@vitejs/plugin-vue": "catalog:",
-    "@vue/test-utils": "2.4.11",
+    "@vue/test-utils": "2.5.1",
     "element-plus": "^2.14.3",
     "happy-dom": "20.11.2",
     "husky": "^9.1.7",
