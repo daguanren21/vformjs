@@ -54,7 +54,7 @@
     "element-plus": "^2.14.3",
     "happy-dom": "20.11.2",
     "husky": "^9.1.7",
-    "oxlint": "1.76.0",
+    "oxlint": "1.85.0",
     "turbo": "^2.5.4",
     "typescript": "catalog:",
     "vitepress": "2.0.0-alpha.20",
