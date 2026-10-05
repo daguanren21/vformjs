@@ -39,8 +39,8 @@
   },
   "dependencies": {
     "@babel/parser": "7.29.8",
-    "@vue/compiler-dom": "3.5.40",
-    "@vue/compiler-sfc": "3.5.40",
+    "@vue/compiler-dom": "3.5.43",
+    "@vue/compiler-sfc": "3.5.43",
     "magic-string": "0.30.21"
   },
   "devDependencies": {
